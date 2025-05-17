@@ -1,0 +1,19 @@
+Package: rgeomorphon
+Type: Package
+Title: A Lightweight Implementation of the 'Geomorphon' Algorithm
+Version: 0.1.0
+Author: Andrew Gene Brown
+Maintainer: Andrew Brown <brown.andrewg@gmail.com>
+Description: A fast and low-dependency implementation of the 'geomorphon' 
+  terrain form classification algorithm of Jasiewicz and Stepinski (2013) 
+  based largely on the 'GRASS GIS' 'r.geomorphon' module. This implementation
+  employs a novel parallel algorithm, written in C++ and without external 
+  dependencies.
+License: GPL (>= 3)
+Imports: RcppParallel
+LinkingTo: Rcpp, RcppArmadillo, RcppParallel
+Suggests: terra, tinytest
+Encoding: UTF-8
+Language: en-US
+RoxygenNote: 7.3.2
+Roxygen: list(markdown = TRUE)

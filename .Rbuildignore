@@ -1,0 +1,7 @@
+^.*\.Rproj$
+^\.Rproj\.user$
+^README\.Rmd$
+^misc$
+^.*\.tif$
+^\.github$
+^LICENSE\.md$

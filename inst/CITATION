@@ -1,0 +1,30 @@
+bibentry(
+   bibtype = "Manual",
+   title   = "rgeomorphon: A Lightweight Implementation of the 'Geomorphon' Algorithm",
+   author  = person("Andrew", "Brown"),
+   note    = "R package version 0.1.0",
+   year    = 2025,
+   url     = "https://github.com/brownag/rgeomorphon/"
+)
+
+bibentry(
+  bibtype  = "Article",
+  title    = "Geomorphons - a pattern recognition approach to classification and mapping of landforms",
+  author   = c(person("Jaroslaw", "Jasiewicz"), person("Tomasz", "Stepinski")),
+  journal  = "Geomorphology",
+  year     = 2013,
+  volume   = 182,
+  pages    = "147-156",
+  doi      = "10.1016/j.geomorph.2012.11.005"
+)
+
+bibentry(
+  bibtype = "Manual",
+  title = "Geographic Resources Analysis Support System (GRASS) Software, Version 8.3",
+  author = c(person("Jaroslaw", "Jasiewicz"), person("Tomasz", "Stepinski"), person("GRASS Development Team")),
+  note = "r.geomorphon module",
+  organization = "Open Source Geospatial Foundation",
+  address = "USA",
+  year = 2024,
+  url = "https://grass.osgeo.org/grass-stable/manuals/r.geomorphon.html"
+)
