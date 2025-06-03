@@ -1,13 +1,9 @@
-// [[Rcpp::plugins(cpp11)]]
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::depends(RcppParallel)]]
 #include <RcppArmadillo.h>
 #include <RcppParallel.h>
 #include <vector>
 #include <string>
-#include <cmath>
-#include <algorithm>
-#include <mutex>
 
 #ifndef R_NO_REMAP
 #define R_NO_REMAP
