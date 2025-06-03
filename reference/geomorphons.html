@@ -23,6 +23,7 @@ from 'GRASS GIS'."></head><body>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/brownag/rgeomorphon/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul></div>
 
 
@@ -32,7 +33,7 @@ from 'GRASS GIS'."></head><body>
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Calculate Geomorphons</h1>
-
+      <small class="dont-index">Source: <a href="https://github.com/brownag/rgeomorphon/blob/main/R/geomorphon.R" class="external-link"><code>R/geomorphon.R</code></a></small>
       <div class="d-none name"><code>geomorphons.Rd</code></div>
     </div>
 
@@ -163,7 +164,7 @@ approach to classification and mapping of landforms, Geomorphology, vol. 182,
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://rspatial.org/" class="external-link">terra</a></span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> terra 1.8.54</span>
-<span class="r-in"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="http://humus.rocks/rgeomorphon/">rgeomorphon</a></span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/brownag/rgeomorphon/" class="external-link">rgeomorphon</a></span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">SEARCH</span> <span class="op">=</span> <span class="fl">7</span>       <span class="co"># outer search radius (cells)</span></span></span>
 <span class="r-in"><span><span class="va">SKIP</span> <span class="op">=</span> <span class="fl">1</span>         <span class="co"># inner skip radius (cells)</span></span></span>
@@ -189,7 +190,7 @@ approach to classification and mapping of landforms, Geomorphology, vol. 182,
 <span class="r-in"><span>    <span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    user  system elapsed </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   0.064   0.002   0.060 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   0.064   0.002   0.058 </span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">dem</span>, <span class="va">rg</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="geomorphons-1.png" alt="" width="700" height="433"></span>
