@@ -1,8 +1,8 @@
-SEARCH = 7        # outer search radius (cells)
-SKIP = 1          # inner skip radius (cells)
-DIST = 2          # flatness distance (cells)
-FLAT = 1          # flat angle threshold
-MODE = "anglev1"  # comparison mode
+SEARCH <- 7        # outer search radius (cells)
+SKIP <- 1          # inner skip radius (cells)
+DIST <- 2          # flatness distance (cells)
+FLAT <- 1          # flat angle threshold
+MODE <- "anglev1"  # comparison mode
 
 ## classic volcano
 data("volcano", package = "datasets")

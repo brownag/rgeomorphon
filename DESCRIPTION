@@ -10,6 +10,7 @@ Description: A fast and low-dependency implementation of the 'geomorphon'
   employs a novel parallel algorithm, written in C++ and without external 
   dependencies.
 License: GPL (>= 3)
+Depends: R (>= 3.6.2)
 Imports: RcppParallel
 LinkingTo: Rcpp, RcppArmadillo, RcppParallel
 Suggests: terra, tinytest

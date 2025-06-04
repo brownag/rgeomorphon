@@ -169,7 +169,7 @@ geomorphons <- function(elevation,
     if (!comparison_mode %in% valid_comp_modes) {
         stop(paste(
             "Invalid comparison_mode. Must be one of:",
-            paste(valid_comp_modes, collapse = ", ")
+            toString(valid_comp_modes)
         ))
     }
 
