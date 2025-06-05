@@ -224,16 +224,16 @@ geomorphon_colors <- function() {
     data.frame(
         value = 1:10,
         col = c(
-            "grey",
-            "red",
-            "orange",
-            "yellow",
-            "lightgreen",
-            "green",
-            "cyan",
-            "lightblue",
-            "blue",
-            "purple"
+            "#DCDCDC",
+            "#380000",
+            "#C80000",
+            "#FF5014",
+            "#FAD23C",
+            "#FFFF3C",
+            "#B4E614",
+            "#3CFA96",
+            "#0000FF",
+            "#000038"
         )
     )
 }
