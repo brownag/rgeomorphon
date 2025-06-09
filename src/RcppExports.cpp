@@ -12,7 +12,7 @@ Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
 // geomorphons_cpp_worker
-Rcpp::NumericMatrix geomorphons_cpp_worker(Rcpp::NumericMatrix elevation, double search, double skip, double flat_angle_deg, double dist, std::string comparison_mode, double tdist, bool use_meters, double x_res_dem, double y_res_dem, double nodata);
+Rcpp::List geomorphons_cpp_worker(Rcpp::NumericMatrix elevation, double search, double skip, double flat_angle_deg, double dist, std::string comparison_mode, double tdist, bool use_meters, double x_res_dem, double y_res_dem, double nodata);
 RcppExport SEXP _rgeomorphon_geomorphons_cpp_worker(SEXP elevationSEXP, SEXP searchSEXP, SEXP skipSEXP, SEXP flat_angle_degSEXP, SEXP distSEXP, SEXP comparison_modeSEXP, SEXP tdistSEXP, SEXP use_metersSEXP, SEXP x_res_demSEXP, SEXP y_res_demSEXP, SEXP nodataSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;

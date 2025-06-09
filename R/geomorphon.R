@@ -189,13 +189,25 @@ geomorphons <- function(elevation,
 
     if (inherits(elevation, 'SpatRaster')) {
         forms_rast <- terra::rast(elevation)
-        terra::values(forms_rast) <- forms_matrix_res
+        terra::values(forms_rast) <- forms_matrix_res[["forms"]]
         forms_rast <- geomorphon_theme(forms_rast)
+
+        ternary_rast <- terra::rast(elevation)
+        terra::values(ternary_rast) <- forms_matrix_res[["ternary"]]
+
+        positive_rast <- terra::rast(elevation)
+        terra::values(positive_rast) <- forms_matrix_res[["positive"]]
+
+        negative_rast <- terra::rast(elevation)
+        terra::values(negative_rast) <- forms_matrix_res[["negative"]]
     } else {
-        forms_rast <- forms_matrix_res
+        forms_rast <- forms_matrix_res[["forms"]]
+        ternary_rast <- ternary_matrix_res[["ternary"]]
+        positive_rast <- forms_matrix_res[["positive"]]
+        negative_rast <- ternary_matrix_res[["negative"]]
     }
 
-    forms_rast
+    c(forms_rast, ternary_rast, positive_rast, negative_rast)
 }
 
 #' @export
