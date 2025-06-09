@@ -12,10 +12,15 @@ geomorphons(
   dist = 0,
   comparison_mode = "anglev1",
   tdist = 0,
+  forms = TRUE,
+  ternary = FALSE,
+  positive = FALSE,
+  negative = FALSE,
   use_meters = FALSE,
   nodata_val = NA_real_,
   xres = NULL,
-  yres = xres
+  yres = xres,
+  simplify = FALSE
 )
 }
 \arguments{
@@ -40,6 +45,15 @@ Default: \code{1.0}.}
 \item{tdist}{numeric. Terrain distance factor. When greater than 0, overrides
 Z tolerance from angular logic. Default: \code{0.0}.}
 
+\item{forms}{Character. Number of geomorphon forms to identify. One of
+\verb{"forms10} (default), \code{"forms6"}, \code{"forms5"}, or \verb{"forms4}.}
+
+\item{ternary}{Logical. Include "ternary" output? Default: \code{FALSE}}
+
+\item{positive}{Logical. Include "positive" output? Default: \code{FALSE}}
+
+\item{negative}{Logical. Include "negative" output? Default: \code{FALSE}}
+
 \item{use_meters}{Logical. Default: \code{FALSE} uses cell units. Set to \code{TRUE} to
 specify \code{search}, \code{skip}, and \code{dist} in units of meters.}
 
@@ -50,9 +64,15 @@ matrix). Default: \code{NULL}.}
 
 \item{yres}{numeric. Y grid resolution (used only when \code{elevation} is a
 matrix). Default: \code{xres}.}
+
+\item{simplify}{Logical. If result is length \code{1} list, the first element is
+returned. Default: \code{FALSE}}
 }
 \value{
-SpatRaster or matrix of geomorphon forms.
+List of SpatRaster or matrix of geomorphon algorithm outputs. When
+more than one of \code{forms}, \code{ternary}, \code{positive}, \code{negative} are set the
+result is a list. For one result type, and default \code{simplify} argument, the
+result is the first (and only) element of the list.
 }
 \description{
 Parallel implementation of the 'geomorphon' terrain classification algorithm

@@ -32,38 +32,74 @@ enum FORMS_GRASS {
     G_PT = 10
 };
 
-FORMS_GRASS form_from_counts(int num_neg, int num_pos) {
+// 10-form
+const FORMS_GRASS forms_table10[9][9] = {
+    /* 0 */ {G_FL, G_FL, G_FL, G_FS, G_FS, G_VL, G_VL, G_VL, G_PT},
+    /* 1 */ {G_FL, G_FL, G_FS, G_FS, G_FS, G_VL, G_VL, G_VL, G_NONE},
+    /* 2 */ {G_FL, G_SH, G_SL, G_SL, G_HL, G_HL, G_VL, G_NONE, G_NONE},
+    /* 3 */ {G_SH, G_SH, G_SL, G_SL, G_SL, G_HL, G_NONE, G_NONE, G_NONE},
+    /* 4 */ {G_SH, G_SH, G_SP, G_SL, G_SL, G_NONE, G_NONE, G_NONE, G_NONE},
+    /* 5 */ {G_RI, G_RI, G_SP, G_SP, G_NONE, G_NONE, G_NONE, G_NONE, G_NONE},
+    /* 6 */ {G_RI, G_RI, G_RI, G_NONE, G_NONE, G_NONE, G_NONE, G_NONE, G_NONE},
+    /* 7 */ {G_RI, G_RI, G_NONE, G_NONE, G_NONE, G_NONE, G_NONE, G_NONE, G_NONE},
+    /* 8 */ {G_PK, G_NONE, G_NONE, G_NONE, G_NONE, G_NONE, G_NONE, G_NONE, G_NONE}
+};
+
+// 6-form
+const FORMS_GRASS forms_table6[9][9] = {
+    /* 0 */ {G_FL, G_FL, G_FL, G_FS, G_FS, G_VL, G_VL, G_VL, G_VL},
+    /* 1 */ {G_FL, G_FL, G_FS, G_FS, G_FS, G_VL, G_VL, G_VL, G_NONE},
+    /* 2 */ {G_FL, G_SL, G_SL, G_SL, G_SL, G_VL, G_VL, G_NONE, G_NONE},
+    /* 3 */ {G_SH, G_SH, G_SL, G_SL, G_SL, G_SL, G_NONE, G_NONE, G_NONE},
+    /* 4 */ {G_SH, G_SH, G_SL, G_SL, G_SL, G_NONE, G_NONE, G_NONE, G_NONE},
+    /* 5 */ {G_RI, G_RI, G_RI, G_SL, G_NONE, G_NONE, G_NONE, G_NONE, G_NONE},
+    /* 6 */ {G_RI, G_RI, G_RI, G_NONE, G_NONE, G_NONE, G_NONE, G_NONE, G_NONE},
+    /* 7 */ {G_RI, G_RI, G_NONE, G_NONE, G_NONE, G_NONE, G_NONE, G_NONE, G_NONE},
+    /* 8 */ {G_RI, G_NONE, G_NONE, G_NONE, G_NONE, G_NONE, G_NONE, G_NONE, G_NONE}
+};
+
+// 5-form
+const FORMS_GRASS forms_table5[9][9] = {
+    /* 0 */ {G_FL, G_FL, G_FL, G_SL, G_VL, G_VL, G_VL, G_VL, G_VL},
+    /* 1 */ {G_FL, G_FL, G_SL, G_SL, G_VL, G_VL, G_VL, G_VL, G_NONE},
+    /* 2 */ {G_FL, G_SL, G_SL, G_SL, G_SL, G_VL, G_VL, G_NONE, G_NONE},
+    /* 3 */ {G_SL, G_SL, G_SL, G_SL, G_SL, G_SL, G_NONE, G_NONE, G_NONE},
+    /* 4 */ {G_RI, G_RI, G_SL, G_SL, G_SL, G_NONE, G_NONE, G_NONE, G_NONE},
+    /* 5 */ {G_RI, G_RI, G_RI, G_SL, G_NONE, G_NONE, G_NONE, G_NONE, G_NONE},
+    /* 6 */ {G_RI, G_RI, G_RI, G_NONE, G_NONE, G_NONE, G_NONE, G_NONE, G_NONE},
+    /* 7 */ {G_RI, G_RI, G_NONE, G_NONE, G_NONE, G_NONE, G_NONE, G_NONE, G_NONE},
+    /* 8 */ {G_PK, G_NONE, G_NONE, G_NONE, G_NONE, G_NONE, G_NONE, G_NONE, G_NONE}
+};
+
+// 4-form
+const FORMS_GRASS forms_table4[9][9] = {
+    /* 0 */ {G_FL, G_FL, G_FL, G_SL, G_VL, G_VL, G_VL, G_VL, G_VL},
+    /* 1 */ {G_FL, G_FL, G_SL, G_SL, G_VL, G_VL, G_VL, G_VL, G_NONE},
+    /* 2 */ {G_FL, G_SL, G_SL, G_SL, G_SL, G_VL, G_VL, G_NONE, G_NONE},
+    /* 3 */ {G_SL, G_SL, G_SL, G_SL, G_SL, G_SL, G_NONE, G_NONE, G_NONE},
+    /* 4 */ {G_RI, G_RI, G_SL, G_SL, G_SL, G_NONE, G_NONE, G_NONE, G_NONE},
+    /* 5 */ {G_RI, G_RI, G_RI, G_SL, G_NONE, G_NONE, G_NONE, G_NONE, G_NONE},
+    /* 6 */ {G_RI, G_RI, G_RI, G_NONE, G_NONE, G_NONE, G_NONE, G_NONE, G_NONE},
+    /* 7 */ {G_RI, G_RI, G_NONE, G_NONE, G_NONE, G_NONE, G_NONE, G_NONE, G_NONE},
+    /* 8 */ {G_RI, G_NONE, G_NONE, G_NONE, G_NONE, G_NONE, G_NONE, G_NONE, G_NONE}
+};
+
+FORMS_GRASS form_from_counts(int num_neg, int num_pos, int num_forms) {
     if (num_neg < 0 || num_neg > 8 || num_pos < 0 || num_pos > 8) {
         return G_FL;
     }
 
-    // 10-form
-    const FORMS_GRASS forms_table[9][9] = {
-        /* 0 */ {G_FL, G_FL, G_FL, G_FS, G_FS, G_VL, G_VL, G_VL, G_PT},
-        /* 1 */ {G_FL, G_FL, G_FS, G_FS, G_FS, G_VL, G_VL, G_VL, G_NONE},
-        /* 2 */ {G_FL, G_SH, G_SL, G_SL, G_HL, G_HL, G_VL, G_NONE, G_NONE},
-        /* 3 */ {G_SH, G_SH, G_SL, G_SL, G_SL, G_HL, G_NONE, G_NONE, G_NONE},
-        /* 4 */ {G_SH, G_SH, G_SP, G_SL, G_SL, G_NONE, G_NONE, G_NONE, G_NONE},
-        /* 5 */ {G_RI, G_RI, G_SP, G_SP, G_NONE, G_NONE, G_NONE, G_NONE, G_NONE},
-        /* 6 */ {G_RI, G_RI, G_RI, G_NONE, G_NONE, G_NONE, G_NONE, G_NONE, G_NONE},
-        /* 7 */ {G_RI, G_RI, G_NONE, G_NONE, G_NONE, G_NONE, G_NONE, G_NONE, G_NONE},
-        /* 8 */ {G_PK, G_NONE, G_NONE, G_NONE, G_NONE, G_NONE, G_NONE, G_NONE, G_NONE}
-    };
+    FORMS_GRASS result;
 
-    // 4-form
-    // const FORMS_GRASS forms_table4[9][9] = {
-    //     /* 0 */ {G_FL, G_FL, G_FL, G_SL, G_VL, G_VL, G_VL, G_VL, G_VL},
-    //     /* 1 */ {G_FL, G_FL, G_SL, G_SL, G_VL, G_VL, G_VL, G_VL, G_NONE},
-    //     /* 2 */ {G_FL, G_SL, G_SL, G_SL, G_SL, G_VL, G_VL, G_NONE, G_NONE},
-    //     /* 3 */ {G_SL, G_SL, G_SL, G_SL, G_SL, G_SL, G_NONE, G_NONE, G_NONE},
-    //     /* 4 */ {G_RI, G_RI, G_SL, G_SL, G_SL, G_NONE, G_NONE, G_NONE, G_NONE},
-    //     /* 5 */ {G_RI, G_RI, G_RI, G_SL, G_NONE, G_NONE, G_NONE, G_NONE, G_NONE},
-    //     /* 6 */ {G_RI, G_RI, G_RI, G_NONE, G_NONE, G_NONE, G_NONE, G_NONE, G_NONE},
-    //     /* 7 */ {G_RI, G_RI, G_NONE, G_NONE, G_NONE, G_NONE, G_NONE, G_NONE, G_NONE},
-    //     /* 8 */ {G_RI, G_NONE, G_NONE, G_NONE, G_NONE, G_NONE, G_NONE, G_NONE, G_NONE}
-    // };
-
-    FORMS_GRASS result = forms_table[num_neg][num_pos];
+    if (num_forms == 4) {
+        result = forms_table4[num_neg][num_pos];
+    } else if (num_forms == 5) {
+        result = forms_table5[num_neg][num_pos];
+    } else if (num_forms == 6) {
+        result = forms_table6[num_neg][num_pos];
+    } else {
+        result = forms_table10[num_neg][num_pos];
+    }
 
     if (result == G_NONE)
         return G_FL;
@@ -141,22 +177,18 @@ void generate_ternary_codes() {
     if (ternary_codes_generated_flag) {
         return;
     }
-    Rcpp::Rcout << "Generating minimized ternary codes lookup table (6561 entries)..." << std::endl;
     for (unsigned int i = 0; i < 6561; ++i) {
         global_ternary_codes[i] = ternary_rotate(i);
     }
-    Rcpp::Rcout << "Minimized ternary codes lookup table generated." << std::endl;
     ternary_codes_generated_flag = true;
 }
 
 unsigned int minimize_ternary_code(const std::vector<int>& pattern) {
     if (!ternary_codes_generated_flag) {
-        Rcpp::warning("Minimized ternary codes LUT accessed before generation. Generating now (this should ideally be called once).");
         generate_ternary_codes();
     }
     unsigned int i = ternary_encode(pattern);
     if (i >= 6561) {
-        Rcpp::warning("Calculated preliminary_idx out of bounds: %u", i);
         return 0;
     }
     return global_ternary_codes[i];
@@ -179,6 +211,7 @@ struct GeomorphonWorker : public RcppParallel::Worker {
     double flat_thresh_height_w;
     double t_dist_factor_w;
     COMPARISON_MODE comp_mode_w;
+    int forms_w, ternary_w, positive_w, negative_w;
     double nodata_w;
 
     const int grass_nextr[8] = {-1, -1, -1,  0,  1,  1,  1,  0};
@@ -200,6 +233,10 @@ struct GeomorphonWorker : public RcppParallel::Worker {
         double flat_thresh_h,
         double t_dist_f,
         COMPARISON_MODE comp_mode,
+        int forms,
+        int ternary,
+        int positive,
+        int negative,
         double nodata_v
     ) : dem_access_mat_w(dem_r_in),
         forms_output_mat_w(forms_r_out),
@@ -218,6 +255,10 @@ struct GeomorphonWorker : public RcppParallel::Worker {
         flat_thresh_height_w(flat_thresh_h),
         t_dist_factor_w(t_dist_f),
         comp_mode_w(comp_mode),
+        forms_w(forms),
+        ternary_w(ternary),
+        positive_w(positive),
+        negative_w(negative),
         nodata_w(nodata_v)
     { }
 
@@ -258,10 +299,14 @@ struct GeomorphonWorker : public RcppParallel::Worker {
                      r_center_cell >= n_rows_w - (skip_cells_w + 1) ||
                      c_center_cell <= skip_cells_w ||
                      c_center_cell >= n_cols_w - (skip_cells_w + 1)) {
-                    forms_output_mat_w(r_center_cell, c_center_cell) = nodata_w;
-                    ternary_output_mat_w(r_center_cell, c_center_cell) = nodata_w;
-                    positive_output_mat_w(r_center_cell, c_center_cell) = nodata_w;
-                    negative_output_mat_w(r_center_cell, c_center_cell) = nodata_w;
+                    if (forms_w > 0)
+                      forms_output_mat_w(r_center_cell, c_center_cell) = nodata_w;
+                    if (ternary_w > 0)
+                      ternary_output_mat_w(r_center_cell, c_center_cell) = nodata_w;
+                    if (positive_w > 0)
+                      positive_output_mat_w(r_center_cell, c_center_cell) = nodata_w;
+                    if (negative_w > 0)
+                      negative_output_mat_w(r_center_cell, c_center_cell) = nodata_w;
                     continue;
                 }
 
@@ -447,14 +492,24 @@ struct GeomorphonWorker : public RcppParallel::Worker {
                     p3 *= 3;
                 }
 
-                positive_output_mat_w(r_center_cell, c_center_cell) = static_cast<double>(np);
-                negative_output_mat_w(r_center_cell, c_center_cell) = static_cast<double>(nn);
+                if (ternary_w > 0) {
+                  unsigned int minimized_code = minimize_ternary_code(tp_grass_order);
+                  ternary_output_mat_w(r_center_cell, c_center_cell) = static_cast<int>(minimized_code);
+                }
 
-                FORMS_GRASS final_form_code = form_from_counts(nn, np);
-                forms_output_mat_w(r_center_cell, c_center_cell) = static_cast<double>(final_form_code);
+                if (positive_w > 0){
+                  positive_output_mat_w(r_center_cell, c_center_cell) = static_cast<double>(np);
+                }
 
-                unsigned int minimized_code = minimize_ternary_code(tp_grass_order);
-                ternary_output_mat_w(r_center_cell, c_center_cell) = static_cast<int>(minimized_code);
+                if (negative_w > 0){
+                  negative_output_mat_w(r_center_cell, c_center_cell) = static_cast<double>(nn);
+                }
+
+                if (forms_w > 0) {
+                  FORMS_GRASS final_form_code = form_from_counts(nn, np, forms_w);
+                  forms_output_mat_w(r_center_cell, c_center_cell) = static_cast<double>(final_form_code);
+                }
+
             }
         }
     }
@@ -472,6 +527,10 @@ Rcpp::List geomorphons_cpp_worker(
         bool use_meters,
         double x_res_dem,
         double y_res_dem,
+        int forms,
+        int ternary,
+        int positive,
+        int negative,
         double nodata
     ) {
 
@@ -548,17 +607,26 @@ Rcpp::List geomorphons_cpp_worker(
     }
 
     Rcpp::NumericMatrix positive_out_mat(elevation.nrow(), elevation.ncol());
-    std::fill(positive_out_mat.begin(), positive_out_mat.end(), nodata);
-
     Rcpp::NumericMatrix negative_out_mat(elevation.nrow(), elevation.ncol());
-    std::fill(negative_out_mat.begin(), negative_out_mat.end(), nodata);
-
     Rcpp::NumericMatrix forms_out_mat(elevation.nrow(), elevation.ncol());
-    std::fill(forms_out_mat.begin(), forms_out_mat.end(), nodata);
-
-    generate_ternary_codes();
     Rcpp::NumericMatrix ternary_out_mat(elevation.nrow(), elevation.ncol());
-    std::fill(ternary_out_mat.begin(), ternary_out_mat.end(), nodata);
+
+    if (positive > 0) {
+        std::fill(positive_out_mat.begin(), positive_out_mat.end(), nodata);
+    }
+
+    if (negative > 0) {
+        std::fill(negative_out_mat.begin(), negative_out_mat.end(), nodata);
+    }
+
+    if (forms > 0) {
+        std::fill(forms_out_mat.begin(), forms_out_mat.end(), nodata);
+    }
+
+    if (ternary > 0) {
+        generate_ternary_codes();
+        std::fill(ternary_out_mat.begin(), ternary_out_mat.end(), nodata);
+    }
 
     GeomorphonWorker geomorphon_worker(elevation,
                                        forms_out_mat,
@@ -575,6 +643,10 @@ Rcpp::List geomorphons_cpp_worker(
                                        flat_thresh_height,
                                        tdist,
                                        cmode,
+                                       forms,
+                                       ternary,
+                                       positive,
+                                       negative,
                                        nodata);
 
     RcppParallel::parallelFor(0, elevation.nrow(), geomorphon_worker);

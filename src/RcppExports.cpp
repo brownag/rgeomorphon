@@ -12,8 +12,8 @@ Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
 // geomorphons_cpp_worker
-Rcpp::List geomorphons_cpp_worker(Rcpp::NumericMatrix elevation, double search, double skip, double flat_angle_deg, double dist, std::string comparison_mode, double tdist, bool use_meters, double x_res_dem, double y_res_dem, double nodata);
-RcppExport SEXP _rgeomorphon_geomorphons_cpp_worker(SEXP elevationSEXP, SEXP searchSEXP, SEXP skipSEXP, SEXP flat_angle_degSEXP, SEXP distSEXP, SEXP comparison_modeSEXP, SEXP tdistSEXP, SEXP use_metersSEXP, SEXP x_res_demSEXP, SEXP y_res_demSEXP, SEXP nodataSEXP) {
+Rcpp::List geomorphons_cpp_worker(Rcpp::NumericMatrix elevation, double search, double skip, double flat_angle_deg, double dist, std::string comparison_mode, double tdist, bool use_meters, double x_res_dem, double y_res_dem, int forms, int ternary, int positive, int negative, double nodata);
+RcppExport SEXP _rgeomorphon_geomorphons_cpp_worker(SEXP elevationSEXP, SEXP searchSEXP, SEXP skipSEXP, SEXP flat_angle_degSEXP, SEXP distSEXP, SEXP comparison_modeSEXP, SEXP tdistSEXP, SEXP use_metersSEXP, SEXP x_res_demSEXP, SEXP y_res_demSEXP, SEXP formsSEXP, SEXP ternarySEXP, SEXP positiveSEXP, SEXP negativeSEXP, SEXP nodataSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -27,14 +27,18 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< bool >::type use_meters(use_metersSEXP);
     Rcpp::traits::input_parameter< double >::type x_res_dem(x_res_demSEXP);
     Rcpp::traits::input_parameter< double >::type y_res_dem(y_res_demSEXP);
+    Rcpp::traits::input_parameter< int >::type forms(formsSEXP);
+    Rcpp::traits::input_parameter< int >::type ternary(ternarySEXP);
+    Rcpp::traits::input_parameter< int >::type positive(positiveSEXP);
+    Rcpp::traits::input_parameter< int >::type negative(negativeSEXP);
     Rcpp::traits::input_parameter< double >::type nodata(nodataSEXP);
-    rcpp_result_gen = Rcpp::wrap(geomorphons_cpp_worker(elevation, search, skip, flat_angle_deg, dist, comparison_mode, tdist, use_meters, x_res_dem, y_res_dem, nodata));
+    rcpp_result_gen = Rcpp::wrap(geomorphons_cpp_worker(elevation, search, skip, flat_angle_deg, dist, comparison_mode, tdist, use_meters, x_res_dem, y_res_dem, forms, ternary, positive, negative, nodata));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_rgeomorphon_geomorphons_cpp_worker", (DL_FUNC) &_rgeomorphon_geomorphons_cpp_worker, 11},
+    {"_rgeomorphon_geomorphons_cpp_worker", (DL_FUNC) &_rgeomorphon_geomorphons_cpp_worker, 15},
     {NULL, NULL, 0}
 };
 
