@@ -1,9 +1,12 @@
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::depends(RcppParallel)]]
-#include <RcppArmadillo.h>
-#include <RcppParallel.h>
 #include <vector>
 #include <string>
+
+#include <RcppArmadillo.h>
+#include <RcppParallel.h>
+
+using namespace Rcpp;
 
 #ifndef R_NO_REMAP
 #define R_NO_REMAP
@@ -31,6 +34,8 @@ enum FORMS_GRASS {
     G_VL = 9,
     G_PT = 10
 };
+
+RCPP_EXPOSED_ENUM_NODECL(FORMS_GRASS)
 
 // 10-form
 const FORMS_GRASS forms_table10[9][9] = {
@@ -84,7 +89,7 @@ const FORMS_GRASS forms_table4[9][9] = {
     /* 8 */ {G_RI, G_NONE, G_NONE, G_NONE, G_NONE, G_NONE, G_NONE, G_NONE, G_NONE}
 };
 
-FORMS_GRASS form_from_counts(int num_neg, int num_pos, int num_forms) {
+FORMS_GRASS form_from_counts(int num_neg, int num_pos, int num_forms, FORMS_GRASS none_val) {
     if (num_neg < 0 || num_neg > 8 || num_pos < 0 || num_pos > 8) {
         return G_FL;
     }
@@ -102,9 +107,41 @@ FORMS_GRASS form_from_counts(int num_neg, int num_pos, int num_forms) {
     }
 
     if (result == G_NONE)
-        return G_FL;
+        return none_val;
 
     return result;
+}
+
+// [[Rcpp::export]]
+Rcpp::IntegerVector get_forms_grass_enum() {
+    Rcpp::IntegerVector values = {
+        G_NONE, G_FL, G_PK, G_RI, G_SH, G_SP,
+        G_SL, G_HL, G_FS, G_VL, G_PT
+    };
+
+    Rcpp::CharacterVector names = {
+        "G_NONE", "G_FL", "G_PK", "G_RI", "G_SH", "G_SP",
+        "G_SL", "G_HL", "G_FS", "G_VL", "G_PT"
+    };
+
+    values.names() = names;
+
+    return values;
+}
+
+// [[Rcpp::export]]
+Rcpp::NumericMatrix get_forms_matrix_cpp(int num_forms) {
+    const int num_rows = 9;
+    const int num_cols = 9;
+    Rcpp::NumericMatrix result_matrix(num_rows, num_cols);
+
+    for (int i = 0; i < num_cols; ++i) {
+        for (int j = 0; j < num_rows; ++j) {
+            result_matrix(i, j) = form_from_counts(i, j, num_forms, G_NONE);
+        }
+    }
+
+    return result_matrix;
 }
 
 enum COMPARISON_MODE {
@@ -506,7 +543,7 @@ struct GeomorphonWorker : public RcppParallel::Worker {
                 }
 
                 if (forms_w > 0) {
-                  FORMS_GRASS final_form_code = form_from_counts(nn, np, forms_w);
+                  FORMS_GRASS final_form_code = form_from_counts(nn, np, forms_w, G_FL);
                   forms_output_mat_w(r_center_cell, c_center_cell) = static_cast<double>(final_form_code);
                 }
 

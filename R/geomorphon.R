@@ -254,9 +254,9 @@ geomorphons <- function(elevation,
         terra::values(negative_rast) <- forms_matrix_res[["negative"]]
     } else {
         forms_rast <- forms_matrix_res[["forms"]]
-        ternary_rast <- ternary_matrix_res[["ternary"]]
+        ternary_rast <- forms_matrix_res[["ternary"]]
         positive_rast <- forms_matrix_res[["positive"]]
-        negative_rast <- ternary_matrix_res[["negative"]]
+        negative_rast <- forms_matrix_res[["negative"]]
     }
 
     res <- list(
