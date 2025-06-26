@@ -67,7 +67,7 @@ system.time({
     )
 })
 #>    user  system elapsed 
-#>   0.104   0.010   0.102
+#>   0.054   0.005   0.046
 
 # inspect result
 plot(c(dem, rg), 
@@ -114,7 +114,7 @@ system.time({
     )
 })
 #>    user  system elapsed 
-#>   0.086   0.000   0.071
+#>   0.086   0.001   0.071
 
 # inspect result
 plot(c(dem, rg), 
