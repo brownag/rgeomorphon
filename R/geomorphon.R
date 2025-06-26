@@ -32,13 +32,23 @@
 #'   Z tolerance from angular logic. Default: `0.0`.
 #' @param use_meters Logical. Default: `FALSE` uses cell units. Set to `TRUE` to
 #'   specify `search`, `skip`, and `dist` in units of meters.
+#' @param forms Character. Number of geomorphon forms to identify. One of
+#'   `"forms10` (default), `"forms6"`, `"forms5"`, or `"forms4`.
+#' @param ternary Logical. Include "ternary" output? Default: `FALSE`
+#' @param positive Logical. Include "positive" output? Default: `FALSE`
+#' @param negative Logical. Include "negative" output? Default: `FALSE`
+#' @param nodata_val numeric. NODATA value. Default: `NA_real_`.
 #' @param xres numeric. X grid resolution (used only when `elevation` is a
 #'   matrix). Default: `NULL`.
 #' @param yres numeric. Y grid resolution (used only when `elevation` is a
-#'   matrix). Default: `xres`.
-#' @param nodata_val numeric. NODATA value. Default: `NA_real_`.
+#' matrix). Default: `xres`.
+#' @param simplify Logical. If result is length `1` list, the first element is
+#'   returned. Default: `FALSE`
 #'
-#' @return SpatRaster or matrix of geomorphon forms.
+#' @return List of SpatRaster or matrix of geomorphon algorithm outputs. When
+#'   more than one of `forms`, `ternary`, `positive`, `negative` are set the
+#'   result is a list. For one result type, and default `simplify` argument, the
+#'   result is the first (and only) element of the list.
 #'
 #' @seealso [geomorphon_theme()]
 #'
@@ -107,10 +117,51 @@ geomorphons <- function(elevation,
                         dist = 0.0,
                         comparison_mode = "anglev1",
                         tdist = 0.0,
+                        forms = TRUE,
+                        ternary = FALSE,
+                        positive = FALSE,
+                        negative = FALSE,
                         use_meters = FALSE,
                         nodata_val = NA_real_,
                         xres = NULL,
-                        yres = xres) {
+                        yres = xres,
+                        simplify = FALSE) {
+
+    outputs <- character(0)
+    forms_int <- -1
+
+    if (!is.null(forms) && !isFALSE(forms)) {
+        if (isTRUE(forms) || forms == "forms") {
+            forms_int <- 10
+        } else {
+            fi <- as.integer(gsub("forms", "", forms))
+            if (is.na(fi)) {
+                if (!forms %in% c("forms10", "forms6", "forms5", "forms4")) {
+                    message("Valid values for 'forms' include: `TRUE` ('forms10'; default), 'forms6', 'forms5', 'forms4'", call. = FALSE)
+                }
+                fi <- 10
+            }
+            forms_int <- fi
+        }
+        forms <- "forms"
+    }
+
+    if (is.null(ternary)) {
+        ternary <- FALSE
+    }
+
+    if (is.null(positive)) {
+        positive <- FALSE
+    }
+
+    if (is.null(negative)) {
+        negative <- FALSE
+    }
+
+    outputs <- c(forms = forms,
+                 ternary = if (isTRUE(ternary)) "ternary" else character(0),
+                 positive = if (isTRUE(positive)) "positive" else character(0),
+                 negative = if (isTRUE(negative)) "negative" else character(0))
 
     comparison_mode <- tolower(comparison_mode)
 
@@ -184,18 +235,46 @@ geomorphons <- function(elevation,
         use_meters = as.logical(use_meters),
         x_res_dem = as.double(x_res),
         y_res_dem = as.double(y_res),
+        forms = as.integer(forms_int),
+        ternary = as.integer(ternary),
+        positive = as.integer(positive),
+        negative = as.integer(negative),
         nodata = nodata
     )
 
     if (inherits(elevation, 'SpatRaster')) {
         forms_rast <- terra::rast(elevation)
-        terra::values(forms_rast) <- forms_matrix_res
-        forms_rast <- geomorphon_theme(forms_rast)
+        terra::values(forms_rast) <- forms_matrix_res[["forms"]]
+        forms_rast <- geomorphon_theme(forms_rast, forms = forms)
+        ternary_rast <- terra::rast(elevation)
+        terra::values(ternary_rast) <- forms_matrix_res[["ternary"]]
+        positive_rast <- terra::rast(elevation)
+        terra::values(positive_rast) <- forms_matrix_res[["positive"]]
+        negative_rast <- terra::rast(elevation)
+        terra::values(negative_rast) <- forms_matrix_res[["negative"]]
     } else {
-        forms_rast <- forms_matrix_res
+        forms_rast <- forms_matrix_res[["forms"]]
+        ternary_rast <- forms_matrix_res[["ternary"]]
+        positive_rast <- forms_matrix_res[["positive"]]
+        negative_rast <- forms_matrix_res[["negative"]]
     }
 
-    forms_rast
+    res <- list(
+        forms = forms_rast,
+        ternary = ternary_rast,
+        positive = positive_rast,
+        negative = negative_rast
+    )[outputs]
+
+    if (isTRUE(simplify) && length(res) == 1) {
+        res <- res[[1]]
+    }
+
+    if (inherits(elevation, 'SpatRaster')) {
+        terra::rast(res)
+    } else {
+        res
+    }
 }
 
 #' @export
@@ -244,6 +323,9 @@ geomorphon_colors <- function() {
 #' matrix. Input values should be integers between 1 and 10.
 #'
 #' @param x A SpatRaster or matrix object.
+#' @param forms character. One of: `"forms10"` (default), `"forms6"`,
+#'   `"forms5"`, `"forms4"`. These are themes corresponding to the built-in
+#'   10-form, 6-form, 5-form, and 4-form `"forms`" outputs from [geomorphons()].
 #'
 #' @details
 #'
@@ -255,7 +337,7 @@ geomorphon_colors <- function() {
 #'
 #' @export
 #' @rdname geomorphon_theme
-geomorphon_theme <- function(x) {
+geomorphon_theme <- function(x, forms = "forms10") {
     if (inherits(x, 'SpatRaster')) {
         names(x) <- "geomorphon"
         levels(x) <- geomorphon_categories()

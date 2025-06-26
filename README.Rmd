@@ -41,7 +41,7 @@ You can install the development version of {rgeomorphon} like so:
 remotes::install_github("brownag/rgeomorphon")
 ```
 
-## Example
+## Volcano Example
 
 This is a basic example using the classic R `volcano` dataset and {terra}
 SpatRaster object as input.
@@ -49,7 +49,7 @@ SpatRaster object as input.
 `volcano` is a 10m by 10m grid of elevation values from Maunga Whau in the
 Auckland volcanic field of New Zealand.
 
-```{r example}
+```{r volcano}
 library(terra)
 library(rgeomorphon)
 
@@ -82,6 +82,49 @@ plot(c(dem, rg),
      plg = list(x = "bottomleft", 
                 bty = "o", 
                 bg = "white"))
+```
+
+## Salton Sea Example
+
+Now we will do a bathymetry example using the built in Salton Sea dataset (`salton`).
+
+See `help("salton")` for details.
+
+```{r salton}
+library(terra)
+library(rgeomorphon)
+
+# PARAMETERS
+SEARCH = 10      # outer search radius (cells)
+SKIP = 3         # inner skip radius (cells)
+FLAT = 0.1       # flat angle threshold (degrees)
+
+# salton sea bathymetry sample data
+data("salton", package = "rgeomorphon")
+
+# construct and georeference a SpatRaster object
+dem <- terra::rast(salton)
+terra::crs(dem) <- attr(salton, "crs")
+terra::ext(dem) <- attr(salton, "extent")
+names(dem) <- "Elevation (feet)"
+
+# calculate bathymorphons using 6-form system
+system.time({
+    rg <- geomorphons(
+        dem,
+        search = SEARCH,
+        skip = SKIP,
+        flat = FLAT,
+        forms = "forms6"
+    )
+})
+
+# inspect result
+plot(c(dem, rg), 
+     plg = list(x = "bottomleft", 
+                bty = "o", 
+                bg = "white",
+                cex = 0.85))
 ```
 
 # Citation

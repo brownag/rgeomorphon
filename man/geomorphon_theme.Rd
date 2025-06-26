@@ -10,10 +10,14 @@ geomorphon_categories()
 
 geomorphon_colors()
 
-geomorphon_theme(x)
+geomorphon_theme(x, forms = "forms10")
 }
 \arguments{
 \item{x}{A SpatRaster or matrix object.}
+
+\item{forms}{character. One of: \code{"forms10"} (default), \code{"forms6"},
+\code{"forms5"}, \code{"forms4"}. These are themes corresponding to the built-in
+10-form, 6-form, 5-form, and 4-form \verb{"forms}" outputs from \code{\link[=geomorphons]{geomorphons()}}.}
 }
 \value{
 A SpatRaster or matrix object with geomorphon class names (and colors
