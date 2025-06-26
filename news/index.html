@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">rgeomorphon</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -33,10 +33,23 @@
     </div>
 
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="0.1.0" id="rgeomorphon-010">rgeomorphon 0.1.0<a class="anchor" aria-label="anchor" href="#rgeomorphon-010"></a></h2>
-<ul><li>Initial CRAN submission.</li>
+<h2 class="pkg-version" data-toc-text="0.2.0" id="rgeomorphon-020">rgeomorphon 0.2.0<a class="anchor" aria-label="anchor" href="#rgeomorphon-020"></a></h2>
+<ul><li><p>Add <code>positive</code>, <code>negative</code>, and <code>ternary</code> arguments and output types (for <a href="https://github.com/brownag/rgeomorphon/issues/3" class="external-link">#3</a>)</p></li>
+<li><p>Add support for 4-, 5-, and 6-form classifications via <code>forms</code> argument</p></li>
+<li>
+<p>Add <code>forms_matrix_*</code> methods for classifying positive and negative output using arbitrary forms matrices (lookup tables)</p>
+<ul><li><p><code><a href="../reference/forms_matrix_get.html">forms_matrix_get()</a></code> to obtain forms matrices hard coded in the algorithm</p></li>
+<li><p><code><a href="../reference/forms_matrix.html">forms_matrix()</a></code> to create a new object of class <code>forms_matrix</code> (basically a factor matrix)</p></li>
+<li><p><code><a href="../reference/forms_matrix_apply.html">forms_matrix_apply()</a></code> to classify positive and negative outputs using a <code>forms_matrix</code></p></li>
+</ul></li>
+<li><p>Add new Salton Sea bathymetry dataset; see <code><a href="../reference/salton.html">?salton</a></code></p></li>
 </ul></div>
-  </main></div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.1.0" id="rgeomorphon-010">rgeomorphon 0.1.0<a class="anchor" aria-label="anchor" href="#rgeomorphon-010"></a></h2>
+<ul><li>Initial GitHub release</li>
+</ul></div>
+  </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
+    </nav></aside></div>
 
 
     <footer><div class="pkgdown-footer-left">

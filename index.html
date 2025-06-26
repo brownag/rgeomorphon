@@ -22,7 +22,7 @@
 
     <a class="navbar-brand me-2" href="index.html">rgeomorphon</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -63,13 +63,13 @@
 <span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"brownag/rgeomorphon"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="example">Example<a class="anchor" aria-label="anchor" href="#example"></a>
+<h2 id="volcano-example">Volcano Example<a class="anchor" aria-label="anchor" href="#volcano-example"></a>
 </h2>
 <p>This is a basic example using the classic R <code>volcano</code> dataset and {terra} SpatRaster object as input.</p>
 <p><code>volcano</code> is a 10m by 10m grid of elevation values from Maunga Whau in the Auckland volcanic field of New Zealand.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://rspatial.org/" class="external-link">terra</a></span><span class="op">)</span></span>
-<span><span class="co">#&gt; terra 1.8.54</span></span>
+<span><span class="co">#&gt; terra 1.8.56</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/brownag/rgeomorphon/" class="external-link">rgeomorphon</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># PARAMETERS</span></span>
@@ -96,20 +96,64 @@
 <span>    <span class="op">)</span></span>
 <span><span class="op">}</span><span class="op">)</span></span>
 <span><span class="co">#&gt;    user  system elapsed </span></span>
-<span><span class="co">#&gt;   0.042   0.009   0.036</span></span>
+<span><span class="co">#&gt;   0.054   0.005   0.046</span></span>
 <span></span>
 <span><span class="co"># inspect result</span></span>
 <span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">dem</span>, <span class="va">rg</span><span class="op">)</span>, </span>
 <span>     plg <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>x <span class="op">=</span> <span class="st">"bottomleft"</span>, </span>
 <span>                bty <span class="op">=</span> <span class="st">"o"</span>, </span>
 <span>                bg <span class="op">=</span> <span class="st">"white"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<p><img src="reference/figures/README-example-1.png" width="100%"></p>
+<p><img src="reference/figures/README-volcano-1.png" width="100%"></p>
+</div>
+<div class="section level2">
+<h2 id="salton-sea-example">Salton Sea Example<a class="anchor" aria-label="anchor" href="#salton-sea-example"></a>
+</h2>
+<p>Now we will do a bathymetry example using the built in Salton Sea dataset (<code>salton</code>).</p>
+<p>See <code><a href="reference/salton.html">help("salton")</a></code> for details.</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://rspatial.org/" class="external-link">terra</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/brownag/rgeomorphon/" class="external-link">rgeomorphon</a></span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># PARAMETERS</span></span>
+<span><span class="va">SEARCH</span> <span class="op">=</span> <span class="fl">10</span>      <span class="co"># outer search radius (cells)</span></span>
+<span><span class="va">SKIP</span> <span class="op">=</span> <span class="fl">3</span>         <span class="co"># inner skip radius (cells)</span></span>
+<span><span class="va">FLAT</span> <span class="op">=</span> <span class="fl">0.1</span>       <span class="co"># flat angle threshold (degrees)</span></span>
+<span></span>
+<span><span class="co"># salton sea bathymetry sample data</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"salton"</span>, package <span class="op">=</span> <span class="st">"rgeomorphon"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># construct and georeference a SpatRaster object</span></span>
+<span><span class="va">dem</span> <span class="op">&lt;-</span> <span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/rast.html" class="external-link">rast</a></span><span class="op">(</span><span class="va">salton</span><span class="op">)</span></span>
+<span><span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/crs.html" class="external-link">crs</a></span><span class="op">(</span><span class="va">dem</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">salton</span>, <span class="st">"crs"</span><span class="op">)</span></span>
+<span><span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/ext.html" class="external-link">ext</a></span><span class="op">(</span><span class="va">dem</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">salton</span>, <span class="st">"extent"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">dem</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="st">"Elevation (feet)"</span></span>
+<span></span>
+<span><span class="co"># calculate bathymorphons using 6-form system</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/system.time.html" class="external-link">system.time</a></span><span class="op">(</span><span class="op">{</span></span>
+<span>    <span class="va">rg</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/geomorphons.html">geomorphons</a></span><span class="op">(</span></span>
+<span>        <span class="va">dem</span>,</span>
+<span>        search <span class="op">=</span> <span class="va">SEARCH</span>,</span>
+<span>        skip <span class="op">=</span> <span class="va">SKIP</span>,</span>
+<span>        flat <span class="op">=</span> <span class="va">FLAT</span>,</span>
+<span>        forms <span class="op">=</span> <span class="st">"forms6"</span></span>
+<span>    <span class="op">)</span></span>
+<span><span class="op">}</span><span class="op">)</span></span>
+<span><span class="co">#&gt;    user  system elapsed </span></span>
+<span><span class="co">#&gt;   0.086   0.001   0.071</span></span>
+<span></span>
+<span><span class="co"># inspect result</span></span>
+<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">dem</span>, <span class="va">rg</span><span class="op">)</span>, </span>
+<span>     plg <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>x <span class="op">=</span> <span class="st">"bottomleft"</span>, </span>
+<span>                bty <span class="op">=</span> <span class="st">"o"</span>, </span>
+<span>                bg <span class="op">=</span> <span class="st">"white"</span>,</span>
+<span>                cex <span class="op">=</span> <span class="fl">0.85</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<p><img src="reference/figures/README-salton-1.png" width="100%"></p>
 </div>
 </div>
 <div class="section level1">
 <h1 id="citation">Citation<a class="anchor" aria-label="anchor" href="#citation"></a>
 </h1>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/citation.html" class="external-link">citation</a></span><span class="op">(</span><span class="st">"rgeomorphon"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; To cite package 'rgeomorphon' in publications use:</span></span>
 <span><span class="co">#&gt; </span></span>
