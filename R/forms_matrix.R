@@ -1,13 +1,30 @@
 #' Get a `forms_matrix` for Geomorphon Classification
 #'
 #' Gets one of the internally defined forms matrices. A form matrix is defined
-#' for the classic 10-form output (default) as well as three simplified classes:
-#' 4-form, 5-form, and 6-form.
+#' for the classic 10-form output (default; Jasiewicz & Stepinski, 2013) as well
+#' as three simplified classes: 4-form, 5-form, and 6-form (Masetti et al.,
+#' 2018)
 #'
 #' @param num_forms Integer. The number of forms to classify, one of `4`, `5`,
-#'   `6`, or `10`.
+#'   `6`, or `10` (default).
 #' @param levels Named integer with values between 0 and 10 corresponding to
 #'   form class labels. Default: `get_forms_grass_enum()`
+#'
+#' @references
+#'
+#' Stepinski, T., Jasiewicz, J., 2011, Geomorphons - a new approach to
+#' classification of landform, in : Eds: Hengl, T., Evans, I.S., Wilson, J.P.,
+#' and Gould, M., Proceedings of Geomorphometry 2011, Redlands, 109-112.
+#' Available online:
+#' \url{https://www.geomorphometry.org/uploads/pdf/pdf2011/StepinskiJasiewicz2011geomorphometry.pdf}
+#'
+#' Jasiewicz, J., Stepinski, T., 2013, Geomorphons - a pattern recognition
+#' approach to classification and mapping of landforms, Geomorphology, vol. 182,
+#' 147-156. (\doi{doi:10.1016/j.geomorph.2012.11.005})
+#'
+#' Masetti, G., Mayer, L. A., & Ward, L. G. 2018, A Bathymetry- and
+#' Reflectivity-Based Approach for Seafloor Segmentation. Geosciences, 8(1), 14.
+#' (\doi{doi:0.3390/geosciences8010014})
 #'
 #' @returns An object of class `forms_matrix`
 #' @export
