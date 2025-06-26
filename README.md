@@ -30,7 +30,7 @@ You can install the development version of {rgeomorphon} like so:
 remotes::install_github("brownag/rgeomorphon")
 ```
 
-## Example
+## Volcano Example
 
 This is a basic example using the classic R `volcano` dataset and
 {terra} SpatRaster object as input.
@@ -40,7 +40,7 @@ the Auckland volcanic field of New Zealand.
 
 ``` r
 library(terra)
-#> terra 1.8.54
+#> terra 1.8.56
 library(rgeomorphon)
 
 # PARAMETERS
@@ -67,7 +67,7 @@ system.time({
     )
 })
 #>    user  system elapsed 
-#>   0.042   0.009   0.036
+#>   0.104   0.010   0.102
 
 # inspect result
 plot(c(dem, rg), 
@@ -76,7 +76,55 @@ plot(c(dem, rg),
                 bg = "white"))
 ```
 
-<img src="man/figures/README-example-1.png" width="100%" />
+<img src="man/figures/README-volcano-1.png" width="100%" />
+
+## Salton Sea Example
+
+Now we will do a bathymetry example using the built in Salton Sea
+dataset (`salton`).
+
+See `help("salton")` for details.
+
+``` r
+library(terra)
+library(rgeomorphon)
+
+# PARAMETERS
+SEARCH = 10      # outer search radius (cells)
+SKIP = 3         # inner skip radius (cells)
+FLAT = 0.1       # flat angle threshold (degrees)
+
+# salton sea bathymetry sample data
+data("salton", package = "rgeomorphon")
+
+# construct and georeference a SpatRaster object
+dem <- terra::rast(salton)
+terra::crs(dem) <- attr(salton, "crs")
+terra::ext(dem) <- attr(salton, "extent")
+names(dem) <- "Elevation (feet)"
+
+# calculate bathymorphons using 6-form system
+system.time({
+    rg <- geomorphons(
+        dem,
+        search = SEARCH,
+        skip = SKIP,
+        flat = FLAT,
+        forms = "forms6"
+    )
+})
+#>    user  system elapsed 
+#>   0.086   0.000   0.071
+
+# inspect result
+plot(c(dem, rg), 
+     plg = list(x = "bottomleft", 
+                bty = "o", 
+                bg = "white",
+                cex = 0.85))
+```
+
+<img src="man/figures/README-salton-1.png" width="100%" />
 
 # Citation
 

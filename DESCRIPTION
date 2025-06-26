@@ -20,3 +20,4 @@ RoxygenNote: 7.3.2
 Roxygen: list(markdown = TRUE)
 URL: https://github.com/brownag/rgeomorphon/, https://humus.rocks/rgeomorphon/
 BugReports: https://github.com/brownag/rgeomorphon/issues
+LazyData: true
