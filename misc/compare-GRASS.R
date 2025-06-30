@@ -39,6 +39,18 @@ system.time({
     )
 })
 
+system.time({
+    tg <- geomorphons(
+        dem,
+        search = SEARCH,
+        skip = SKIP,
+        dist = DIST,
+        flat = FLAT,
+        comparison_mode = MODE,
+        forms = FALSE,
+        ternary = TRUE
+    )
+})
 library(rgrass)
 initGRASS(SG = dem, override = TRUE)
 write_RAST(dem, "volcano2", flags=c("o", "overwrite"))
@@ -56,6 +68,22 @@ system.time({
     )
 })
 grassg <- read_RAST("volcano2_forms")
+
+
+system.time({
+    execGRASS(
+        "r.geomorphon",
+        elevation = "volcano2",
+        search = SEARCH,
+        skip = SKIP,
+        dist = DIST,
+        flat = FLAT,
+        comparison = MODE,
+        ternary = "volcano2_ternary",
+        flags = "overwrite"
+    )
+})
+terng <- read_RAST("volcano2_ternary")
 
 if (INTERIOR) {
     # extract cells that are at least SEARCH from border
