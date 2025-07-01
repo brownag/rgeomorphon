@@ -801,11 +801,10 @@ geomorphon_theme <- function(x, forms = "forms10") {
             overwrite = TRUE,
             datatype = datatype
         )
-        terra::varnames(cropped_result) <- ""
-        return(cropped_result)
+        return(output_filename)
     })
 
-    terra::sprc(processed_tiles_list)
+    terra::sprc(unlist(processed_tiles_list))
 }
 
 #' Combine Processed Tiles into a Single Output Raster
@@ -834,12 +833,13 @@ geomorphon_theme <- function(x, forms = "forms10") {
         y <- terra::ext(x)
     }
 
-    terra::merge(
+    res <- terra::merge(
         terra::crop(x, y),
         datatype = datatype,
         na.rm = TRUE,
         filename = filename,
         overwrite = overwrite
     )
-
+    terra::varnames(res) <- ""
+    res
 }
