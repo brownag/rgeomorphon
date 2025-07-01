@@ -804,6 +804,10 @@ geomorphon_theme <- function(x, forms = "forms10") {
         return(output_filename)
     })
 
+    if (length(processed_tiles_list) == 1) {
+        processed_tiles_list[[1]] <- terra::rast(processed_tiles_list[[1]])
+    }
+
     terra::sprc(unlist(processed_tiles_list))
 }
 
