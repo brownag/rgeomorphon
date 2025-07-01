@@ -768,9 +768,15 @@ geomorphon_theme <- function(x, forms = "forms10") {
         }
     }
 
+    xs <- terra::sources(x)
+    yw <- terra::geom(y, wkt = TRUE)
+    ycrs <- terra::crs(y)
+
     processed_tiles_list <- LAPPLY.FUN(seq_len(length(x)), function(j) {
 
-        input_tile <- x[j]
+        input_source <- xs[j]
+        input_tile <- terra::rast(input_source)
+
         processed_buffered_tile <- do.call(FUN, c(list(
             elevation = terra::extend(input_tile, cell_buffer)
         ), geomorphon_args))
@@ -779,7 +785,6 @@ geomorphon_theme <- function(x, forms = "forms10") {
             processed_buffered_tile <- processed_buffered_tile[[1]]
         }
 
-        input_source <- terra::sources(input_tile)
         output_filename <- file.path(
             dirname(input_source),
             paste0("crop_", basename(input_source))
@@ -791,7 +796,7 @@ geomorphon_theme <- function(x, forms = "forms10") {
 
         cropped_result <- terra::crop(
             x = processed_buffered_tile,
-            y = y[j, ],
+            y = terra::vect(yw[j], crs = ycrs),
             filename = output_filename,
             overwrite = TRUE,
             datatype = datatype
