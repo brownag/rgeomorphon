@@ -7,7 +7,7 @@
 
 [![R-CMD-check Build
 Status](https://github.com/brownag/rgeomorphon/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/brownag/rgeomorphon/actions)
-[![soilDB
+[![rgeomorphon
 Manual](https://img.shields.io/badge/docs-HTML-informational)](https://humus.rocks/rgeomorphon/)
 <!-- badges: end -->
 
@@ -67,7 +67,7 @@ system.time({
     )
 })
 #>    user  system elapsed 
-#>   0.054   0.005   0.046
+#>   0.146   0.004   0.145
 
 # inspect result
 plot(c(dem, rg), 
@@ -114,7 +114,7 @@ system.time({
     )
 })
 #>    user  system elapsed 
-#>   0.086   0.001   0.071
+#>   0.179   0.003   0.165
 
 # inspect result
 plot(c(dem, rg), 
