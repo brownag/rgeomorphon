@@ -6,6 +6,7 @@
 \usage{
 geomorphons(
   elevation,
+  filename = NULL,
   search = 3,
   skip = 0,
   flat_angle_deg = 1,
@@ -17,15 +18,20 @@ geomorphons(
   positive = FALSE,
   negative = FALSE,
   use_meters = FALSE,
-  nodata_val = NA_real_,
+  nodata_val = NA_integer_,
   xres = NULL,
   yres = xres,
-  simplify = FALSE
+  simplify = FALSE,
+  LAPPLY.FUN = lapply
 )
 }
 \arguments{
 \item{elevation}{matrix or SpatRaster object. Digital Elevation Model values.
-It is \strong{STRONGLY} recommended to use a grid in a projected coordinate system.}
+It is \strong{STRONGLY} recommended to use a grid in a projected coordinate
+system.}
+
+\item{filename}{character. Output filename. Default \code{NULL} creates a
+temporary file.}
 
 \item{search}{numeric. User input for search radius (default: \code{3}). Units
 depend on \code{use_meters}.}
@@ -45,19 +51,19 @@ Default: \code{1.0}.}
 \item{tdist}{numeric. Terrain distance factor. When greater than 0, overrides
 Z tolerance from angular logic. Default: \code{0.0}.}
 
-\item{forms}{Character. Number of geomorphon forms to identify. One of
+\item{forms}{character. Number of geomorphon forms to identify. One of
 \verb{"forms10} (default), \code{"forms6"}, \code{"forms5"}, or \verb{"forms4}.}
 
-\item{ternary}{Logical. Include "ternary" output? Default: \code{FALSE}}
+\item{ternary}{logical. Include "ternary" output? Default: \code{FALSE}}
 
-\item{positive}{Logical. Include "positive" output? Default: \code{FALSE}}
+\item{positive}{logical. Include "positive" output? Default: \code{FALSE}}
 
-\item{negative}{Logical. Include "negative" output? Default: \code{FALSE}}
+\item{negative}{logical. Include "negative" output? Default: \code{FALSE}}
 
 \item{use_meters}{Logical. Default: \code{FALSE} uses cell units. Set to \code{TRUE} to
 specify \code{search}, \code{skip}, and \code{dist} in units of meters.}
 
-\item{nodata_val}{numeric. NODATA value. Default: \code{NA_real_}.}
+\item{nodata_val}{numeric. NODATA value. Default: \code{NA_integer_}.}
 
 \item{xres}{numeric. X grid resolution (used only when \code{elevation} is a
 matrix). Default: \code{NULL}.}
@@ -65,8 +71,11 @@ matrix). Default: \code{NULL}.}
 \item{yres}{numeric. Y grid resolution (used only when \code{elevation} is a
 matrix). Default: \code{xres}.}
 
-\item{simplify}{Logical. If result is length \code{1} list, the first element is
+\item{simplify}{logical. If result is length \code{1} list, the first element is
 returned. Default: \code{FALSE}}
+
+\item{LAPPLY.FUN}{An \code{\link[=lapply]{lapply()}}-like function such as
+\code{future.apply::future_lapply()}. Default: \code{lapply()}.}
 }
 \value{
 List of SpatRaster or matrix of geomorphon algorithm outputs. When

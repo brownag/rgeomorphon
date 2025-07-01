@@ -18,7 +18,7 @@ knitr::opts_chunk$set(
 <!-- badges: start -->
 [![R-CMD-check Build
 Status](https://github.com/brownag/rgeomorphon/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/brownag/rgeomorphon/actions)
-[![soilDB
+[![rgeomorphon
 Manual](https://img.shields.io/badge/docs-HTML-informational)](https://humus.rocks/rgeomorphon/)
 <!-- badges: end -->
 
