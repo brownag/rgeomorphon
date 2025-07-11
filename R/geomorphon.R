@@ -135,11 +135,13 @@ geomorphons <- function(elevation,
                         LAPPLY.FUN = lapply) {
 
     if (inherits(elevation, 'SpatRaster')) {
+
         if (!requireNamespace("terra")) {
             stop("Package 'terra' is required to process SpatRaster input.")
         }
-        mi <- as.data.frame(t(terra::mem_info(elevation, print = FALSE)))
-        nchunk <- as.integer(ceiling(nrow(elevation) / mi$chunk_rows))
+
+        nchunk <- .terra_mem_chunks_needed(elevation)
+
         return(
             .geomorphons_tiled(
                 elevation,
@@ -844,6 +846,7 @@ geomorphon_theme <- function(x, forms = "forms10") {
         filename = filename,
         overwrite = overwrite
     )
+
     terra::varnames(res) <- ""
     res
 }
