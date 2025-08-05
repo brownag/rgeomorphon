@@ -61,5 +61,31 @@ if (requireNamespace("terra", quietly = TRUE)) {
     }))
     names(res2) <- c("forms4", "forms5", "forms6")
 
+
     expect_equivalent(terra::nlyr(c(res, res2)), 7)
+
+    # test chunked processing
+    if (TRUE) {
+        rrmsn <- Sys.getenv("R_RGEOMORPHON_MEM_SCALE_NEED", unset = 10)
+        Sys.setenv("R_RGEOMORPHON_MEM_SCALE_NEED" = 1E7)
+
+        nc <- .terra_mem_chunks_needed(dem)
+
+        if (nc > 1 && nc < 30) {
+            expect_warning({
+                rg <- geomorphons(
+                    dem,
+                    search = SEARCH,
+                    skip = SKIP,
+                    dist = DIST,
+                    flat = FLAT,
+                    comparison_mode = MODE
+                )
+            })
+        } else {
+            tinytest::exit_file("memory scaling would create too many chunks for test")
+        }
+
+        Sys.setenv("R_RGEOMORPHON_MEM_SCALE_NEED" = rrmsn)
+    }
 }
