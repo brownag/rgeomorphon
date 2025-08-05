@@ -36,7 +36,7 @@ if (requireNamespace("terra", quietly = TRUE)) {
     expect_equivalent(nrow(terra::unique(rg)), 10)
     expect_equivalent(nrow(terra::cats(rg)[[1]]), 10)
 
-    expect_warning({
+    expect_silent({
         res <- geomorphons(
             dem,
             search = SEARCH,
