@@ -142,6 +142,32 @@ geomorphons <- function(elevation,
 
         nchunk <- .terra_mem_chunks_needed(elevation)
 
+        ## for one chunk it is more efficient to extend then crop back to
+        ## original extent for consistency with the tiled method
+        if (nchunk == 1) {
+            res <- .geomorphons(
+                terra::extend(elevation, search + skip + 1),
+                search = search,
+                skip = skip,
+                flat_angle_deg = flat_angle_deg,
+                dist = dist,
+                comparison_mode = comparison_mode,
+                tdist = tdist,
+                forms = forms,
+                ternary = ternary,
+                positive = positive,
+                negative = negative,
+                use_meters = use_meters,
+                nodata_val = nodata_val,
+                xres = xres,
+                yres = yres,
+                filename = filename,
+                overwrite = TRUE,
+                simplify = simplify
+            )
+            return(terra::crop(res, elevation))
+        }
+
         return(
             .geomorphons_tiled(
                 elevation,
