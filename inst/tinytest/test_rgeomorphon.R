@@ -69,7 +69,7 @@ if (requireNamespace("terra", quietly = TRUE)) {
         rrmsn <- Sys.getenv("R_RGEOMORPHON_MEM_SCALE_NEED", unset = 10)
         Sys.setenv("R_RGEOMORPHON_MEM_SCALE_NEED" = 1E7)
 
-        nc <- .terra_mem_chunks_needed(dem)
+        nc <- rgeomorphon:::.terra_mem_chunks_needed(dem)
 
         if (nc > 1 && nc < 30) {
             expect_warning({
