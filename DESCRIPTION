@@ -13,7 +13,14 @@ License: GPL (>= 3)
 Depends: R (>= 3.6.2)
 Imports: Rcpp, RcppParallel
 LinkingTo: Rcpp, RcppArmadillo, RcppParallel
-Suggests: terra, tinytest
+Suggests: 
+    terra,
+    litedown,
+    tinytest
+Enhances:
+    future,
+    future.lapply,
+    parallel
 Encoding: UTF-8
 Language: en-US
 RoxygenNote: 7.3.2
@@ -21,3 +28,4 @@ Roxygen: list(markdown = TRUE)
 URL: https://github.com/brownag/rgeomorphon/, https://humus.rocks/rgeomorphon/
 BugReports: https://github.com/brownag/rgeomorphon/issues
 LazyData: true
+VignetteBuilder: litedown
