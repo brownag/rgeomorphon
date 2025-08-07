@@ -89,7 +89,7 @@ In this setup, `rgeomorphon` will send a tile to `machine1.local`. Once it arriv
 
 ### The `geomorphons()` Call Stays the Same
 
-Regardless of which of the powerful backends you configure with `future::plan()`, your call to `geomorphons()` remains identical. You write your code once, and can scale it up simply by changing the plan.
+Regardless of which of the backends you configure with `future::plan()`, your call to `geomorphons()` remains identical. You write your code once, and can scale it up simply by changing the plan.
 
 ```r
 g_forms <- geomorphons(
@@ -127,15 +127,20 @@ ext(dem) <- attr(salton, "extent")
 geomorphon_chunks_needed(dem)
 ```
 
-To force tiled processing we can manipulate the environment variables that `rgeomorphon` uses to estimate memory needs. We will set `R_RGEOMORPHON_N_WORKERS` to tell the function how many parallel jobs we intend to run.
+To force tiled processing we can manipulate the environment variables that `rgeomorphon` uses to estimate memory needs. We will set `R_RGEOMORPHON_MEM_SCALE_NEED` to tell the function how many parallel jobs we intend to run.
 
 ```{r}
-# Scale up the memory needed (equivalent number of tile copies)
+# Scale up the memory needed (equivalent to number of input raster copies)
 Sys.setenv(R_RGEOMORPHON_MEM_SCALE_NEED = 1e5)
 
 # which will cause the chunking algorithm to divide the raster
 geomorphon_chunks_needed(dem)
+
+# Unset the environment variable
+Sys.unsetenv("R_RGEOMORPHON_MEM_SCALE_NEED")
 ```
+
+We can also pass the `nchunk` argument directly to `geomorphons()` to bypass the memory-based heuristics.
 
 Now that `geomorphons()` will use a tiled approach, we can set up our parallel plan and execute the calculation.
 
@@ -154,15 +159,13 @@ system.time({
         flat = 0.1,
         LAPPLY.FUN = function(X, FUN, ...) {
             future.apply::future_lapply(X, FUN, future.seed = TRUE, ...)
-        }
+        },
+        nchunk = 2
     )
 })
 
 # Shut down the parallel workers
 future::plan(sequential)
-
-# Unset the environment variable
-Sys.unsetenv("R_RGEOMORPHON_MEM_SCALE_NEED")
 ```
 
 ```{r}
@@ -208,7 +211,7 @@ This allows for many customizations, for example:
     ```{r}
     # Define a custom lapply-like function that adds reporting
     reporting_lapply <- function(X, FUN, ...) {
-        # This is our wrapper. It takes the tile index 'i' as input.
+        
         reporting_FUN <- function(i) {
             message(paste0("--> Starting tile #", i, " at ", Sys.time()))
             result <- FUN(i, ...)
@@ -216,12 +219,10 @@ This allows for many customizations, for example:
             return(result)
         }
 
-        message("Finished creating tiles, processing ...")
         # Use a sequential lapply to execute our reporting wrapper
         base::lapply(X, reporting_FUN)
     }
 
-    # Pass our custom function to geomorphons()
     g_forms_reported <- geomorphons(
         dem,
         search = 10,

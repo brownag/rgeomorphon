@@ -15,11 +15,11 @@ Imports: Rcpp, RcppParallel
 LinkingTo: Rcpp, RcppArmadillo, RcppParallel
 Suggests: 
     terra,
+    future.apply,
     litedown,
     tinytest
 Enhances:
     future,
-    future.lapply,
     parallel
 Encoding: UTF-8
 Language: en-US

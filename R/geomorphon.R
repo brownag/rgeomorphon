@@ -122,6 +122,7 @@
 #'   returned. Default: `FALSE`
 #' @param LAPPLY.FUN An [lapply()]-like function such as
 #'   `future.apply::future_lapply()`. Default: `lapply()`.
+#' @param nchunk Number of tile chunks to use. Default: `geomorphon_chunks_needed(elevation)`.
 #'
 #' @return List of SpatRaster or matrix of geomorphon algorithm outputs. When
 #'   more than one of `forms`, `ternary`, `positive`, `negative` are set the
@@ -190,15 +191,14 @@ geomorphons <- function(elevation,
                         xres = NULL,
                         yres = xres,
                         simplify = FALSE,
-                        LAPPLY.FUN = lapply) {
+                        LAPPLY.FUN = lapply,
+                        nchunk = geomorphon_chunks_needed(elevation)) {
 
     if (inherits(elevation, 'SpatRaster')) {
 
         if (!requireNamespace("terra")) {
             stop("Package 'terra' is required to process SpatRaster input.")
         }
-
-        nchunk <- geomorphon_chunks_needed(elevation)
 
         ## for one chunk it is more efficient to extend then crop back to
         ## original extent for consistency with the tiled method

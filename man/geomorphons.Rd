@@ -22,7 +22,8 @@ geomorphons(
   xres = NULL,
   yres = xres,
   simplify = FALSE,
-  LAPPLY.FUN = lapply
+  LAPPLY.FUN = lapply,
+  nchunk = geomorphon_chunks_needed(elevation)
 )
 }
 \arguments{
@@ -76,6 +77,8 @@ returned. Default: \code{FALSE}}
 
 \item{LAPPLY.FUN}{An \code{\link[=lapply]{lapply()}}-like function such as
 \code{future.apply::future_lapply()}. Default: \code{lapply()}.}
+
+\item{nchunk}{Number of tile chunks to use. Default: \code{geomorphon_chunks_needed(elevation)}.}
 }
 \value{
 List of SpatRaster or matrix of geomorphon algorithm outputs. When
