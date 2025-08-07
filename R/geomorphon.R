@@ -2,19 +2,92 @@
 
 #' Calculate Geomorphons
 #'
-#' Parallel implementation of the 'geomorphon' terrain classification algorithm
-#' largely based on 'r.geomorphon' algorithm of Jasiewicz and Stepinski (2013)
-#' from 'GRASS GIS'.
+#' 'Rcpp' implementation of the 'geomorphon' terrain classification system based
+#' on 'r.geomorphon' algorithm of Jasiewicz and Stepinski (2013) from 'GRASS
+#' GIS'.
+#'
+#' # Distance Calculation and Coordinate Reference Systems
 #'
 #' The algorithm assumes planar distances and angles are calculated based on
 #' cell resolutions, so it is strongly recommended that elevation data be in a
 #' projected coordinate system.
 #'
+#' # Buffer Around Area of Interest
+#'
 #' For reliable geomorphon classification, especially near study area
 #' boundaries, it is recommended to use a raster that includes a buffer of at
 #' least `search + 1` cells around the area of interest. This implementation
-#' utilizes all available DEM data up to the specified search radius or the
-#' boundary (whichever is encountered first).
+#' utilizes all available DEM data up to the specified search radius.
+#'
+#' A buffer of `search + skip + 1` cells is automatically applied when
+#' processing SpatRaster input, as this is necessary to avoid edge effects when
+#' processing large rasters in tiles. Matrix input is not altered.
+#'
+#' # Tiled Processing for Large Rasters
+#'
+#' For Digital Elevation Models (DEMs) that are too large to fit into available
+#' memory, `rgeomorphon` employs an automatic tiled processing workflow. This
+#' method breaks the large raster into a grid of smaller, manageable chunks that
+#' are processed sequentially.
+#'
+#' The premise of this approach is the use of buffered tiles. To ensure seamless
+#' results and avoid edge artifacts, a buffer of surrounding data is added to
+#' each chunk before the geomorphon calculation is performed. This provides the
+#' necessary neighborhood of cells for the algorithm to work correctly. After
+#' each tile is processed, the buffer region is removed from the result.
+#' Finally, the clean, processed tiles are mosaicked back together into a
+#' single, complete output raster that perfectly matches the extent of the
+#' original input DEM.
+#'
+#' This entire workflow is handled internally by the main `geomorphons()`
+#' function, which can also leverage parallel processing to speed up the
+#' operation on multi-core systems. See the vignette on parallel processing with
+#' 'futures' package.
+#'
+#' The number of chunks needed can be controlled by setting several environment
+#' variables. These variables are read by the function at runtime.
+#'
+#' ## Default Behavior
+#'
+#' By default, the function assumes a single worker, scales the estimated memory
+#' needed by a factor of 10, and applies the square root to the total
+#' number of chunks. This can be replicated with the following settings:
+#'
+#' ```r
+#' Sys.setenv(R_RGEOMORPHON_N_WORKERS = 1)
+#' Sys.setenv(R_RGEOMORPHON_MEM_SCALE_NEED = 10)
+#' Sys.setenv(R_RGEOMORPHON_MEM_SCALE_WORKERS = 1)
+#' Sys.setenv(R_RGEOMORPHON_MEM_POWER = 0.5)
+#' ```
+#'
+#' ## Customized Behavior
+#'
+#' You can customize the tiling behavior by setting the environment variables
+#' to different values. For example, to use four workers, scale memory needs by
+#' a factor of five, apply a worker scaling factor of two, and a power of 1.5 to
+#' the total, you would set the following:
+#'
+#' ```r
+#' Sys.setenv(R_RGEOMORPHON_N_WORKERS = 4)
+#' Sys.setenv(R_RGEOMORPHON_MEM_SCALE_NEED = 5)
+#' Sys.setenv(R_RGEOMORPHON_MEM_SCALE_WORKERS = 2)
+#' Sys.setenv(R_RGEOMORPHON_MEM_POWER = 1.5)
+#' ```
+#'
+#' # Comparison with GRASS 'r.geomorphon'
+#'
+#' This implementation achieves very high agreement with the classification
+#' logic of GRASS GIS 'r.geomorphon' when using equivalent parameters and data
+#' in a projected coordinate system.
+#'
+#' 'r.geomorphon' employs a row buffering strategy which can, for cells near the
+#' edges of a raster, result in a truncated line-of-sight compared to the full
+#' raster extent. This may lead GRASS to classify edge-region cells differently
+#' or as NODATA where this implementation may produce a more 'valid' geomorphon
+#' form given the available data.
+#'
+#' More information about the 'r.geomorphon' module can be found in the GRASS
+#' GIS manual: \url{https://grass.osgeo.org/grass-stable/manuals/r.geomorphon.html}
 #'
 #' @param elevation matrix or SpatRaster object. Digital Elevation Model values.
 #'   It is **STRONGLY** recommended to use a grid in a projected coordinate
@@ -55,22 +128,7 @@
 #'   result is a list. For one result type, and default `simplify` argument, the
 #'   result is the first (and only) element of the list.
 #'
-#' @seealso [geomorphon_theme()]
-#'
-#' @details
-#'
-#' This implementation achieves very high agreement with the classification
-#' logic of GRASS GIS 'r.geomorphon' when using equivalent parameters and data
-#' in a projected coordinate system.
-#'
-#' 'r.geomorphon' employs a row buffering strategy which can, for cells near the
-#' edges of a raster, result in a truncated line-of-sight compared to the full
-#' raster extent. This may lead GRASS to classify edge-region cells differently
-#' or as NODATA where this implementation may produce a more 'valid' geomorphon
-#' form given the available data.
-#'
-#' More information about the 'r.geomorphon' module can be found in the GRASS
-#' GIS manual: \url{https://grass.osgeo.org/grass-stable/manuals/r.geomorphon.html}
+#' @seealso [geomorphon_theme()] [geomorphon_chunks_needed()]
 #'
 #' @references
 #'
@@ -140,7 +198,7 @@ geomorphons <- function(elevation,
             stop("Package 'terra' is required to process SpatRaster input.")
         }
 
-        nchunk <- .terra_mem_chunks_needed(elevation)
+        nchunk <- geomorphon_chunks_needed(elevation)
 
         ## for one chunk it is more efficient to extend then crop back to
         ## original extent for consistency with the tiled method
