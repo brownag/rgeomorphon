@@ -42,7 +42,7 @@
 #' This entire workflow is handled internally by the main `geomorphons()`
 #' function, which can also leverage parallel processing to speed up the
 #' operation on multi-core systems. See the vignette on parallel processing with
-#' 'futures' package.
+#' 'future' package.
 #'
 #' The number of chunks needed can be controlled by setting several environment
 #' variables. These variables are read by the function at runtime.
@@ -624,30 +624,50 @@ geomorphon_theme <- function(x, forms = "forms10") {
     if (!is.null(args[["search"]])) {
         search <- args[["search"]]
     }
+
     skip <- 0
     if (!is.null(args[["skip"]])) {
         skip <- args[["skip"]]
     }
+
     if (!is.null(args[["ternary"]])) {
-        ternary <- isTRUE(args[["ternary"]])
+        ternary <- args[["ternary"]]
     }
-    dtype <- ifelse(ternary, "INT2U", "INT1U")
-    BUFFER <- search + skip + 1
-    if(length(BUFFER) == 0) {
-        BUFFER <- 0
+    dtype <- ifelse(isTRUE(ternary), "INT2U", "INT1U")
+
+    if (!is.null(args[["cell_buffer"]])) {
+        cell_buffer <- args[["cell_buffer"]]
+    } else {
+        cell_buffer <- search + skip + 1
     }
-    gte <- .geomorphons_tile_extents(elevation, y, cell_buffer = BUFFER)
+    if (length(cell_buffer) == 0) {
+        cell_buffer <- 0
+    }
+
+    use_meters <- FALSE
+    if (!is.null(args[["use_meters"]])) {
+        use_meters <- args[["use_meters"]]
+    }
+    if (isTRUE(use_meters)) {
+        # convert to cell buffer
+        cell_buffer <- ceiling(cell_buffer / mean(terra::res(elevation)))
+    }
+
+    gte <- .geomorphons_tile_extents(elevation, y, cell_buffer = cell_buffer)
+
     tiles <- .geomorphons_create_tiles(elevation, gte$buffered_polys, overwrite = overwrite)
+
     res <- .geomorphons_process_tiles(
         tiles,
         gte$tile_polys,
-        cell_buffer = BUFFER,
+        cell_buffer = cell_buffer,
         FUN = .geomorphons,
         filename = filename,
         datatype = dtype,
         ...,
         LAPPLY.FUN = LAPPLY.FUN
     )
+
     .geomorphons_combine_tiles(res, elevation, filename = filename, datatype = dtype, overwrite = overwrite)
 }
 

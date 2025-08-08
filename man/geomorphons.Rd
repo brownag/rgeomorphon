@@ -126,7 +126,7 @@ original input DEM.
 This entire workflow is handled internally by the main \code{geomorphons()}
 function, which can also leverage parallel processing to speed up the
 operation on multi-core systems. See the vignette on parallel processing with
-'futures' package.
+'future' package.
 
 The number of chunks needed can be controlled by setting several environment
 variables. These variables are read by the function at runtime.
