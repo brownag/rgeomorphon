@@ -22,7 +22,7 @@
 
     <a class="navbar-brand me-2" href="index.html">rgeomorphon</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -32,6 +32,12 @@
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
 <li class="nav-item"><a class="nav-link" href="reference/index.html">Reference</a></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
+<li><a class="dropdown-item" href="articles/geomorphons-tiled.html">Parallel and Distributed Processing with 'rgeomorphon'</a></li>
+  </ul>
+</li>
 <li class="nav-item"><a class="nav-link" href="news/index.html">Changelog</a></li>
       </ul>
 <ul class="navbar-nav">
@@ -96,7 +102,7 @@
 <span>    <span class="op">)</span></span>
 <span><span class="op">}</span><span class="op">)</span></span>
 <span><span class="co">#&gt;    user  system elapsed </span></span>
-<span><span class="co">#&gt;   0.054   0.005   0.046</span></span>
+<span><span class="co">#&gt;   0.059   0.004   0.051</span></span>
 <span></span>
 <span><span class="co"># inspect result</span></span>
 <span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">dem</span>, <span class="va">rg</span><span class="op">)</span>, </span>
@@ -139,7 +145,7 @@
 <span>    <span class="op">)</span></span>
 <span><span class="op">}</span><span class="op">)</span></span>
 <span><span class="co">#&gt;    user  system elapsed </span></span>
-<span><span class="co">#&gt;   0.086   0.001   0.071</span></span>
+<span><span class="co">#&gt;   0.100   0.001   0.083</span></span>
 <span></span>
 <span><span class="co"># inspect result</span></span>
 <span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">dem</span>, <span class="va">rg</span><span class="op">)</span>, </span>
@@ -211,7 +217,7 @@
 <h2 data-toc-skip>Dev status</h2>
 <ul class="list-unstyled">
 <li><a href="https://github.com/brownag/rgeomorphon/actions" class="external-link"><img src="https://github.com/brownag/rgeomorphon/actions/workflows/R-CMD-check.yaml/badge.svg" alt="R-CMD-check Build Status"></a></li>
-<li><a href="https://humus.rocks/rgeomorphon/" class="external-link"><img src="https://img.shields.io/badge/docs-HTML-informational" alt="soilDB Manual"></a></li>
+<li><a href="https://humus.rocks/rgeomorphon/" class="external-link"><img src="https://img.shields.io/badge/docs-HTML-informational" alt="rgeomorphon Manual"></a></li>
 </ul>
 </div>
 
