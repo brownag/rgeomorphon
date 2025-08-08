@@ -6,6 +6,7 @@
 \usage{
 geomorphons(
   elevation,
+  filename = NULL,
   search = 3,
   skip = 0,
   flat_angle_deg = 1,
@@ -17,15 +18,21 @@ geomorphons(
   positive = FALSE,
   negative = FALSE,
   use_meters = FALSE,
-  nodata_val = NA_real_,
+  nodata_val = NA_integer_,
   xres = NULL,
   yres = xres,
-  simplify = FALSE
+  simplify = FALSE,
+  LAPPLY.FUN = lapply,
+  nchunk = geomorphon_chunks_needed(elevation)
 )
 }
 \arguments{
 \item{elevation}{matrix or SpatRaster object. Digital Elevation Model values.
-It is \strong{STRONGLY} recommended to use a grid in a projected coordinate system.}
+It is \strong{STRONGLY} recommended to use a grid in a projected coordinate
+system.}
+
+\item{filename}{character. Output filename. Default \code{NULL} creates a
+temporary file.}
 
 \item{search}{numeric. User input for search radius (default: \code{3}). Units
 depend on \code{use_meters}.}
@@ -45,19 +52,19 @@ Default: \code{1.0}.}
 \item{tdist}{numeric. Terrain distance factor. When greater than 0, overrides
 Z tolerance from angular logic. Default: \code{0.0}.}
 
-\item{forms}{Character. Number of geomorphon forms to identify. One of
+\item{forms}{character. Number of geomorphon forms to identify. One of
 \verb{"forms10} (default), \code{"forms6"}, \code{"forms5"}, or \verb{"forms4}.}
 
-\item{ternary}{Logical. Include "ternary" output? Default: \code{FALSE}}
+\item{ternary}{logical. Include "ternary" output? Default: \code{FALSE}}
 
-\item{positive}{Logical. Include "positive" output? Default: \code{FALSE}}
+\item{positive}{logical. Include "positive" output? Default: \code{FALSE}}
 
-\item{negative}{Logical. Include "negative" output? Default: \code{FALSE}}
+\item{negative}{logical. Include "negative" output? Default: \code{FALSE}}
 
 \item{use_meters}{Logical. Default: \code{FALSE} uses cell units. Set to \code{TRUE} to
 specify \code{search}, \code{skip}, and \code{dist} in units of meters.}
 
-\item{nodata_val}{numeric. NODATA value. Default: \code{NA_real_}.}
+\item{nodata_val}{numeric. NODATA value. Default: \code{NA_integer_}.}
 
 \item{xres}{numeric. X grid resolution (used only when \code{elevation} is a
 matrix). Default: \code{NULL}.}
@@ -65,8 +72,13 @@ matrix). Default: \code{NULL}.}
 \item{yres}{numeric. Y grid resolution (used only when \code{elevation} is a
 matrix). Default: \code{xres}.}
 
-\item{simplify}{Logical. If result is length \code{1} list, the first element is
+\item{simplify}{logical. If result is length \code{1} list, the first element is
 returned. Default: \code{FALSE}}
+
+\item{LAPPLY.FUN}{An \code{\link[=lapply]{lapply()}}-like function such as
+\code{future.apply::future_lapply()}. Default: \code{lapply()}.}
+
+\item{nchunk}{Number of tile chunks to use. Default: \code{geomorphon_chunks_needed(elevation)}.}
 }
 \value{
 List of SpatRaster or matrix of geomorphon algorithm outputs. When
@@ -75,21 +87,78 @@ result is a list. For one result type, and default \code{simplify} argument, the
 result is the first (and only) element of the list.
 }
 \description{
-Parallel implementation of the 'geomorphon' terrain classification algorithm
-largely based on 'r.geomorphon' algorithm of Jasiewicz and Stepinski (2013)
-from 'GRASS GIS'.
+'Rcpp' implementation of the 'geomorphon' terrain classification system based
+on 'r.geomorphon' algorithm of Jasiewicz and Stepinski (2013) from 'GRASS
+GIS'.
 }
-\details{
+\section{Distance Calculation and Coordinate Reference Systems}{
 The algorithm assumes planar distances and angles are calculated based on
 cell resolutions, so it is strongly recommended that elevation data be in a
 projected coordinate system.
+}
 
+\section{Buffer Around Area of Interest}{
 For reliable geomorphon classification, especially near study area
 boundaries, it is recommended to use a raster that includes a buffer of at
 least \code{search + 1} cells around the area of interest. This implementation
-utilizes all available DEM data up to the specified search radius or the
-boundary (whichever is encountered first).
+utilizes all available DEM data up to the specified search radius.
 
+A buffer of \code{search + skip + 1} cells is automatically applied when
+processing SpatRaster input, as this is necessary to avoid edge effects when
+processing large rasters in tiles. Matrix input is not altered.
+}
+
+\section{Tiled Processing for Large Rasters}{
+For Digital Elevation Models (DEMs) that are too large to fit into available
+memory, \code{rgeomorphon} employs an automatic tiled processing workflow. This
+method breaks the large raster into a grid of smaller, manageable chunks that
+are processed sequentially.
+
+The premise of this approach is the use of buffered tiles. To ensure seamless
+results and avoid edge artifacts, a buffer of surrounding data is added to
+each chunk before the geomorphon calculation is performed. This provides the
+necessary neighborhood of cells for the algorithm to work correctly. After
+each tile is processed, the buffer region is removed from the result.
+Finally, the clean, processed tiles are mosaicked back together into a
+single, complete output raster that perfectly matches the extent of the
+original input DEM.
+
+This entire workflow is handled internally by the main \code{geomorphons()}
+function, which can also leverage parallel processing to speed up the
+operation on multi-core systems. See the vignette on parallel processing with
+'future' package.
+
+The number of chunks needed can be controlled by setting several environment
+variables. These variables are read by the function at runtime.
+\subsection{Default Behavior}{
+
+By default, the function assumes a single worker, scales the estimated memory
+needed by a factor of 10, and applies the square root to the total
+number of chunks. This can be replicated with the following settings:
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{Sys.setenv(R_RGEOMORPHON_N_WORKERS = 1)
+Sys.setenv(R_RGEOMORPHON_MEM_SCALE_NEED = 10)
+Sys.setenv(R_RGEOMORPHON_MEM_SCALE_WORKERS = 1)
+Sys.setenv(R_RGEOMORPHON_MEM_POWER = 0.5)
+}\if{html}{\out{</div>}}
+}
+
+\subsection{Customized Behavior}{
+
+You can customize the tiling behavior by setting the environment variables
+to different values. For example, to use four workers, scale memory needs by
+a factor of five, apply a worker scaling factor of two, and a power of 1.5 to
+the total, you would set the following:
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{Sys.setenv(R_RGEOMORPHON_N_WORKERS = 4)
+Sys.setenv(R_RGEOMORPHON_MEM_SCALE_NEED = 5)
+Sys.setenv(R_RGEOMORPHON_MEM_SCALE_WORKERS = 2)
+Sys.setenv(R_RGEOMORPHON_MEM_POWER = 1.5)
+}\if{html}{\out{</div>}}
+}
+}
+
+\section{Comparison with GRASS 'r.geomorphon'}{
 This implementation achieves very high agreement with the classification
 logic of GRASS GIS 'r.geomorphon' when using equivalent parameters and data
 in a projected coordinate system.
@@ -103,6 +172,7 @@ form given the available data.
 More information about the 'r.geomorphon' module can be found in the GRASS
 GIS manual: \url{https://grass.osgeo.org/grass-stable/manuals/r.geomorphon.html}
 }
+
 \examples{
 \dontshow{if (requireNamespace("terra")) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
 library(terra)
@@ -147,5 +217,5 @@ approach to classification and mapping of landforms, Geomorphology, vol. 182,
 147-156. (\doi{doi:10.1016/j.geomorph.2012.11.005})
 }
 \seealso{
-\code{\link[=geomorphon_theme]{geomorphon_theme()}}
+\code{\link[=geomorphon_theme]{geomorphon_theme()}} \code{\link[=geomorphon_chunks_needed]{geomorphon_chunks_needed()}}
 }

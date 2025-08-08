@@ -2,22 +2,98 @@
 
 #' Calculate Geomorphons
 #'
-#' Parallel implementation of the 'geomorphon' terrain classification algorithm
-#' largely based on 'r.geomorphon' algorithm of Jasiewicz and Stepinski (2013)
-#' from 'GRASS GIS'.
+#' 'Rcpp' implementation of the 'geomorphon' terrain classification system based
+#' on 'r.geomorphon' algorithm of Jasiewicz and Stepinski (2013) from 'GRASS
+#' GIS'.
+#'
+#' # Distance Calculation and Coordinate Reference Systems
 #'
 #' The algorithm assumes planar distances and angles are calculated based on
 #' cell resolutions, so it is strongly recommended that elevation data be in a
 #' projected coordinate system.
 #'
+#' # Buffer Around Area of Interest
+#'
 #' For reliable geomorphon classification, especially near study area
 #' boundaries, it is recommended to use a raster that includes a buffer of at
 #' least `search + 1` cells around the area of interest. This implementation
-#' utilizes all available DEM data up to the specified search radius or the
-#' boundary (whichever is encountered first).
+#' utilizes all available DEM data up to the specified search radius.
+#'
+#' A buffer of `search + skip + 1` cells is automatically applied when
+#' processing SpatRaster input, as this is necessary to avoid edge effects when
+#' processing large rasters in tiles. Matrix input is not altered.
+#'
+#' # Tiled Processing for Large Rasters
+#'
+#' For Digital Elevation Models (DEMs) that are too large to fit into available
+#' memory, `rgeomorphon` employs an automatic tiled processing workflow. This
+#' method breaks the large raster into a grid of smaller, manageable chunks that
+#' are processed sequentially.
+#'
+#' The premise of this approach is the use of buffered tiles. To ensure seamless
+#' results and avoid edge artifacts, a buffer of surrounding data is added to
+#' each chunk before the geomorphon calculation is performed. This provides the
+#' necessary neighborhood of cells for the algorithm to work correctly. After
+#' each tile is processed, the buffer region is removed from the result.
+#' Finally, the clean, processed tiles are mosaicked back together into a
+#' single, complete output raster that perfectly matches the extent of the
+#' original input DEM.
+#'
+#' This entire workflow is handled internally by the main `geomorphons()`
+#' function, which can also leverage parallel processing to speed up the
+#' operation on multi-core systems. See the vignette on parallel processing with
+#' 'future' package.
+#'
+#' The number of chunks needed can be controlled by setting several environment
+#' variables. These variables are read by the function at runtime.
+#'
+#' ## Default Behavior
+#'
+#' By default, the function assumes a single worker, scales the estimated memory
+#' needed by a factor of 10, and applies the square root to the total
+#' number of chunks. This can be replicated with the following settings:
+#'
+#' ```r
+#' Sys.setenv(R_RGEOMORPHON_N_WORKERS = 1)
+#' Sys.setenv(R_RGEOMORPHON_MEM_SCALE_NEED = 10)
+#' Sys.setenv(R_RGEOMORPHON_MEM_SCALE_WORKERS = 1)
+#' Sys.setenv(R_RGEOMORPHON_MEM_POWER = 0.5)
+#' ```
+#'
+#' ## Customized Behavior
+#'
+#' You can customize the tiling behavior by setting the environment variables
+#' to different values. For example, to use four workers, scale memory needs by
+#' a factor of five, apply a worker scaling factor of two, and a power of 1.5 to
+#' the total, you would set the following:
+#'
+#' ```r
+#' Sys.setenv(R_RGEOMORPHON_N_WORKERS = 4)
+#' Sys.setenv(R_RGEOMORPHON_MEM_SCALE_NEED = 5)
+#' Sys.setenv(R_RGEOMORPHON_MEM_SCALE_WORKERS = 2)
+#' Sys.setenv(R_RGEOMORPHON_MEM_POWER = 1.5)
+#' ```
+#'
+#' # Comparison with GRASS 'r.geomorphon'
+#'
+#' This implementation achieves very high agreement with the classification
+#' logic of GRASS GIS 'r.geomorphon' when using equivalent parameters and data
+#' in a projected coordinate system.
+#'
+#' 'r.geomorphon' employs a row buffering strategy which can, for cells near the
+#' edges of a raster, result in a truncated line-of-sight compared to the full
+#' raster extent. This may lead GRASS to classify edge-region cells differently
+#' or as NODATA where this implementation may produce a more 'valid' geomorphon
+#' form given the available data.
+#'
+#' More information about the 'r.geomorphon' module can be found in the GRASS
+#' GIS manual: \url{https://grass.osgeo.org/grass-stable/manuals/r.geomorphon.html}
 #'
 #' @param elevation matrix or SpatRaster object. Digital Elevation Model values.
-#'   It is **STRONGLY** recommended to use a grid in a projected coordinate system.
+#'   It is **STRONGLY** recommended to use a grid in a projected coordinate
+#'   system.
+#' @param filename character. Output filename. Default `NULL` creates a
+#'   temporary file.
 #' @param search numeric. User input for search radius (default: `3`). Units
 #'   depend on `use_meters`.
 #' @param skip numeric. User input for skip radius (default: `0`). Units depend
@@ -32,40 +108,28 @@
 #'   Z tolerance from angular logic. Default: `0.0`.
 #' @param use_meters Logical. Default: `FALSE` uses cell units. Set to `TRUE` to
 #'   specify `search`, `skip`, and `dist` in units of meters.
-#' @param forms Character. Number of geomorphon forms to identify. One of
+#' @param forms character. Number of geomorphon forms to identify. One of
 #'   `"forms10` (default), `"forms6"`, `"forms5"`, or `"forms4`.
-#' @param ternary Logical. Include "ternary" output? Default: `FALSE`
-#' @param positive Logical. Include "positive" output? Default: `FALSE`
-#' @param negative Logical. Include "negative" output? Default: `FALSE`
-#' @param nodata_val numeric. NODATA value. Default: `NA_real_`.
+#' @param ternary logical. Include "ternary" output? Default: `FALSE`
+#' @param positive logical. Include "positive" output? Default: `FALSE`
+#' @param negative logical. Include "negative" output? Default: `FALSE`
+#' @param nodata_val numeric. NODATA value. Default: `NA_integer_`.
 #' @param xres numeric. X grid resolution (used only when `elevation` is a
 #'   matrix). Default: `NULL`.
 #' @param yres numeric. Y grid resolution (used only when `elevation` is a
-#' matrix). Default: `xres`.
-#' @param simplify Logical. If result is length `1` list, the first element is
+#'   matrix). Default: `xres`.
+#' @param simplify logical. If result is length `1` list, the first element is
 #'   returned. Default: `FALSE`
+#' @param LAPPLY.FUN An [lapply()]-like function such as
+#'   `future.apply::future_lapply()`. Default: `lapply()`.
+#' @param nchunk Number of tile chunks to use. Default: `geomorphon_chunks_needed(elevation)`.
 #'
 #' @return List of SpatRaster or matrix of geomorphon algorithm outputs. When
 #'   more than one of `forms`, `ternary`, `positive`, `negative` are set the
 #'   result is a list. For one result type, and default `simplify` argument, the
 #'   result is the first (and only) element of the list.
 #'
-#' @seealso [geomorphon_theme()]
-#'
-#' @details
-#'
-#' This implementation achieves very high agreement with the classification
-#' logic of GRASS GIS 'r.geomorphon' when using equivalent parameters and data
-#' in a projected coordinate system.
-#'
-#' 'r.geomorphon' employs a row buffering strategy which can, for cells near the
-#' edges of a raster, result in a truncated line-of-sight compared to the full
-#' raster extent. This may lead GRASS to classify edge-region cells differently
-#' or as NODATA where this implementation may produce a more 'valid' geomorphon
-#' form given the available data.
-#'
-#' More information about the 'r.geomorphon' module can be found in the GRASS
-#' GIS manual: \url{https://grass.osgeo.org/grass-stable/manuals/r.geomorphon.html}
+#' @seealso [geomorphon_theme()] [geomorphon_chunks_needed()]
 #'
 #' @references
 #'
@@ -111,6 +175,7 @@
 #' plot(c(dem, rg))
 #'
 geomorphons <- function(elevation,
+                        filename = NULL,
                         search = 3,
                         skip = 0,
                         flat_angle_deg = 1.0,
@@ -122,12 +187,113 @@ geomorphons <- function(elevation,
                         positive = FALSE,
                         negative = FALSE,
                         use_meters = FALSE,
-                        nodata_val = NA_real_,
+                        nodata_val = NA_integer_,
                         xres = NULL,
                         yres = xres,
-                        simplify = FALSE) {
+                        simplify = FALSE,
+                        LAPPLY.FUN = lapply,
+                        nchunk = geomorphon_chunks_needed(elevation)) {
 
-    outputs <- character(0)
+    if (inherits(elevation, 'SpatRaster')) {
+
+        if (!requireNamespace("terra")) {
+            stop("Package 'terra' is required to process SpatRaster input.")
+        }
+
+        ## for one chunk it is more efficient to extend then crop back to
+        ## original extent for consistency with the tiled method
+        if (nchunk == 1) {
+            res <- .geomorphons(
+                terra::extend(elevation, search + skip + 1),
+                search = search,
+                skip = skip,
+                flat_angle_deg = flat_angle_deg,
+                dist = dist,
+                comparison_mode = comparison_mode,
+                tdist = tdist,
+                forms = forms,
+                ternary = ternary,
+                positive = positive,
+                negative = negative,
+                use_meters = use_meters,
+                nodata_val = nodata_val,
+                xres = xres,
+                yres = yres,
+                filename = filename,
+                overwrite = TRUE,
+                simplify = simplify
+            )
+            return(terra::crop(res, elevation))
+        }
+
+        return(
+            .geomorphons_tiled(
+                elevation,
+                y = nchunk,
+                search = search,
+                skip = skip,
+                flat_angle_deg = flat_angle_deg,
+                dist = dist,
+                comparison_mode = comparison_mode,
+                tdist = tdist,
+                forms = forms,
+                ternary = ternary,
+                positive = positive,
+                negative = negative,
+                use_meters = use_meters,
+                nodata_val = nodata_val,
+                xres = xres,
+                yres = yres,
+                filename = filename,
+                overwrite = TRUE,
+                LAPPLY.FUN = LAPPLY.FUN,
+                simplify = simplify
+            )
+        )
+    } else {
+        return(
+            .geomorphons(
+                elevation,
+                search = search,
+                skip = skip,
+                flat_angle_deg = flat_angle_deg,
+                dist = dist,
+                comparison_mode = comparison_mode,
+                tdist = tdist,
+                forms = forms,
+                ternary = ternary,
+                positive = positive,
+                negative = negative,
+                use_meters = use_meters,
+                nodata_val = nodata_val,
+                xres = xres,
+                yres = yres,
+                filename = NULL,
+                overwrite = TRUE,
+                simplify = simplify
+            )
+        )
+    }
+}
+
+.geomorphons <- function(elevation,
+                         search,
+                         skip,
+                         flat_angle_deg,
+                         dist,
+                         comparison_mode,
+                         tdist,
+                         forms,
+                         ternary,
+                         positive,
+                         negative,
+                         use_meters,
+                         nodata_val,
+                         xres,
+                         yres,
+                         filename,
+                         overwrite,
+                         simplify) {
     forms_int <- -1
 
     if (!is.null(forms) && !isFALSE(forms)) {
@@ -157,6 +323,8 @@ geomorphons <- function(elevation,
     if (is.null(negative)) {
         negative <- FALSE
     }
+
+    outputs <- character(0)
 
     outputs <- c(forms = forms,
                  ternary = if (isTRUE(ternary)) "ternary" else character(0),
@@ -243,14 +411,15 @@ geomorphons <- function(elevation,
     )
 
     if (inherits(elevation, 'SpatRaster')) {
-        forms_rast <- terra::rast(elevation)
+        tmp <- terra::rast(elevation)
+        forms_rast <- tmp
         terra::values(forms_rast) <- forms_matrix_res[["forms"]]
         forms_rast <- geomorphon_theme(forms_rast, forms = forms)
-        ternary_rast <- terra::rast(elevation)
+        ternary_rast <- tmp
         terra::values(ternary_rast) <- forms_matrix_res[["ternary"]]
-        positive_rast <- terra::rast(elevation)
+        positive_rast <- tmp
         terra::values(positive_rast) <- forms_matrix_res[["positive"]]
-        negative_rast <- terra::rast(elevation)
+        negative_rast <- tmp
         terra::values(negative_rast) <- forms_matrix_res[["negative"]]
     } else {
         forms_rast <- forms_matrix_res[["forms"]]
@@ -271,10 +440,17 @@ geomorphons <- function(elevation,
     }
 
     if (inherits(elevation, 'SpatRaster')) {
-        terra::rast(res)
-    } else {
-        res
+        res <- terra::rast(res)
+        if (!is.null(filename)) {
+            res <- terra::writeRaster(
+                res,
+                filename = filename,
+                overwrite = TRUE,
+                datatype = ifelse("ternary" %in% outputs, "INT2U", "INT1U")
+            )
+        }
     }
+    res
 }
 
 #' @export
@@ -348,4 +524,433 @@ geomorphon_theme <- function(x, forms = "forms10") {
     }
 
     x
+}
+
+#' Calculate Geomorphons on a Large Raster via Tiling
+#'
+#' Processes a large Digital Elevation Model (DEM) that may not fit into memory
+#' by dividing it into smaller tiles, calculating geomorphons on each tile
+#' independently, and then mosaicking the results into a single, seamless output
+#' raster. This function orchestrates the tiling, processing, and combining
+#' steps.
+#'
+#' This chunked processing approach works by creating temporary, buffered tiles
+#' on disk. A buffer region around each tile provides sufficient data for the
+#' geomorphon calculation's search window, thus avoiding edge artifacts between
+#' tiles. After processing, the buffer area is removed, and the final tiles are
+#' merged.
+#'
+#' @param elevation `SpatRaster`. The DEM to be processed.
+#' @param y integer. The number of tiles to create along each dimension (rows
+#'   and columns). For example, `y = 2` creates a 2x2 grid of four tiles. A
+#'   larger number creates more, smaller tiles, which can be useful for very
+#'   large rasters or parallel processing, but may increase I/O overhead.
+#'   Default: `2`.
+#' @param filename character. The path and filename for the final, combined
+#'   output SpatRaster file. This must be specified as the function writes its
+#'   final result to disk.
+#' @param overwrite logical. If `TRUE`, the final output file and any temporary
+#'   tile files will be overwritten if they already exist. Default: `TRUE`.
+#' @param ... Additional arguments passed directly to the core geomorphon
+#'   processing function e.g [geomorphons()]. This includes parameters like
+#'   `search`, `skip`, `flat_angle_deg`, etc.
+#' @param LAPPLY.FUN An [lapply()]-like function such as
+#'   `future.apply::future_lapply()`. Default: `lapply()`.
+#'
+#' @returns A `SpatRaster` object pointing to the final, combined geomorphon
+#'   raster file specified by the `filename` argument.
+#'
+#' @seealso The unexported lower-level functions used by this wrapper:
+#'   `.geomorphons_tile_extents()`, `.geomorphons_create_tiles()`,
+#'   `.geomorphons_process_tiles()`, `.geomorphons_combine_tiles()`.
+#'
+#' @noRd
+#' @examplesIf requireNamespace("terra")
+#' # Load the 'salton' dataset
+#' data("salton", package = "rgeomorphon")
+#'
+#' # Construct and georeference a SpatRaster object
+#' dem <- terra::rast(salton)
+#' terra::crs(dem) <- attr(salton, "crs")
+#' terra::ext(dem) <- attr(salton, "extent")
+#' names(dem) <- "Elevation (feet)"
+#'
+#' # Define a temporary output file
+#' tf <- tempfile(fileext = ".tif")
+#'
+#' res <- .geomorphons_tiled(
+#'     elevation = dem,
+#'     filename = tf,
+#'     overwrite = TRUE,
+#'     search = 10,
+#'     skip = 5,
+#'     flat_angle_deg = 0.1,
+#'     forms = "forms6",
+#'     ternary = TRUE,
+#'     positive = FALSE,
+#'     negative = FALSE,
+#'     comparison_mode = "anglev1",
+#'     nodata_val = NA_real_,
+#'     dist = 0,
+#'     tdist = 0,
+#'     use_meters = FALSE,
+#'     simplify = FALSE
+#' )
+#'
+#' res
+#'
+#' terra::plot(res, main = "Geomorphons from Tiled Processing")
+#'
+#' \dontshow{
+#' # clean up temp files
+#' related_files <- terra::sources(res, all=TRUE, relative=FALSE)
+#' related_dirs <- unique(dirname(unlist(related_files)))
+#' unlink(related_dirs, recursive = TRUE, force = TRUE)
+#' }
+.geomorphons_tiled <- function(elevation,
+                               y = 2,
+                               filename,
+                               overwrite = TRUE,
+                               ...,
+                               LAPPLY.FUN = lapply) {
+
+    if (missing(filename)) {
+        stop("`filename` must be specified for output of combined tiled result")
+    }
+
+    args <- list(...)
+
+    search <- 0
+    if (!is.null(args[["search"]])) {
+        search <- args[["search"]]
+    }
+
+    skip <- 0
+    if (!is.null(args[["skip"]])) {
+        skip <- args[["skip"]]
+    }
+
+    if (!is.null(args[["ternary"]])) {
+        ternary <- args[["ternary"]]
+    }
+    dtype <- ifelse(isTRUE(ternary), "INT2U", "INT1U")
+
+    if (!is.null(args[["cell_buffer"]])) {
+        cell_buffer <- args[["cell_buffer"]]
+    } else {
+        cell_buffer <- search + skip + 1
+    }
+    if (length(cell_buffer) == 0) {
+        cell_buffer <- 0
+    }
+
+    use_meters <- FALSE
+    if (!is.null(args[["use_meters"]])) {
+        use_meters <- args[["use_meters"]]
+    }
+    if (isTRUE(use_meters)) {
+        # convert to cell buffer
+        cell_buffer <- ceiling(cell_buffer / mean(terra::res(elevation)))
+    }
+
+    gte <- .geomorphons_tile_extents(elevation, y, cell_buffer = cell_buffer)
+
+    tiles <- .geomorphons_create_tiles(elevation, gte$buffered_polys, overwrite = overwrite)
+
+    res <- .geomorphons_process_tiles(
+        tiles,
+        gte$tile_polys,
+        cell_buffer = cell_buffer,
+        FUN = .geomorphons,
+        filename = filename,
+        datatype = dtype,
+        ...,
+        LAPPLY.FUN = LAPPLY.FUN
+    )
+
+    .geomorphons_combine_tiles(res, elevation, filename = filename, datatype = dtype, overwrite = overwrite)
+}
+
+#' Calculate Tiling Scheme and Buffered Extents for Chunked Processing
+#'
+#' This function defines the spatial layout for chunked raster processing. It
+#' divides a large source SpatRaster into a grid of smaller tiles and then
+#' calculates the extent of a buffered area around each tile. This buffered
+#' extent is crucial for ensuring that neighborhood operations (like
+#' geomorphons) have sufficient data around the edges of each tile to produce
+#' correct results.
+#'
+#' @param x A `SpatRaster` object to be tiled.
+#' @param y integer or `SpatVector`. The number of tiles to create along each
+#'   dimension (rows and columns). For example, `y = 2` creates a 2x2 grid of
+#'   tiles. When `y` is a `SpatVector`, the extent of each polygon is used to
+#'   create the tiles.
+#' @param cell_buffer integer. The number of cells to add as a buffer around
+#'   each tile. This should be at least `search + skip + 1` from the main
+#'   geomorphon function to ensure the search window is always filled with valid
+#'   data.
+#'
+#' @return A `list` containing two `SpatVector` objects:
+#'         \describe{
+#'           \item{`tile_polys`}{`SpatVector` of polygons representing the unbuffered extents of each processing tile.}
+#'           \item{`buffered_polys`}{`SpatVector` of polygons representing the buffered extents, which will be used to crop the source raster for processing.}
+#'           \item{`cell_buffer`}{integer. Number of cells buffered around each tile.}
+#'           \item{`buffer_distance`}{numeric. Distance, in map units, of buffer around each tike.}
+#'         }
+#'
+#' @noRd
+#'
+#' @examplesIf requireNamespace(terra)
+#' r <- terra::rast(volcano)
+#' terra::ext(r) <- c(0, 610, 0, 870)
+#' terra::crs(r) <- "local"
+#'
+#' # calculate a 2x2 tiling scheme with a 5-cell buffer
+#' tile_scheme <- .geomorphons_tile_extents(r, y = 2, cell_buffer = 5)
+#'
+#' tile_scheme$tile_polys
+#' tile_scheme$buffered_polys
+#'
+#' terra::plot(r)
+#' terra::plot(
+#'     tile_scheme$tile_polys,
+#'     border = "blue",
+#'     lwd = 2,
+#'     add = TRUE
+#' )
+#' terra::plot(
+#'     tile_scheme$buffered_polys,
+#'     border = "red",
+#'     lty = 2,
+#'     add = TRUE
+#' )
+.geomorphons_tile_extents <- function(x, y, cell_buffer) {
+    if (!inherits(x, "SpatRaster")) {
+        stop("Input 'x' must be a SpatRaster object.")
+    }
+    if (cell_buffer < 0) {
+        stop("'cell_buffer' must be a non-negative integer.")
+    }
+
+    if (is.numeric(y)) {
+        tile_extents <- apply(terra::getTileExtents(x, ceiling(c(
+            nrow(x) / y, ncol(x) / y
+        ))), 1, FUN = terra::ext)
+
+        tile_polygons <- do.call('rbind', lapply(
+            tile_extents,
+            terra::as.polygons,
+            crs = terra::crs(x)
+        ))
+    } else {
+        tile_polygons <- y
+    }
+
+    buffer_dist_map_units <- terra::res(x)[1] * cell_buffer
+    buffered_polygons <- terra::buffer(tile_polygons, buffer_dist_map_units)
+
+    return(list(
+        tile_polys = tile_polygons,
+        buffered_polys = buffered_polygons,
+        cell_buffer = cell_buffer,
+        buffer_distance = buffer_dist_map_units
+    ))
+}
+
+#' Create Buffered Raster Tiles on Disk
+#'
+#' Using a set of buffered polygon extents, this function crops a source
+#' SpatRaster into multiple smaller raster files (tiles) on disk. Each tile
+#' contains the data needed for processing one chunk, including the necessary
+#' buffer region. Storing tiles on disk is essential for processing DEMs that do
+#' not fit into memory.
+#'
+#' @param x A `SpatRaster` object to be tiled.
+#' @param y A `SpatVector` of polygons defining the extents of the buffered
+#'   tiles to be created. This is typically the output from
+#'   `geomorphons_tile_extents()`.
+#' @param filename_template Character. A filename template for the output tile
+#'   files. Should include a placeholder for the tile number. `terra::makeTiles`
+#'   uses a `_x_y` suffix for tile indices if no placeholder is given. Example:
+#'   `file.path(tempdir(), "dem_tile_.tif")`.
+#' @param overwrite Logical. If `TRUE`, existing tile files will be overwritten.
+#'
+#' @return A `SpatRasterCollection` where each element is a SpatRaster object
+#'   pointing to a tile file on disk.
+#'
+#' @noRd
+#'
+#' @examplesIf requireNamespace("terra")
+#' r <- terra::rast(volcano)
+#' terra::ext(r) <- c(0, 610, 0, 870)
+#' terra::crs(r) <- "local"
+#'
+#' tile_scheme <- .geomorphons_tile_extents(r, y = 2, cell_buffer = 10)
+#'
+#' # Create the tile files in a temporary directory
+#' tile_collection <- .geomorphons_create_tiles(
+#'   x = terra::extend(r, tile_scheme$cell_buffer),
+#'   y = tile_scheme$buffered_polys,
+#'   filename_template = file.path(tempdir(), "tile_.tif"),
+#'   overwrite = TRUE
+#' )
+#'
+#' tile_collection
+#'
+#' terra::plot(tile_collection[1])
+#' terra::lines(tile_scheme$tile_polys[1])
+.geomorphons_create_tiles <- function(x,
+                                      y,
+                                      filename_template = file.path(tempdir(), "rgeomorphon_.tif"),
+                                      overwrite = TRUE) {
+    if (!inherits(x, "SpatRaster")) {
+        stop("Input 'x' must be a SpatRaster object.")
+    }
+    if (!inherits(y, "SpatVector")) {
+        stop("Input 'y' must be a SpatVector object.")
+    }
+
+    z <- terra::makeTiles(
+        x = x,
+        y = y,
+        filename = filename_template,
+        overwrite = overwrite
+    )
+
+    if (length(z) == 1) {
+        z <- terra::rast(z)
+    }
+
+    terra::sprc(z)
+}
+
+#' Process Tiled Rasters to Calculate Geomorphons
+#'
+#' This function iterates through a collection of buffered raster tiles, applies
+#' a specified geomorphon function to each, and saves the correctly cropped
+#' results. The buffer is used in the calculation but removed from the final
+#' output tile, ensuring seamless results when the tiles are later merged.
+#'
+#' @param x A `SpatRasterCollection` containing the buffered input tiles,
+#'   typically from `geomorphons_create_tiles()`.
+#' @param y A `SpatVector` of polygons defining the original, unbuffered extents
+#'   of each tile. This is used for cropping the results. This is typically the
+#'   output from `geomorphons_tile_extents()`.
+#' @param FUN The geomorphon function to apply to each tile (e.g.,
+#'   [geomorphons()]).
+#' @param cell_buffer Integer. The number of cells to add as a buffer around
+#'   each tile. Default `NULL` uses `search + skip + 1`.
+#' @param ... Additional arguments to be passed to `FUN` (e.g., `search`,
+#'   `skip`, `flat_angle_deg`, etc.).
+#' @param LAPPLY.FUN An [lapply()]-like function such as
+#'   `future.apply::future_lapply()`. Default: `lapply()`.
+#'
+#' @return A `SpatRasterCollection` where each element points to the processed,
+#'   cropped result file for each corresponding input tile.
+#' @noRd
+.geomorphons_process_tiles <- function(x,
+                                       y,
+                                       cell_buffer = NULL,
+                                       FUN = geomorphons,
+                                       ...,
+                                       datatype,
+                                       LAPPLY.FUN = lapply) {
+    if (!inherits(x, "SpatRasterCollection")) {
+        stop("Input 'x' must be a SpatRasterCollection.")
+    }
+    if (!inherits(y, "SpatVector")) {
+        stop("Input 'y' must be a SpatVector object.")
+    }
+    if (length(x) != length(y)) {
+        stop("Number of tiles in 'x' must match number of polygons in 'y'.")
+    }
+
+    geomorphon_args <- list(...)
+
+    if (is.null(cell_buffer)) {
+        cell_buffer <- geomorphon_args$search + geomorphon_args$skip + 1
+        if (is.null(cell_buffer)) {
+            cell_buffer <- 0
+        }
+    }
+
+    xs <- terra::sources(x)
+    yw <- terra::geom(y, wkt = TRUE)
+    ycrs <- terra::crs(y)
+
+    processed_tiles_list <- LAPPLY.FUN(seq_len(length(x)), function(j) {
+
+        input_source <- xs[j]
+        input_tile <- terra::rast(input_source)
+
+        processed_buffered_tile <- do.call(FUN, c(list(
+            elevation = terra::extend(input_tile, cell_buffer)
+        ), geomorphon_args))
+
+        if (is.list(processed_buffered_tile)) {
+            processed_buffered_tile <- processed_buffered_tile[[1]]
+        }
+
+        output_filename <- file.path(
+            dirname(input_source),
+            paste0("crop_", basename(input_source))
+        )
+
+        if( input_source == "") {
+            output_filename <- NULL
+        }
+
+        cropped_result <- terra::crop(
+            x = processed_buffered_tile,
+            y = terra::vect(yw[j], crs = ycrs),
+            filename = output_filename,
+            overwrite = TRUE,
+            datatype = datatype
+        )
+        return(output_filename)
+    })
+
+    if (length(processed_tiles_list) == 1) {
+        processed_tiles_list[[1]] <- terra::rast(processed_tiles_list[[1]])
+    }
+
+    terra::sprc(unlist(processed_tiles_list))
+}
+
+#' Combine Processed Tiles into a Single Output Raster
+#'
+#' Mosaics a collection of processed raster tiles into a single, seamless
+#' SpatRaster. The final raster is cropped to the exact extent of the original
+#' source DEM to ensure a perfect match.
+#'
+#' @param x `SpatRasterCollection` of the final result tiles, typically from
+#'   [geomorphons_process_tiles()].
+#' @param y `SpatExtent` object from the original, full DEM. Used to ensure
+#'   the final output has the exact same extent. Default `NULL` uses full extent
+#'   of `x`.
+#' @param filename character. The path and filename for the final output raster.
+#' @param overwrite logical. If `TRUE`, the final output file will be
+#'   overwritten.
+#'
+#' @return A `SpatRaster` object pointing to the final, merged file on disk.
+#' @noRd
+.geomorphons_combine_tiles <- function(x, y = NULL, filename, datatype, overwrite = TRUE) {
+    if (!inherits(x, "SpatRasterCollection")) {
+        stop("Input 'x' must be a SpatRasterCollection.")
+    }
+
+    if (is.null(y)) {
+        y <- terra::ext(x)
+    }
+
+    res <- terra::merge(
+        terra::crop(x, y),
+        datatype = datatype,
+        na.rm = TRUE,
+        filename = filename,
+        overwrite = overwrite
+    )
+
+    terra::varnames(res) <- ""
+    res
 }

@@ -1,6 +1,7 @@
 #' @keywords internal
 #' @useDynLib rgeomorphon
 #' @import RcppParallel
+#' @importFrom Rcpp getRcppVersion
 "_PACKAGE"
 
 ## usethis namespace: start
