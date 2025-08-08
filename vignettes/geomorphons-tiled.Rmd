@@ -1,8 +1,8 @@
 ---
-title: "Parallel Processing with 'rgeomorphon'"
+title: "Parallel and Distributed Processing with 'rgeomorphon'"
 knit: litedown:::knit
 vignette: >
-  %\VignetteIndexEntry{Parallel Processing with 'rgeomorphon'}
+  %\VignetteIndexEntry{Parallel and Distributed Processing with 'rgeomorphon'}
   %\VignetteEngine{litedown::vignette}
   %\VignetteEncoding{UTF-8}
 ---
@@ -25,39 +25,40 @@ litedown::reactor(
 library(rgeomorphon)
 ```
 
-When working with large Digital Elevation Models (DEMs), calculating geomorphons can be time-consuming. `rgeomorphon` can speed up this process by using parallel processing. This vignette explains how to set up and use the parallel processing features of the package.
+When working with large Digital Elevation Models (DEMs), calculating geomorphons can be time-consuming. `rgeomorphon` can speed up this process by using parallel and distributed processing. This vignette explains how to set up and use the tiling and parallel processing features of the package.
 
-## The Core Concept: Tiled Processing
+## Working with Tiles
 
 Parallel processing in `rgeomorphon` is achieved by splitting the input raster into smaller tiles. Each tile is then processed independently on a separate worker. The results are then combined back into a single, seamless raster.
 
-This tiled approach is typically used automatically when a raster is too large to fit in memory. However, you can influence this behavior to leverage tiled processing on smaller datasets.
+The number of tiles is estimated using `terra::mem_info()` to identify raster memory requirements, amount of free memory, fraction of memory that can be used by `terra`, number of "copies" of the input data raster needed to complete processing, etc.
 
-## The `future` Ecosystem
+The tiled approach is used automatically when a raster is too large to fit in memory. However, you can either directly set the number of chunks to use, or set other factors related to relative memory usage constraints.
 
-### The Two Layers of Parallelism in `rgeomorphon`
+## The Parallel Ecosystem
 
-`rgeomorphon` offers two distinct layers of parallelism to accelerate calculations. This parallelism allows `rgeomorphon` to perform optimally across a vast range of hardware, from a personal laptop to a high-performance computing (HPC) cluster.
+### Two Layers of Parallelism
+
+`rgeomorphon` offers two distinct layers of parallelism to accelerate calculations. This parallelism allows `rgeomorphon` to perform optimally across a range of hardware, from a personal laptop to a high-performance computing (HPC) cluster.
+
+`RcppParallel` speeds up the work *inside* each tile, while packages from the [`futureverse`](https://www.futureverse.org/) allow you to distribute the processing of multiple tiles across multiple **R** sessions.
 
 1.  **Low-Level Parallelism (within a single chunk):** At its core, `rgeomorphon` uses **`RcppParallel`** to execute the main geomorphon algorithm in C++. This provides efficient, multi-threaded computation on a single data chunk. When you run `geomorphons()` on a raster that fits in memory, `RcppParallel` will automatically attempt to use multiple CPU cores to speed up the calculation. This is a form of shared-memory parallelism that works "out of the box."
 
-2.  **High-Level Parallelism (across multiple chunks):** For rasters that are too large to fit in memory, `rgeomorphon` divides the data into smaller, independent tiles. This is where the **`future`** package ecosystem comes in. You can control how these independent tiles are processed by providing a parallel `lapply`-like function to the `LAPPLY.FUN` argument. This allows you to distribute the processing of *entire tiles* across multiple R sessions, either on a single machine (`multisession`) or even across a computer cluster (`cluster`).
+2.  **High-Level Parallelism (across multiple chunks):** For rasters that are too large to fit in memory, `rgeomorphon` divides the data into smaller, independent tiles. You can control how these independent tiles are processed by providing a parallel `lapply`-like function to the `LAPPLY.FUN` argument. A great option for this is `future.apply::future.lapply()`. 
+There are two key steps to setting up your **R** session:
 
-In short, `RcppParallel` speeds up the work *inside* each tile, while `future` can be used to process *multiple tiles* at the same time. 
+1.  **Set a [`future`](https://future.futureverse.org/reference/plan.html) plan:** This tells **R** *how* to distribute the tiles. For example, `plan(multisession)` tells `future` to use separate **R** sessions on your local machine.
 
-To use the high-level, tiled parallelism, you must do two things:
-1.  **Set a `future` plan:** This tells R *how* to distribute the tiles. For example, `plan(multisession)` tells `future` to use separate R sessions on your local machine.
-2.  **Provide a parallel `lapply` function:** You need to pass a parallel-aware loop function to `geomorphons()` via the `LAPPLY.FUN` argument. The `future.apply` package provides the `future_lapply()` function for this purpose.
+2.  **Provide a parallel `lapply` function:** You need to pass a parallel-aware loop function to `geomorphons()` via the `LAPPLY.FUN` argument.
 
 ### Scaling Up: From a Laptop to a Cluster
-
-A key design principle in `rgeomorphon` is that the code for your geomorphon calculation should not have to change as your computing environment becomes more powerful. The package achieves this by separating the *what* from the *how* of parallel processing. The `geomorphons()` function defines *what* to compute, while the **`future`** framework lets you decide *how* and *where* to compute it.
 
 The only piece of code you need to change to switch between different parallel strategies is the `future::plan()`. This single command configures the entire backend. Let's look at a few common scenarios.
 
 #### Scenario 1: Sequential Processing (No Parallelism)
 
-To disable all high-level parallelism and process tiles one-by-one in your main R session, you use `plan(sequential)`. This is great for debugging or for situations where the overhead of parallelism isn't worth it.
+To disable all high-level parallelism and process tiles one-by-one in your main **R** session, you use `plan(sequential)`. This is great for debugging or for situations where the overhead of parallelism isn't worth it.
 
 ```r
 library(future)
@@ -68,28 +69,28 @@ plan(sequential)
 
 #### Scenario 2: Local Multicore Processing
 
-This is the most common scenario for users with a modern multi-core laptop or workstation. `plan(multisession)` starts several new, independent R sessions in the background on your local machine. Each session will work on a different tile of the raster.
+Local processing using multiple **R** sessions is the most common scenario for users with a modern multi-core laptop or workstation. `plan(multisession)` starts several new, independent **R** sessions in the background on your local machine. Each session will work on a different tile of the raster.
 
 ```r
 # Use 4 background R sessions on this computer
-plan(multisession, workers = 4)
+future::plan(multisession, workers = 4)
 ```
 On this backend, the low-level `RcppParallel` engine within each worker will still try to use multiple threads, so they will be competing for the same CPU cores. Even so, this is a simple and effective way to parallelize on a single machine.
 
 #### Scenario 3: Distributed Cluster Processing
 
-This is where the two-level parallel design truly shines. If you have access to a High-Performance Computing (HPC) cluster or several machines on a network, you can use the `cluster` backend. The `future` framework will handle the logistics of sending individual tiles to different machines for processing.
+If you have access to a High-Performance Computing (HPC) cluster or several machines on a network, you can use the `cluster` backend. The `future` framework will handle the logistics of sending individual tiles to different machines for processing.
 
 ```r
 # Distribute work to two specific machines on the local network
-plan(cluster, workers = c("machine1.local", "machine2.local"))
+future::plan(cluster, workers = c("machine1.local", "machine2.local"))
 ```
 
 In this setup, `rgeomorphon` will send a tile to `machine1.local`. Once it arrives, the `RcppParallel` engine on `machine1.local` will take over and use all of its local cores to process that tile as fast as possible. This allows you to scale your processing power far beyond the limits of a single computer.
 
 ### The `geomorphons()` Call Stays the Same
 
-Regardless of which of the backends you configure with `future::plan()`, your call to `geomorphons()` remains identical. You write your code once, and can scale it up simply by changing the plan.
+Regardless of which of the backends you configure with `future::plan()`, your call to `geomorphons()` remains identical. 
 
 ```r
 g_forms <- geomorphons(
@@ -106,7 +107,7 @@ plan(sequential)
 
 To learn more about the different `future` backends and their configuration options (including for job schedulers like Slurm or TORQUE), we highly recommend exploring the documentation and vignettes on the official **[`future` package website](https://future.futureverse.org/)**.
 
-## A Demonstration with `salton`
+## Demo with `salton`
 
 Let's demonstrate this with the `salton` dataset included with `rgeomorphon`. This dataset is small and would not normally trigger tiled processing.
 
@@ -127,11 +128,11 @@ ext(dem) <- attr(salton, "extent")
 geomorphon_chunks_needed(dem)
 ```
 
-To force tiled processing we can manipulate the environment variables that `rgeomorphon` uses to estimate memory needs. We will set `R_RGEOMORPHON_MEM_SCALE_NEED` to tell the function how many parallel jobs we intend to run.
+To force tiled processing we can manipulate the environment variables that `rgeomorphon` uses to estimate memory needs. We will set `R_RGEOMORPHON_MEM_SCALE_NEED` to tell the function how much memory the processing of the input raster will need. This scaling factor is the number of equivalent "copies" of the input data you need to process it.
 
 ```{r}
 # Scale up the memory needed (equivalent to number of input raster copies)
-Sys.setenv(R_RGEOMORPHON_MEM_SCALE_NEED = 1e5)
+Sys.setenv(R_RGEOMORPHON_MEM_SCALE_NEED = 1e7)
 
 # which will cause the chunking algorithm to divide the raster
 geomorphon_chunks_needed(dem)
@@ -149,7 +150,8 @@ Now that `geomorphons()` will use a tiled approach, we can set up our parallel p
 # This creates 4 background R sessions to do the work
 future::plan(multisession, workers = 4)
 ```
-Use the LAPPLY.FUN argument to pass future.apply::future_lapply. This tells geomorphons() to use the future backend for processing tiles
+
+Use the LAPPLY.FUN argument to pass `future.apply::future_lapply`. This tells `geomorphons()` to use the future backend for processing tiles
 
 ```{r}
 system.time({
@@ -170,7 +172,7 @@ future::plan(sequential)
 
 ```{r}
 # Inspect
-terra::plot(g_parallel, main = "Geomorphons via Parallel Processing")
+terra::plot(g_parallel, main = "Geomorphons via Tiled Processing")
 ```
 
 ### Important Notes
@@ -181,9 +183,11 @@ terra::plot(g_parallel, main = "Geomorphons via Parallel Processing")
 
 ## Beyond Parallelism: The Flexibility of `LAPPLY.FUN`
 
-While `future.apply::future_lapply` is the recommended way to achieve scalable, high-level parallelism, the `LAPPLY.FUN` argument is intentionally designed as a generic interface. It is not locked into the `future` ecosystem. You can provide **any R function** that behaves like `base::lapply()`, giving you an advanced level of control over how tiles are processed.
+While `future.apply::future_lapply` is the recommended way to achieve scalable, high-level parallelism, the `LAPPLY.FUN` argument is intentionally designed as a generic interface. It is not locked into the `futureverse` ecosystem. You can provide *any* **R** function that behaves like `base::lapply()`, giving you control over how tiles are processed.
 
-This allows for many customizations, for example:
+This hook makes the tile-processing loop customizable, allowing for logging, error handling, or integration with virtually any sequential or parallel looping mechanism in **R**.
+
+For example:
 
 1.  **Using Alternative Parallel Backends:** If you prefer a different parallel framework, such as the one provided by the base `parallel` package, you can easily integrate it.
 
@@ -206,21 +210,20 @@ This allows for many customizations, for example:
 
 2.  **Injecting Progress Reporting and Logging:** For very large datasets, processing can take a long time. You can use `LAPPLY.FUN` to create a wrapper function that provides real-time feedback or writes to a log file as each tile is completed. This doesn't require any parallel backend; it simply modifies the loop's behavior.
 
-    In the example below, we create a custom function that prints a message before and after processing each tile.
+    In the example below, we create a custom function that prints a message before and after processing each tile. Tiles are processed sequentially with `base::lapply()`
 
     ```{r}
     # Define a custom lapply-like function that adds reporting
     reporting_lapply <- function(X, FUN, ...) {
         
         reporting_FUN <- function(i) {
-            message(paste0("--> Starting tile #", i, " at ", Sys.time()))
+            message(paste0("Starting tile #", i, " at ", Sys.time()))
             result <- FUN(i, ...)
-            message(paste0("<-- Finished tile #", i, " at ", Sys.time()))
+            message(paste0("Finished tile #", i, " at ", Sys.time()))
             return(result)
         }
 
-        # Use a sequential lapply to execute our reporting wrapper
-        base::lapply(X, reporting_FUN)
+        lapply(X, reporting_FUN)
     }
 
     g_forms_reported <- geomorphons(
@@ -231,6 +234,4 @@ This allows for many customizations, for example:
     )
     ```
     
-    This would print a start and end message to the console for every tile processed, giving you a live view of the progress.
-
-This hook makes the tile-processing loop fully customizable, allowing for logging, error handling, or integration with virtually any sequential or parallel looping mechanism in the R ecosystem.
+    This prints a start and end message to the console for every tile processed, giving you a live view of the progress.
