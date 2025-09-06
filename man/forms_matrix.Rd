@@ -2,6 +2,7 @@
 % Please edit documentation in R/forms_matrix.R
 \name{forms_matrix}
 \alias{forms_matrix}
+\alias{get_forms_grass_enum}
 \title{Create a \code{forms_matrix} object}
 \usage{
 forms_matrix(x, levels = get_forms_grass_enum())

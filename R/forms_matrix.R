@@ -259,3 +259,9 @@ print.forms_matrix <- function(x, show_values = FALSE, ...) {
 
     invisible(x)
 }
+
+#' @export
+#' @name get_forms_grass_enum
+#' @rdname forms_matrix
+get_forms_grass_enum
+# see RcppExports.R
