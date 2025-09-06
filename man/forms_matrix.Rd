@@ -4,18 +4,82 @@
 \alias{forms_matrix}
 \title{Create a \code{forms_matrix} object}
 \usage{
-forms_matrix(x, levels)
+forms_matrix(x, levels = get_forms_grass_enum())
 }
 \arguments{
-\item{x}{Integer. A 9x9  matrix.}
+\item{x}{Integer. A 9x9 matrix.}
 
 \item{levels}{Named integer vector. Map of integer values to their string
-names. This is typically the output of \code{get_forms_grass_enum()}.}
+names. Default: \code{get_forms_grass_enum()}}
 }
 \value{
 An object of class \code{c("forms_matrix", "matrix", "array")}.
 }
 \description{
-This constructor function wraps a 9x9 integer matrix and associates it
-with a set of levels, creating a 'forms_matrix' object.
+This constructor function wraps a 9x9 integer matrix and associates it with a
+set of levels, creating a 'forms_matrix' object.
+}
+\details{
+This function is intended for custom classification matrix based on positive
+and negative overlooks. See \code{forms_matrix_get()} for a convenient accessor
+for the standard classification systems with 4, 5, 6 or 10 forms.
+}
+\examples{
+\dontshow{if (requireNamespace("terra")) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+
+library(terra)
+library(rgeomorphon)
+
+# default values
+x <- forms_matrix_get(num_forms = 10, levels = get_forms_grass_enum())
+
+# inspect
+x
+
+# create a 9-class system where PEAK is combined with RIDGE
+x[x == 2] <- 3
+a <- get_forms_grass_enum()
+a <- a[!names(a) == "G_PK"]
+
+# create a forms matrix with custom levels
+fm <- forms_matrix(x, a)
+
+# run geomorphon algorithm
+SEARCH = 7       # outer search radius (cells)
+SKIP = 1         # inner skip radius (cells)
+DIST = 0         # flatness distance (cells)
+FLAT = 1         # flat angle threshold
+MODE = "anglev1" # comparison mode
+
+## classic volcano
+data("volcano", package = "datasets")
+dem <- terra::rast(volcano)
+terra::crs(dem) <- terra::crs("EPSG:2193")
+terra::ext(dem) <- c(1756968, 1757578, 5917000, 5917870)
+names(dem) <- "elevation"
+
+# include original forms, positive, and negative output
+res <- geomorphons(
+    dem,
+    search = SEARCH,
+    skip = SKIP,
+    dist = DIST,
+    flat = FLAT,
+    comparison_mode = MODE,
+    forms = TRUE,
+    positive = TRUE,
+    negative = TRUE
+)
+
+ # apply custom classification to positive and negative
+ res2 <- geomorphon_theme(
+   forms_matrix_apply(
+       x = res[[c("positive", "negative")]],
+       rcl = fm
+   )
+ )
+
+ # compare with default
+ terra::plot(terra::rast(c(`10 form`=res$forms, `9 form`=res2)))
+\dontshow{\}) # examplesIf}
 }

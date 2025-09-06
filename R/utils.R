@@ -20,11 +20,26 @@
 #'
 #' @returns _integer_. Number of tile chunks to divide `x` into.
 #' @export
+#' @examplesIf requireNamespace("terra")
+#'
+#' data("salton", package = "rgeomorphon")
+#'
+#' x <- terra::rast(salton)
+#' terra::ext(x) <- attr(salton, "extent")
+#' terra::crs(x) <- attr(salton, "crs")
+#'
+#' geomorphon_chunks_needed(x)
+#'
 geomorphon_chunks_needed <- function(x,
                                      workers = Sys.getenv("R_RGEOMORPHON_N_WORKERS", unset = 1),
                                      scl_need = Sys.getenv("R_RGEOMORPHON_MEM_SCALE_NEED", unset = 10),
                                      scl_workers = Sys.getenv("R_RGEOMORPHON_MEM_SCALE_WORKERS", unset = 1),
                                      pow_total = Sys.getenv("R_RGEOMORPHON_MEM_POWER", unset = 0.5)) {
+
+    if (!requireNamespace("terra")) {
+        stop("Package 'terra' is required", call. = FALSE)
+    }
+
     mi <- as.data.frame(t(terra::mem_info(x, print = FALSE)))
     ceiling((mi$needed * as.numeric(scl_need) /
                 (mi$available * (mi$memfrac / (as.numeric(workers) * as.numeric(scl_workers)))))^as.numeric(pow_total))

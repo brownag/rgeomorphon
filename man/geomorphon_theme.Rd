@@ -31,3 +31,8 @@ matrix. Input values should be integers between 1 and 10.
 When \code{x} is a matrix the result is a factor using \code{geomorphon_categories()}.
 Values are integers 1 to 10 and labels are the geomorphon form names.
 }
+\examples{
+
+geomorphon_theme(1:10)
+
+}

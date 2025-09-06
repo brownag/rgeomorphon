@@ -513,6 +513,11 @@ geomorphon_colors <- function() {
 #'
 #' @export
 #' @rdname geomorphon_theme
+#'
+#' @examples
+#'
+#' geomorphon_theme(1:10)
+#'
 geomorphon_theme <- function(x, forms = "forms10") {
     if (inherits(x, 'SpatRaster')) {
         names(x) <- "geomorphon"

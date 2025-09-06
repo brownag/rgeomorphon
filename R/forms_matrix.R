@@ -5,6 +5,10 @@
 #' as three simplified classes: 4-form, 5-form, and 6-form (Masetti et al.,
 #' 2018)
 #'
+#' For creating custom classification systems see the `forms_matrix()` constructor.
+#'
+#' @seealso [forms_matrix()]
+#'
 #' @param num_forms Integer. The number of forms to classify, one of `4`, `5`,
 #'   `6`, or `10` (default).
 #' @param levels Named integer with values between 0 and 10 corresponding to
@@ -24,15 +28,24 @@
 #'
 #' Masetti, G., Mayer, L. A., & Ward, L. G. 2018, A Bathymetry- and
 #' Reflectivity-Based Approach for Seafloor Segmentation. Geosciences, 8(1), 14.
-#' (\doi{doi:0.3390/geosciences8010014})
+#' (\doi{doi:10.3390/geosciences8010014})
 #'
 #' @returns An object of class `forms_matrix`
 #' @export
+#' @examples
+#'
+#' forms_matrix_get()
+#'
 forms_matrix_get <- function(num_forms = 10, levels = get_forms_grass_enum()) {
     forms_matrix(get_forms_matrix_cpp(num_forms), levels)
 }
 
 #' Apply a `forms_matrix` to Positive and Negative Overlooks
+#'
+#' This function applies a `forms_matrix` to reclassify a SpatRaster object with
+#' 2 layers containing positive and negative overlooks.
+#'
+#' @seealso [forms_matrix()]
 #'
 #' @param x SpatRaster containing two layers with names specified in `positive`
 #'   and `negative`.
@@ -92,6 +105,15 @@ forms_matrix_apply <- function(x,
                                positive = "positive",
                                negative = "negative",
                                ...) {
+
+    if (!requireNamespace("terra")) {
+        stop("Package 'terra' is required", call. = FALSE)
+    }
+
+    if (!inherits(x, "SpatRaster")) {
+        stop("Object 'x' should be a SpatRaster", call. = FALSE)
+    }
+
     p <- x[[positive]]
     n <- x[[negative]]
     d <- nrow(rcl)
@@ -109,16 +131,77 @@ forms_matrix_apply <- function(x,
 
 #' Create a `forms_matrix` object
 #'
-#' This constructor function wraps a 9x9 integer matrix and associates it
-#' with a set of levels, creating a 'forms_matrix' object.
+#' This constructor function wraps a 9x9 integer matrix and associates it with a
+#' set of levels, creating a 'forms_matrix' object.
 #'
-#' @param x Integer. A 9x9  matrix.
+#' This function is intended for custom classification matrix based on positive
+#' and negative overlooks. See `forms_matrix_get()` for a convenient accessor
+#' for the standard classification systems with 4, 5, 6 or 10 forms.
+#'
+#' @param x Integer. A 9x9 matrix.
 #' @param levels Named integer vector. Map of integer values to their string
-#'   names. This is typically the output of `get_forms_grass_enum()`.
+#'   names. Default: `get_forms_grass_enum()`
 #'
 #' @return An object of class `c("forms_matrix", "matrix", "array")`.
 #' @export
-forms_matrix <- function(x, levels) {
+#' @examplesIf requireNamespace("terra")
+#'
+#' library(terra)
+#' library(rgeomorphon)
+#'
+#' # default values
+#' x <- forms_matrix_get(num_forms = 10, levels = get_forms_grass_enum())
+#'
+#' # inspect
+#' x
+#'
+#' # create a 9-class system where PEAK is combined with RIDGE
+#' x[x == 2] <- 3
+#' a <- get_forms_grass_enum()
+#' a <- a[!names(a) == "G_PK"]
+#'
+#' # create a forms matrix with custom levels
+#' fm <- forms_matrix(x, a)
+#'
+#' # run geomorphon algorithm
+#' SEARCH = 7       # outer search radius (cells)
+#' SKIP = 1         # inner skip radius (cells)
+#' DIST = 0         # flatness distance (cells)
+#' FLAT = 1         # flat angle threshold
+#' MODE = "anglev1" # comparison mode
+#'
+#' ## classic volcano
+#' data("volcano", package = "datasets")
+#' dem <- terra::rast(volcano)
+#' terra::crs(dem) <- terra::crs("EPSG:2193")
+#' terra::ext(dem) <- c(1756968, 1757578, 5917000, 5917870)
+#' names(dem) <- "elevation"
+#'
+#' # include original forms, positive, and negative output
+#' res <- geomorphons(
+#'     dem,
+#'     search = SEARCH,
+#'     skip = SKIP,
+#'     dist = DIST,
+#'     flat = FLAT,
+#'     comparison_mode = MODE,
+#'     forms = TRUE,
+#'     positive = TRUE,
+#'     negative = TRUE
+#' )
+#'
+#'  # apply custom classification to positive and negative
+#'  res2 <- geomorphon_theme(
+#'    forms_matrix_apply(
+#'        x = res[[c("positive", "negative")]],
+#'        rcl = fm
+#'    )
+#'  )
+#'
+#'  # compare with default
+#'  terra::plot(terra::rast(c(`10 form`=res$forms, `9 form`=res2)))
+#'
+forms_matrix <- function(x, levels = get_forms_grass_enum()) {
 
     if (!is.matrix(x) || !is.numeric(x)) {
         stop("Input 'x' must be a numeric matrix.", call. = FALSE)
@@ -151,6 +234,10 @@ forms_matrix <- function(x, levels) {
 #' @param ... Additional arguments passed to print (not used here).
 #' @return Invisibly returns the original object `x`.
 #' @export
+#' @examples
+#'
+#' print(forms_matrix_get(num_forms = 4))
+#'
 print.forms_matrix <- function(x, show_values = FALSE, ...) {
     levels <- attr(x, "levels")
     display_matrix <- x

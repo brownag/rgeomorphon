@@ -6,16 +6,10 @@
 \alias{rgeomorphon-package}
 \title{rgeomorphon: A Lightweight Implementation of the 'Geomorphon' Algorithm}
 \description{
-A fast and low-dependency implementation of the 'geomorphon' terrain form classification algorithm of Jasiewicz and Stepinski (2013) based largely on the 'GRASS GIS' 'r.geomorphon' module. This implementation employs a novel parallel algorithm, written in C++ and without external dependencies.
+A lightweight implementation of the 'geomorphon' terrain form classification algorithm of Jasiewicz and Stepinski (2013) based largely on the 'GRASS GIS' 'r.geomorphon' module. This implementation employs a novel algorithm written in C++ and ‘RcppParallel’.
 }
 \seealso{
-Useful links:
-\itemize{
-  \item \url{https://github.com/brownag/rgeomorphon/}
-  \item \url{https://humus.rocks/rgeomorphon/}
-  \item Report bugs at \url{https://github.com/brownag/rgeomorphon/issues}
-}
-
+\code{\link[=geomorphons]{geomorphons()}}
 }
 \author{
 \strong{Maintainer}: Andrew Brown \email{brown.andrewg@gmail.com} (\href{https://orcid.org/0000-0002-4565-533X}{ORCID})

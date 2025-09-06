@@ -39,3 +39,15 @@ calculate geomorphons on larger-than-memory rasters. Allows for scaling by
 number of parallel workers, a multiplicative factor for the memory needs, and
 a multiplicative factor for worker needs.
 }
+\examples{
+\dontshow{if (requireNamespace("terra")) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+
+data("salton", package = "rgeomorphon")
+
+x <- terra::rast(salton)
+terra::ext(x) <- attr(salton, "extent")
+terra::crs(x) <- attr(salton, "crs")
+
+geomorphon_chunks_needed(x)
+\dontshow{\}) # examplesIf}
+}

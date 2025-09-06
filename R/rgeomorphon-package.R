@@ -2,6 +2,7 @@
 #' @useDynLib rgeomorphon
 #' @import RcppParallel
 #' @importFrom Rcpp getRcppVersion
+#' @seealso [geomorphons()]
 "_PACKAGE"
 
 ## usethis namespace: start

@@ -31,7 +31,8 @@ and \code{negative}.}
 A SpatRaster containing the classification result.
 }
 \description{
-Apply a \code{forms_matrix} to Positive and Negative Overlooks
+This function applies a \code{forms_matrix} to reclassify a SpatRaster object with
+2 layers containing positive and negative overlooks.
 }
 \examples{
 \dontshow{if (requireNamespace("terra")) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
@@ -76,4 +77,7 @@ names(res2) <- c("forms4", "forms5", "forms6")
 
 terra::plot(c(res, res2))
 \dontshow{\}) # examplesIf}
+}
+\seealso{
+\code{\link[=forms_matrix]{forms_matrix()}}
 }

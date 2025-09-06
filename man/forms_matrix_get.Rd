@@ -22,6 +22,14 @@ for the classic 10-form output (default; Jasiewicz & Stepinski, 2013) as well
 as three simplified classes: 4-form, 5-form, and 6-form (Masetti et al.,
 2018)
 }
+\details{
+For creating custom classification systems see the \code{forms_matrix()} constructor.
+}
+\examples{
+
+forms_matrix_get()
+
+}
 \references{
 Stepinski, T., Jasiewicz, J., 2011, Geomorphons - a new approach to
 classification of landform, in : Eds: Hengl, T., Evans, I.S., Wilson, J.P.,
@@ -35,5 +43,8 @@ approach to classification and mapping of landforms, Geomorphology, vol. 182,
 
 Masetti, G., Mayer, L. A., & Ward, L. G. 2018, A Bathymetry- and
 Reflectivity-Based Approach for Seafloor Segmentation. Geosciences, 8(1), 14.
-(\doi{doi:0.3390/geosciences8010014})
+(\doi{doi:10.3390/geosciences8010014})
+}
+\seealso{
+\code{\link[=forms_matrix]{forms_matrix()}}
 }

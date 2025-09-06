@@ -20,3 +20,8 @@ Invisibly returns the original object \code{x}.
 \description{
 Controls how the 'forms_matrix' object is displayed in the console.
 }
+\examples{
+
+print(forms_matrix_get(num_forms = 4))
+
+}

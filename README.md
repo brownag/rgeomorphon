@@ -11,12 +11,12 @@ Status](https://github.com/brownag/rgeomorphon/actions/workflows/R-CMD-check.yam
 Manual](https://img.shields.io/badge/docs-HTML-informational)](https://humus.rocks/rgeomorphon/)
 <!-- badges: end -->
 
-A fast and low-dependency implementation of the ‘geomorphon’ terrain
-form classification algorithm of Jasiewicz and Stepinski (2013) based
-largely on the ‘GRASS GIS’ ‘r.geomorphon’ module.
+A lightweight implementation of the ‘geomorphon’ terrain form
+classification algorithm of Jasiewicz and Stepinski (2013) based largely
+on the ‘GRASS GIS’ ‘r.geomorphon’ module.
 
-This implementation employs a novel parallel algorithm, written in C++
-and without external dependencies.
+This implementation employs a novel algorithm written in C++ and
+‘RcppParallel’.
 
 For the sake of simplicity, some GRASS-specific implementation details
 have not been added. See `?geomorphons` for details.
@@ -67,7 +67,7 @@ system.time({
     )
 })
 #>    user  system elapsed 
-#>   0.059   0.004   0.051
+#>   0.069   0.001   0.060
 
 # inspect result
 plot(c(dem, rg), 
@@ -114,7 +114,7 @@ system.time({
     )
 })
 #>    user  system elapsed 
-#>   0.100   0.001   0.083
+#>   0.226   0.002   0.211
 
 # inspect result
 plot(c(dem, rg), 
