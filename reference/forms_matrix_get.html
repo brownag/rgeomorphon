@@ -52,7 +52,7 @@ as three simplified classes: 4-form, 5-form, and 6-form (Masetti et al.,
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">forms_matrix_get</span><span class="op">(</span>num_forms <span class="op">=</span> <span class="fl">10</span>, levels <span class="op">=</span> <span class="fu">get_forms_grass_enum</span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">forms_matrix_get</span><span class="op">(</span>num_forms <span class="op">=</span> <span class="fl">10</span>, levels <span class="op">=</span> <span class="fu"><a href="forms_matrix.html">get_forms_grass_enum</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -66,12 +66,16 @@ as three simplified classes: 4-form, 5-form, and 6-form (Masetti et al.,
 
 <dt id="arg-levels">levels<a class="anchor" aria-label="anchor" href="#arg-levels"></a></dt>
 <dd><p>Named integer with values between 0 and 10 corresponding to
-form class labels. Default: <code>get_forms_grass_enum()</code></p></dd>
+form class labels. Default: <code><a href="forms_matrix.html">get_forms_grass_enum()</a></code></p></dd>
 
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>An object of class <code>forms_matrix</code></p>
+    </div>
+    <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p>For creating custom classification systems see the <code><a href="forms_matrix.html">forms_matrix()</a></code> constructor.</p>
     </div>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
@@ -86,10 +90,33 @@ approach to classification and mapping of landforms, Geomorphology, vol. 182,
 )</p>
 <p>Masetti, G., Mayer, L. A., &amp; Ward, L. G. 2018, A Bathymetry- and
 Reflectivity-Based Approach for Seafloor Segmentation. Geosciences, 8(1), 14.
-(<a href="https://doi.org/0.3390/geosciences8010014" class="external-link">doi:0.3390/geosciences8010014</a>
+(<a href="https://doi.org/10.3390/geosciences8010014" class="external-link">doi:10.3390/geosciences8010014</a>
 )</p>
     </div>
+    <div class="section level2">
+    <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
+    <div class="dont-index"><p><code><a href="forms_matrix.html">forms_matrix()</a></code></p></div>
+    </div>
 
+    <div class="section level2">
+    <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="fu">forms_matrix_get</span><span class="op">(</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;forms_matrix&gt; object</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       pos=0  pos=1  pos=2  pos=3  pos=4  pos=5  pos=6  pos=7  pos=8 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> neg=0 G_FL   G_FL   G_FL   G_FS   G_FS   G_VL   G_VL   G_VL   G_PT  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> neg=1 G_FL   G_FL   G_FS   G_FS   G_FS   G_VL   G_VL   G_VL   G_NONE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> neg=2 G_FL   G_SH   G_SL   G_SL   G_HL   G_HL   G_VL   G_NONE G_NONE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> neg=3 G_SH   G_SH   G_SL   G_SL   G_SL   G_HL   G_NONE G_NONE G_NONE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> neg=4 G_SH   G_SH   G_SP   G_SL   G_SL   G_NONE G_NONE G_NONE G_NONE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> neg=5 G_RI   G_RI   G_SP   G_SP   G_NONE G_NONE G_NONE G_NONE G_NONE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> neg=6 G_RI   G_RI   G_RI   G_NONE G_NONE G_NONE G_NONE G_NONE G_NONE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> neg=7 G_RI   G_RI   G_NONE G_NONE G_NONE G_NONE G_NONE G_NONE G_NONE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> neg=8 G_PK   G_NONE G_NONE G_NONE G_NONE G_NONE G_NONE G_NONE G_NONE</span>
+<span class="r-in"><span></span></span>
+</code></pre></div>
+    </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
 
