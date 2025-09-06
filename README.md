@@ -23,7 +23,13 @@ have not been added. See `?geomorphons` for details.
 
 ## Installation
 
-You can install the development version of {rgeomorphon} like so:
+You can install {rgeomorphon} from CRAN:
+
+``` r
+install.packages("rgeomorphon")
+```
+
+And you can install the development version from GitHub:
 
 ``` r
 # install.packages("remotes")
@@ -67,7 +73,7 @@ system.time({
     )
 })
 #>    user  system elapsed 
-#>   0.069   0.001   0.060
+#>   0.078   0.003   0.069
 
 # inspect result
 plot(c(dem, rg), 
@@ -114,7 +120,7 @@ system.time({
     )
 })
 #>    user  system elapsed 
-#>   0.226   0.002   0.211
+#>   0.130   0.006   0.116
 
 # inspect result
 plot(c(dem, rg), 
