@@ -1,3 +1,11 @@
+# rgeomorphon 0.3.0
+
+ - Added support for tiled processing for rasters too large to fit in memory
+ 
+ - Added vignette: Parallel and Distributed Processing with 'rgeomorphon'
+ 
+ - Build with `-DARMA_USE_CURRENT` for Armadillo 15+
+ 
 # rgeomorphon 0.2.0
  
  - Add `positive`, `negative`, and `ternary` arguments and output types (for #3)
