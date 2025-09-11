@@ -11,8 +11,8 @@
 <script src="deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="A Lightweight Implementation of the Geomorphon Algorithm">
-<meta name="description" content="A lightweight implementation of the geomorphon terrain form classification algorithm of Jasiewicz and Stepinski (2013) based largely on the GRASS GIS r.geomorphon module. This implementation employs a novel algorithm written in C++ and ‘RcppParallel’.">
-<meta property="og:description" content="A lightweight implementation of the geomorphon terrain form classification algorithm of Jasiewicz and Stepinski (2013) based largely on the GRASS GIS r.geomorphon module. This implementation employs a novel algorithm written in C++ and ‘RcppParallel’.">
+<meta name="description" content="A lightweight implementation of the geomorphon terrain form classification algorithm of Jasiewicz and Stepinski (2013) &lt;doi:10.1016/j.geomorph.2012.11.005&gt; based largely on the GRASS GIS r.geomorphon module. This implementation employs a novel algorithm written in C++ and RcppParallel.">
+<meta property="og:description" content="A lightweight implementation of the geomorphon terrain form classification algorithm of Jasiewicz and Stepinski (2013) &lt;doi:10.1016/j.geomorph.2012.11.005&gt; based largely on the GRASS GIS r.geomorphon module. This implementation employs a novel algorithm written in C++ and RcppParallel.">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -55,9 +55,13 @@
   <main id="main" class="col-md-9"><div class="section level1">
 <div class="page-header"><h1 id="rgeomorphon">rgeomorphon<a class="anchor" aria-label="anchor" href="#rgeomorphon"></a>
 </h1></div>
+<!--
+[![CRAN version](https://www.r-pkg.org/badges/version/rgeomorphon)](https://CRAN.R-project.org/package=rgeomorphon)
+[![CRAN status](https://badges.cranchecks.info/worst/rgeomorphon.svg)](https://cran.r-project.org/web/checks/check_results_rgeomorphon.html)
+-->
 <!-- badges: start -->
 
-<p>A lightweight implementation of the ‘geomorphon’ terrain form classification algorithm of Jasiewicz and Stepinski (2013) based largely on the ‘GRASS GIS’ ‘r.geomorphon’ module.</p>
+<p>A lightweight implementation of the geomorphon terrain form classification algorithm of Jasiewicz and Stepinski (2013) <a href="doi:10.1016/j.geomorph.2012.11.005" class="uri">doi:10.1016/j.geomorph.2012.11.005</a> based largely on the ‘GRASS GIS’ ‘r.geomorphon’ module.</p>
 <p>This implementation employs a novel algorithm written in C++ and ‘RcppParallel’.</p>
 <p>For the sake of simplicity, some GRASS-specific implementation details have not been added. See <code><a href="reference/geomorphons.html">?geomorphons</a></code> for details.</p>
 <div class="section level2">
@@ -105,7 +109,7 @@
 <span>    <span class="op">)</span></span>
 <span><span class="op">}</span><span class="op">)</span></span>
 <span><span class="co">#&gt;    user  system elapsed </span></span>
-<span><span class="co">#&gt;   0.078   0.003   0.069</span></span>
+<span><span class="co">#&gt;   0.058   0.005   0.050</span></span>
 <span></span>
 <span><span class="co"># inspect result</span></span>
 <span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">dem</span>, <span class="va">rg</span><span class="op">)</span>, </span>
@@ -148,7 +152,7 @@
 <span>    <span class="op">)</span></span>
 <span><span class="op">}</span><span class="op">)</span></span>
 <span><span class="co">#&gt;    user  system elapsed </span></span>
-<span><span class="co">#&gt;   0.130   0.006   0.116</span></span>
+<span><span class="co">#&gt;   0.097   0.002   0.079</span></span>
 <span></span>
 <span><span class="co"># inspect result</span></span>
 <span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">dem</span>, <span class="va">rg</span><span class="op">)</span>, </span>
@@ -167,7 +171,7 @@
 <span><span class="co">#&gt; To cite package 'rgeomorphon' in publications use:</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;   Brown A (2025). _rgeomorphon: A Lightweight Implementation of the</span></span>
-<span><span class="co">#&gt;   'Geomorphon' Algorithm_. R package version 0.1.0,</span></span>
+<span><span class="co">#&gt;   'Geomorphon' Algorithm_. R package version 0.3.0,</span></span>
 <span><span class="co">#&gt;   &lt;https://github.com/brownag/rgeomorphon/&gt;.</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;   Jasiewicz J, Stepinski T (2013). "Geomorphons - a pattern recognition</span></span>
@@ -219,6 +223,7 @@
 <div class="dev-status">
 <h2 data-toc-skip>Dev status</h2>
 <ul class="list-unstyled">
+<li><a href="https://brownag.r-universe.dev/" class="external-link"><img src="https://brownag.r-universe.dev/badges/rgeomorphon" alt="Development Version"></a></li>
 <li><a href="https://github.com/brownag/rgeomorphon/actions" class="external-link"><img src="https://github.com/brownag/rgeomorphon/actions/workflows/R-CMD-check.yaml/badge.svg" alt="R-CMD-check Build Status"></a></li>
 <li><a href="https://humus.rocks/rgeomorphon/" class="external-link"><img src="https://img.shields.io/badge/docs-HTML-informational" alt="rgeomorphon Manual"></a></li>
 </ul>
