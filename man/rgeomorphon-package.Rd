@@ -6,7 +6,7 @@
 \alias{rgeomorphon-package}
 \title{rgeomorphon: A Lightweight Implementation of the 'Geomorphon' Algorithm}
 \description{
-A lightweight implementation of the 'geomorphon' terrain form classification algorithm of Jasiewicz and Stepinski (2013) based largely on the 'GRASS GIS' 'r.geomorphon' module. This implementation employs a novel algorithm written in C++ and ‘RcppParallel’.
+A lightweight implementation of the geomorphon terrain form classification algorithm of Jasiewicz and Stepinski (2013) \doi{10.1016/j.geomorph.2012.11.005} based largely on the 'GRASS GIS' 'r.geomorphon' module. This implementation employs a novel algorithm written in C++ and 'RcppParallel'.
 }
 \seealso{
 \code{\link[=geomorphons]{geomorphons()}}

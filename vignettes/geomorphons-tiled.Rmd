@@ -15,8 +15,9 @@ litedown::reactor(
             Sys.getenv("R_RGEOMORPHON_RUN_LONG_EXAMPLES", unset = "FALSE")
         )) &&
             requireNamespace("terra", quietly = TRUE) &&
-            all(c("future", "future.apply", "parallel") %in%
-                    rownames(installed.packages()))
+            all(nzchar(c(system.file(package = "future"),
+                         system.file(package = "future.apply"), 
+                         system.file(package = "parallel"))))
     )
 )
 ```
