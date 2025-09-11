@@ -14,20 +14,23 @@ knitr::opts_chunk$set(
 ```
 
 # rgeomorphon
+<!--
+[![CRAN version](https://www.r-pkg.org/badges/version/rgeomorphon)](https://CRAN.R-project.org/package=rgeomorphon)
+[![CRAN status](https://badges.cranchecks.info/worst/rgeomorphon.svg)](https://cran.r-project.org/web/checks/check_results_rgeomorphon.html)
+-->
 
 <!-- badges: start -->
-[![R-CMD-check Build
-Status](https://github.com/brownag/rgeomorphon/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/brownag/rgeomorphon/actions)
-[![rgeomorphon
-Manual](https://img.shields.io/badge/docs-HTML-informational)](https://humus.rocks/rgeomorphon/)
+[![Development Version](https://brownag.r-universe.dev/badges/rgeomorphon)](https://brownag.r-universe.dev/)
+[![R-CMD-check Build Status](https://github.com/brownag/rgeomorphon/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/brownag/rgeomorphon/actions)
+[![rgeomorphon Manual](https://img.shields.io/badge/docs-HTML-informational)](https://humus.rocks/rgeomorphon/)
 <!-- badges: end -->
 
-A lightweight implementation of the 'geomorphon' terrain
-form classification algorithm of Jasiewicz and Stepinski (2013) based
-largely on the 'GRASS GIS' 'r.geomorphon' module.
-  
-This implementation employs a novel algorithm written in C++ and 'RcppParallel'.
+A lightweight implementation of the geomorphon terrain form classification 
+algorithm of Jasiewicz and Stepinski (2013) <doi:10.1016/j.geomorph.2012.11.005> 
+based largely on the 'GRASS GIS' 'r.geomorphon' module.
 
+This implementation employs a novel algorithm written in C++ and 'RcppParallel'.
+  
 For the sake of simplicity, some GRASS-specific implementation details have not
 been added. See `?geomorphons` for details.
 

@@ -3,17 +3,25 @@
 
 # rgeomorphon
 
+<!--
+[![CRAN version](https://www.r-pkg.org/badges/version/rgeomorphon)](https://CRAN.R-project.org/package=rgeomorphon)
+[![CRAN status](https://badges.cranchecks.info/worst/rgeomorphon.svg)](https://cran.r-project.org/web/checks/check_results_rgeomorphon.html)
+-->
+
 <!-- badges: start -->
 
+[![Development
+Version](https://brownag.r-universe.dev/badges/rgeomorphon)](https://brownag.r-universe.dev/)
 [![R-CMD-check Build
 Status](https://github.com/brownag/rgeomorphon/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/brownag/rgeomorphon/actions)
 [![rgeomorphon
 Manual](https://img.shields.io/badge/docs-HTML-informational)](https://humus.rocks/rgeomorphon/)
 <!-- badges: end -->
 
-A lightweight implementation of the ‘geomorphon’ terrain form
-classification algorithm of Jasiewicz and Stepinski (2013) based largely
-on the ‘GRASS GIS’ ‘r.geomorphon’ module.
+A lightweight implementation of the geomorphon terrain form
+classification algorithm of Jasiewicz and Stepinski (2013)
+<doi:10.1016/j.geomorph.2012.11.005> based largely on the ‘GRASS GIS’
+‘r.geomorphon’ module.
 
 This implementation employs a novel algorithm written in C++ and
 ‘RcppParallel’.
@@ -73,7 +81,7 @@ system.time({
     )
 })
 #>    user  system elapsed 
-#>   0.078   0.003   0.069
+#>   0.058   0.005   0.050
 
 # inspect result
 plot(c(dem, rg), 
@@ -120,7 +128,7 @@ system.time({
     )
 })
 #>    user  system elapsed 
-#>   0.130   0.006   0.116
+#>   0.097   0.002   0.079
 
 # inspect result
 plot(c(dem, rg), 
@@ -139,7 +147,7 @@ citation("rgeomorphon")
 #> To cite package 'rgeomorphon' in publications use:
 #> 
 #>   Brown A (2025). _rgeomorphon: A Lightweight Implementation of the
-#>   'Geomorphon' Algorithm_. R package version 0.1.0,
+#>   'Geomorphon' Algorithm_. R package version 0.3.0,
 #>   <https://github.com/brownag/rgeomorphon/>.
 #> 
 #>   Jasiewicz J, Stepinski T (2013). "Geomorphons - a pattern recognition
