@@ -1,6 +1,6 @@
 bibentry(
    bibtype = "Manual",
-   title   = "rgeomorphon: A Lightweight Implementation of the 'Geomorphon' Algorithm",
+   title   = "rgeomorphon: A Lightweight Implementation of the Geomorphon Algorithm",
    author  = person("Andrew", "Brown"),
    note    = "R package version 0.3.0",
    year    = 2025,

@@ -87,7 +87,7 @@ result is a list. For one result type, and default \code{simplify} argument, the
 result is the first (and only) element of the list.
 }
 \description{
-'Rcpp' implementation of the 'geomorphon' terrain classification system based
+'Rcpp' implementation of the geomorphon terrain classification system based
 on 'r.geomorphon' algorithm of Jasiewicz and Stepinski (2013) from 'GRASS
 GIS'.
 }
@@ -158,9 +158,9 @@ Sys.setenv(R_RGEOMORPHON_MEM_POWER = 1.5)
 }
 }
 
-\section{Comparison with GRASS 'r.geomorphon'}{
+\section{Comparison with 'GRASS' 'r.geomorphon'}{
 This implementation achieves very high agreement with the classification
-logic of GRASS GIS 'r.geomorphon' when using equivalent parameters and data
+logic of 'GRASS GIS' 'r.geomorphon' when using equivalent parameters and data
 in a projected coordinate system.
 
 'r.geomorphon' employs a row buffering strategy which can, for cells near the

@@ -81,7 +81,7 @@ system.time({
     )
 })
 #>    user  system elapsed 
-#>   0.058   0.005   0.050
+#>   0.060   0.005   0.052
 
 # inspect result
 plot(c(dem, rg), 
@@ -128,7 +128,7 @@ system.time({
     )
 })
 #>    user  system elapsed 
-#>   0.097   0.002   0.079
+#>   0.102   0.000   0.082
 
 # inspect result
 plot(c(dem, rg), 
@@ -147,7 +147,7 @@ citation("rgeomorphon")
 #> To cite package 'rgeomorphon' in publications use:
 #> 
 #>   Brown A (2025). _rgeomorphon: A Lightweight Implementation of the
-#>   'Geomorphon' Algorithm_. R package version 0.3.0,
+#>   Geomorphon Algorithm_. R package version 0.3.0,
 #>   <https://github.com/brownag/rgeomorphon/>.
 #> 
 #>   Jasiewicz J, Stepinski T (2013). "Geomorphons - a pattern recognition
