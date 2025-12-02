@@ -3,13 +3,12 @@
 
 # rgeomorphon
 
-<!--
-[![CRAN version](https://www.r-pkg.org/badges/version/rgeomorphon)](https://CRAN.R-project.org/package=rgeomorphon)
-[![CRAN status](https://badges.cranchecks.info/worst/rgeomorphon.svg)](https://cran.r-project.org/web/checks/check_results_rgeomorphon.html)
--->
-
 <!-- badges: start -->
 
+[![CRAN
+version](https://www.r-pkg.org/badges/version/rgeomorphon)](https://CRAN.R-project.org/package=rgeomorphon)
+[![CRAN
+status](https://badges.cranchecks.info/worst/rgeomorphon.svg)](https://cran.r-project.org/web/checks/check_results_rgeomorphon.html)
 [![Development
 Version](https://brownag.r-universe.dev/badges/rgeomorphon)](https://brownag.r-universe.dev/)
 [![R-CMD-check Build
@@ -19,12 +18,14 @@ Manual](https://img.shields.io/badge/docs-HTML-informational)](https://humus.roc
 <!-- badges: end -->
 
 A lightweight implementation of the geomorphon terrain form
-classification algorithm of Jasiewicz and Stepinski (2013)
-<doi:10.1016/j.geomorph.2012.11.005> based largely on the ‘GRASS GIS’
-‘r.geomorphon’ module.
+classification algorithm of [Jasiewicz and Stepinski
+(2013)](https://doi.org/10.1016/j.geomorph.2012.11.005) based largely on
+the GRASS GIS
+[r.geomorphon](https://grass.osgeo.org/grass-stable/manuals/r.geomorphon.html)
+module.
 
 This implementation employs a novel algorithm written in C++ and
-‘RcppParallel’.
+{RcppParallel}.
 
 For the sake of simplicity, some GRASS-specific implementation details
 have not been added. See `?geomorphons` for details.
@@ -54,7 +55,7 @@ the Auckland volcanic field of New Zealand.
 
 ``` r
 library(terra)
-#> terra 1.8.56
+#> terra 1.8.86
 library(rgeomorphon)
 
 # PARAMETERS
@@ -81,7 +82,7 @@ system.time({
     )
 })
 #>    user  system elapsed 
-#>   0.060   0.005   0.052
+#>   0.066   0.004   0.057
 
 # inspect result
 plot(c(dem, rg), 
@@ -128,7 +129,7 @@ system.time({
     )
 })
 #>    user  system elapsed 
-#>   0.102   0.000   0.082
+#>   0.105   0.001   0.088
 
 # inspect result
 plot(c(dem, rg), 
@@ -147,7 +148,7 @@ citation("rgeomorphon")
 #> To cite package 'rgeomorphon' in publications use:
 #> 
 #>   Brown A (2025). _rgeomorphon: A Lightweight Implementation of the
-#>   Geomorphon Algorithm_. R package version 0.3.0,
+#>   'Geomorphon' Algorithm_. R package version 0.3.0,
 #>   <https://github.com/brownag/rgeomorphon/>.
 #> 
 #>   Jasiewicz J, Stepinski T (2013). "Geomorphons - a pattern recognition
