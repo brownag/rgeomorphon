@@ -26,7 +26,7 @@ and negative overlooks. See \code{forms_matrix_get()} for a convenient accessor
 for the standard classification systems with 4, 5, 6 or 10 forms.
 }
 \examples{
-\dontshow{if (requireNamespace("terra")) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+\dontshow{if (requireNamespace("terra")) withAutoprint(\{ # examplesIf}
 
 library(terra)
 library(rgeomorphon)
