@@ -195,7 +195,7 @@ For example:
     ```{r}
     # Example using the base R parallel package
     library(parallel)
-    cl <- makeCluster(4)
+    cl <- makeCluster(2)
 
     g_forms_par <- geomorphons(
         dem,
