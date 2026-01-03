@@ -40,7 +40,7 @@ number of parallel workers, a multiplicative factor for the memory needs, and
 a multiplicative factor for worker needs.
 }
 \examples{
-\dontshow{if (requireNamespace("terra")) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+\dontshow{if (requireNamespace("terra")) withAutoprint(\{ # examplesIf}
 
 data("salton", package = "rgeomorphon")
 

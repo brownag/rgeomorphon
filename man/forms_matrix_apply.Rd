@@ -35,7 +35,7 @@ This function applies a \code{forms_matrix} to reclassify a SpatRaster object wi
 2 layers containing positive and negative overlooks.
 }
 \examples{
-\dontshow{if (requireNamespace("terra")) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+\dontshow{if (requireNamespace("terra")) withAutoprint(\{ # examplesIf}
 library(terra)
 library(rgeomorphon)
 

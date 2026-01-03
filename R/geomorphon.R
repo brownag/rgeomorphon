@@ -837,10 +837,10 @@ geomorphon_theme <- function(x, forms = "forms10") {
 #' output tile, ensuring seamless results when the tiles are later merged.
 #'
 #' @param x A `SpatRasterCollection` containing the buffered input tiles,
-#'   typically from `geomorphons_create_tiles()`.
+#'   typically from `.geomorphons_create_tiles()`.
 #' @param y A `SpatVector` of polygons defining the original, unbuffered extents
 #'   of each tile. This is used for cropping the results. This is typically the
-#'   output from `geomorphons_tile_extents()`.
+#'   output from `.geomorphons_tile_extents()`.
 #' @param FUN The geomorphon function to apply to each tile (e.g.,
 #'   [geomorphons()]).
 #' @param cell_buffer Integer. The number of cells to add as a buffer around
@@ -929,7 +929,7 @@ geomorphon_theme <- function(x, forms = "forms10") {
 #' source DEM to ensure a perfect match.
 #'
 #' @param x `SpatRasterCollection` of the final result tiles, typically from
-#'   [geomorphons_process_tiles()].
+#'   `.geomorphons_process_tiles()`.
 #' @param y `SpatExtent` object from the original, full DEM. Used to ensure
 #'   the final output has the exact same extent. Default `NULL` uses full extent
 #'   of `x`.

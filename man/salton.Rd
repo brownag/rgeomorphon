@@ -26,7 +26,7 @@ meters, of a 300 m x 300 m cell. Cell values are interpolated using a thin
 plate spline fit to an exhaustive sample of contour line vertices.
 }
 \examples{
-\dontshow{if (requireNamespace("terra")) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+\dontshow{if (requireNamespace("terra")) withAutoprint(\{ # examplesIf}
 
 str(salton)
 
