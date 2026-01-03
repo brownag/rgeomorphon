@@ -147,9 +147,9 @@ We can also pass the `nchunk` argument directly to `geomorphons()` to bypass the
 Now that `geomorphons()` will use a tiled approach, we can set up our parallel plan and execute the calculation.
 
 ```{r}
-# Set up a multisession future plan with 4 workers
-# This creates 4 background R sessions to do the work
-future::plan(multisession, workers = 4)
+# Set up a multisession future plan with 2 workers
+# This creates 2 background R sessions to do the work
+future::plan(multisession, workers = 2)
 ```
 
 Use the LAPPLY.FUN argument to pass `future.apply::future_lapply`. This tells `geomorphons()` to use the future backend for processing tiles
