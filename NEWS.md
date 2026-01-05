@@ -1,3 +1,19 @@
+# rgeomorphon 0.3.2
+
+ - Added `geomorphon_ptrm()` function to calculate Perceived Terrain Realism Metric (Rajasekaran et al. 2022)
+   - Quantifies human-perceived terrain realism on a 0-1 scale
+   - Supports calculation from DEMs or pre-computed geomorphon classifications
+   - Based on proportional distribution of 10 standard geomorphon types
+
+ - Added `geomorphon_concordance()` function to measure structural agreement between geomorphon and categorical maps
+   - Normalized Mutual Information (NMI) for statistical association
+   - Boundary alignment metrics (edge offset and edge concordance)
+   - No assumptions about 1-to-1 class equivalency between maps
+
+ - Internal helper functions for entropy and mutual information calculations (no new package dependencies)
+
+ - Comprehensive unit tests for new analysis functions
+
 # rgeomorphon 0.3.0
 
  - Added support for tiled processing for rasters too large to fit in memory

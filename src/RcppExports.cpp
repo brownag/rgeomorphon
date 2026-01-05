@@ -10,6 +10,34 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
+// focal_edge_cpp
+Rcpp::NumericMatrix focal_edge_cpp(Rcpp::NumericMatrix x, double na_value);
+RcppExport SEXP _rgeomorphon_focal_edge_cpp(SEXP xSEXP, SEXP na_valueSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type x(xSEXP);
+    Rcpp::traits::input_parameter< double >::type na_value(na_valueSEXP);
+    rcpp_result_gen = Rcpp::wrap(focal_edge_cpp(x, na_value));
+    return rcpp_result_gen;
+END_RCPP
+}
+// geomorphon_ptrm_focal_cpp
+Rcpp::NumericMatrix geomorphon_ptrm_focal_cpp(Rcpp::IntegerMatrix geomorphon_class, int radius, Rcpp::NumericVector coefficients, double intercept, double normalizer, double na_value);
+RcppExport SEXP _rgeomorphon_geomorphon_ptrm_focal_cpp(SEXP geomorphon_classSEXP, SEXP radiusSEXP, SEXP coefficientsSEXP, SEXP interceptSEXP, SEXP normalizerSEXP, SEXP na_valueSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::IntegerMatrix >::type geomorphon_class(geomorphon_classSEXP);
+    Rcpp::traits::input_parameter< int >::type radius(radiusSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type coefficients(coefficientsSEXP);
+    Rcpp::traits::input_parameter< double >::type intercept(interceptSEXP);
+    Rcpp::traits::input_parameter< double >::type normalizer(normalizerSEXP);
+    Rcpp::traits::input_parameter< double >::type na_value(na_valueSEXP);
+    rcpp_result_gen = Rcpp::wrap(geomorphon_ptrm_focal_cpp(geomorphon_class, radius, coefficients, intercept, normalizer, na_value));
+    return rcpp_result_gen;
+END_RCPP
+}
 // get_forms_grass_enum
 Rcpp::IntegerVector get_forms_grass_enum();
 RcppExport SEXP _rgeomorphon_get_forms_grass_enum() {
@@ -58,6 +86,8 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_rgeomorphon_focal_edge_cpp", (DL_FUNC) &_rgeomorphon_focal_edge_cpp, 2},
+    {"_rgeomorphon_geomorphon_ptrm_focal_cpp", (DL_FUNC) &_rgeomorphon_geomorphon_ptrm_focal_cpp, 6},
     {"_rgeomorphon_get_forms_grass_enum", (DL_FUNC) &_rgeomorphon_get_forms_grass_enum, 0},
     {"_rgeomorphon_get_forms_matrix_cpp", (DL_FUNC) &_rgeomorphon_get_forms_matrix_cpp, 1},
     {"_rgeomorphon_geomorphons_cpp_worker", (DL_FUNC) &_rgeomorphon_geomorphons_cpp_worker, 15},
