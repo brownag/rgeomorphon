@@ -174,7 +174,7 @@ GIS manual: \url{https://grass.osgeo.org/grass-stable/manuals/r.geomorphon.html}
 }
 
 \examples{
-\dontshow{if (requireNamespace("terra")) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+\dontshow{if (requireNamespace("terra")) withAutoprint(\{ # examplesIf}
 library(terra)
 library(rgeomorphon)
 
