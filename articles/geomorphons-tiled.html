@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">rgeomorphon</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -59,7 +59,7 @@
       <h1>Parallel and Distributed Processing with 'rgeomorphon'</h1>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/brownag/rgeomorphon/blob/0.3.0/vignettes/geomorphons-tiled.Rmd" class="external-link"><code>vignettes/geomorphons-tiled.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/brownag/rgeomorphon/blob/main/vignettes/geomorphons-tiled.Rmd" class="external-link"><code>vignettes/geomorphons-tiled.Rmd</code></a></small>
       <div class="d-none name"><code>geomorphons-tiled.Rmd</code></div>
     </div>
 
@@ -219,7 +219,7 @@ normally trigger tiled processing.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/brownag/rgeomorphon/" class="external-link">rgeomorphon</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://rspatial.org/" class="external-link">terra</a></span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## terra 1.8.60</span></span></code></pre>
+<pre><code><span><span class="co">## terra 1.8.93</span></span></code></pre>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://future.futureverse.org" class="external-link">future</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://future.apply.futureverse.org" class="external-link">future.apply</a></span><span class="op">)</span></span>
@@ -255,9 +255,9 @@ process it.</p>
 <p>Now that <code><a href="../reference/geomorphons.html">geomorphons()</a></code> will use a tiled approach, we can
 set up our parallel plan and execute the calculation.</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Set up a multisession future plan with 4 workers</span></span>
-<span><span class="co"># This creates 4 background R sessions to do the work</span></span>
-<span><span class="fu">future</span><span class="fu">::</span><span class="fu"><a href="https://future.futureverse.org/reference/plan.html" class="external-link">plan</a></span><span class="op">(</span><span class="va">multisession</span>, workers <span class="op">=</span> <span class="fl">4</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="co"># Set up a multisession future plan with 2 workers</span></span>
+<span><span class="co"># This creates 2 background R sessions to do the work</span></span>
+<span><span class="fu">future</span><span class="fu">::</span><span class="fu"><a href="https://future.futureverse.org/reference/plan.html" class="external-link">plan</a></span><span class="op">(</span><span class="va">multisession</span>, workers <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span></code></pre></div>
 <p>Use the LAPPLY.FUN argument to pass
 <code><a href="https://future.apply.futureverse.org/reference/future_lapply.html" class="external-link">future.apply::future_lapply</a></code>. This tells
 <code><a href="../reference/geomorphons.html">geomorphons()</a></code> to use the future backend for processing
@@ -275,14 +275,14 @@ tiles</p>
 <span>    <span class="op">)</span></span>
 <span><span class="op">}</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">##    user  system elapsed </span></span>
-<span><span class="co">##   1.806   0.286  14.151</span></span></code></pre>
+<span><span class="co">##   1.376   0.217   7.932</span></span></code></pre>
 <div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Shut down the parallel workers</span></span>
 <span><span class="fu">future</span><span class="fu">::</span><span class="fu"><a href="https://future.futureverse.org/reference/plan.html" class="external-link">plan</a></span><span class="op">(</span><span class="va">sequential</span><span class="op">)</span></span></code></pre></div>
 <div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Inspect</span></span>
 <span><span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">g_parallel</span>, main <span class="op">=</span> <span class="st">"Geomorphons via Tiled Processing"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="geomorphons-tiled_files/figure-html/unnamed-chunk-6-1.png" width="700"></p>
+<p><img src="geomorphons-tiled_files/figure-html/unnamed-chunk-6-1.png" class="r-plt" alt="" width="700"></p>
 <div class="section level3">
 <h3 id="important-notes">Important Notes<a class="anchor" aria-label="anchor" href="#important-notes"></a>
 </h3>
@@ -327,7 +327,7 @@ base <code>parallel</code> package, you can easily integrate it.</p>
 <div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Example using the base R parallel package</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">parallel</span><span class="op">)</span></span>
-<span><span class="va">cl</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/parallel/makeCluster.html" class="external-link">makeCluster</a></span><span class="op">(</span><span class="fl">4</span><span class="op">)</span></span>
+<span><span class="va">cl</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/parallel/makeCluster.html" class="external-link">makeCluster</a></span><span class="op">(</span><span class="fl">2</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">g_forms_par</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/geomorphons.html">geomorphons</a></span><span class="op">(</span></span>
 <span>    <span class="va">dem</span>,</span>
@@ -386,7 +386,7 @@ processed, giving you a live view of the progress.</p>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
 </div>
 
     </footer>

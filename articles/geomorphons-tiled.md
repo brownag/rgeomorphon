@@ -1,0 +1,346 @@
+# Parallel and Distributed Processing with 'rgeomorphon'
+
+``` r
+library(rgeomorphon)
+```
+
+When working with large Digital Elevation Models (DEMs), calculating
+geomorphons can be time-consuming. `rgeomorphon` can speed up this
+process by using parallel and distributed processing. This vignette
+explains how to set up and use the tiling and parallel processing
+features of the package.
+
+## Working with Tiles
+
+Parallel processing in `rgeomorphon` is achieved by splitting the input
+raster into smaller tiles. Each tile is then processed independently on
+a separate worker. The results are then combined back into a single,
+seamless raster.
+
+The number of tiles is estimated using
+[`terra::mem_info()`](https://rspatial.github.io/terra/reference/mem.html)
+to identify raster memory requirements, amount of free memory, fraction
+of memory that can be used by `terra`, number of “copies” of the input
+data raster needed to complete processing, etc.
+
+The tiled approach is used automatically when a raster is too large to
+fit in memory. However, you can either directly set the number of chunks
+to use, or set other factors related to relative memory usage
+constraints.
+
+## The Parallel Ecosystem
+
+### Two Layers of Parallelism
+
+`rgeomorphon` offers two distinct layers of parallelism to accelerate
+calculations. This parallelism allows `rgeomorphon` to perform optimally
+across a range of hardware, from a personal laptop to a high-performance
+computing (HPC) cluster.
+
+`RcppParallel` speeds up the work *inside* each tile, while packages
+from the [`futureverse`](https://www.futureverse.org/) allow you to
+distribute the processing of multiple tiles across multiple **R**
+sessions.
+
+1.  **Low-Level Parallelism (within a single chunk):** At its core,
+    `rgeomorphon` uses **`RcppParallel`** to execute the main geomorphon
+    algorithm in C++. This provides efficient, multi-threaded
+    computation on a single data chunk. When you run
+    [`geomorphons()`](http://humus.rocks/rgeomorphon/reference/geomorphons.md)
+    on a raster that fits in memory, `RcppParallel` will automatically
+    attempt to use multiple CPU cores to speed up the calculation. This
+    is a form of shared-memory parallelism that works “out of the box.”
+
+2.  **High-Level Parallelism (across multiple chunks):** For rasters
+    that are too large to fit in memory, `rgeomorphon` divides the data
+    into smaller, independent tiles. You can control how these
+    independent tiles are processed by providing a parallel
+    `lapply`-like function to the `LAPPLY.FUN` argument. A great option
+    for this is `future.apply::future.lapply()`. There are two key steps
+    to setting up your **R** session:
+
+3.  **Set a
+    [`future`](https://future.futureverse.org/reference/plan.html)
+    plan:** This tells **R** *how* to distribute the tiles. For example,
+    `plan(multisession)` tells `future` to use separate **R** sessions
+    on your local machine.
+
+4.  **Provide a parallel `lapply` function:** You need to pass a
+    parallel-aware loop function to
+    [`geomorphons()`](http://humus.rocks/rgeomorphon/reference/geomorphons.md)
+    via the `LAPPLY.FUN` argument.
+
+### Scaling Up: From a Laptop to a Cluster
+
+The only piece of code you need to change to switch between different
+parallel strategies is the
+[`future::plan()`](https://future.futureverse.org/reference/plan.html).
+This single command configures the entire backend. Let’s look at a few
+common scenarios.
+
+#### Scenario 1: Sequential Processing (No Parallelism)
+
+To disable all high-level parallelism and process tiles one-by-one in
+your main **R** session, you use `plan(sequential)`. This is great for
+debugging or for situations where the overhead of parallelism isn’t
+worth it.
+
+``` r
+library(future)
+
+# Process everything in the current R session, one tile after another.
+plan(sequential)
+```
+
+#### Scenario 2: Local Multicore Processing
+
+Local processing using multiple **R** sessions is the most common
+scenario for users with a modern multi-core laptop or workstation.
+`plan(multisession)` starts several new, independent **R** sessions in
+the background on your local machine. Each session will work on a
+different tile of the raster.
+
+``` r
+# Use 4 background R sessions on this computer
+future::plan(multisession, workers = 4)
+```
+
+On this backend, the low-level `RcppParallel` engine within each worker
+will still try to use multiple threads, so they will be competing for
+the same CPU cores. Even so, this is a simple and effective way to
+parallelize on a single machine.
+
+#### Scenario 3: Distributed Cluster Processing
+
+If you have access to a High-Performance Computing (HPC) cluster or
+several machines on a network, you can use the `cluster` backend. The
+`future` framework will handle the logistics of sending individual tiles
+to different machines for processing.
+
+``` r
+# Distribute work to two specific machines on the local network
+future::plan(cluster, workers = c("machine1.local", "machine2.local"))
+```
+
+In this setup, `rgeomorphon` will send a tile to `machine1.local`. Once
+it arrives, the `RcppParallel` engine on `machine1.local` will take over
+and use all of its local cores to process that tile as fast as possible.
+This allows you to scale your processing power far beyond the limits of
+a single computer.
+
+### The `geomorphons()` Call Stays the Same
+
+Regardless of which of the backends you configure with
+[`future::plan()`](https://future.futureverse.org/reference/plan.html),
+your call to
+[`geomorphons()`](http://humus.rocks/rgeomorphon/reference/geomorphons.md)
+remains identical.
+
+``` r
+g_forms <- geomorphons(
+    my_large_dem,
+    search = 50,
+    LAPPLY.FUN = function(X, FUN, ...) {
+        future.apply::future_lapply(X, FUN, future.seed = TRUE, ...)
+    }
+)
+
+# Remember to always return to a sequential plan to shut down workers
+plan(sequential)
+```
+
+To learn more about the different `future` backends and their
+configuration options (including for job schedulers like Slurm or
+TORQUE), we highly recommend exploring the documentation and vignettes
+on the official **[`future` package
+website](https://future.futureverse.org/)**.
+
+## Demo with `salton`
+
+Let’s demonstrate this with the `salton` dataset included with
+`rgeomorphon`. This dataset is small and would not normally trigger
+tiled processing.
+
+``` r
+library(rgeomorphon)
+library(terra)
+```
+
+    ## terra 1.8.93
+
+``` r
+library(future)
+library(future.apply)
+
+# Load the salton dataset and prepare it as a SpatRaster
+data("salton", package = "rgeomorphon")
+dem <- terra::rast(salton)
+names(dem) <- "Elevation"
+crs(dem) <- attr(salton, "crs")
+ext(dem) <- attr(salton, "extent")
+
+# By default, this small raster is processed in a single chunk
+geomorphon_chunks_needed(dem)
+```
+
+    ## [1] 1
+
+To force tiled processing we can manipulate the environment variables
+that `rgeomorphon` uses to estimate memory needs. We will set
+`R_RGEOMORPHON_MEM_SCALE_NEED` to tell the function how much memory the
+processing of the input raster will need. This scaling factor is the
+number of equivalent “copies” of the input data you need to process it.
+
+``` r
+# Scale up the memory needed (equivalent to number of input raster copies)
+Sys.setenv(R_RGEOMORPHON_MEM_SCALE_NEED = 1e7)
+
+# which will cause the chunking algorithm to divide the raster
+geomorphon_chunks_needed(dem)
+```
+
+    ## [1] 17
+
+``` r
+# Unset the environment variable
+Sys.unsetenv("R_RGEOMORPHON_MEM_SCALE_NEED")
+```
+
+We can also pass the `nchunk` argument directly to
+[`geomorphons()`](http://humus.rocks/rgeomorphon/reference/geomorphons.md)
+to bypass the memory-based heuristics.
+
+Now that
+[`geomorphons()`](http://humus.rocks/rgeomorphon/reference/geomorphons.md)
+will use a tiled approach, we can set up our parallel plan and execute
+the calculation.
+
+``` r
+# Set up a multisession future plan with 2 workers
+# This creates 2 background R sessions to do the work
+future::plan(multisession, workers = 2)
+```
+
+Use the LAPPLY.FUN argument to pass
+[`future.apply::future_lapply`](https://future.apply.futureverse.org/reference/future_lapply.html).
+This tells
+[`geomorphons()`](http://humus.rocks/rgeomorphon/reference/geomorphons.md)
+to use the future backend for processing tiles
+
+``` r
+system.time({
+    g_parallel <- geomorphons(
+        dem,
+        search = 10,
+        flat = 0.1,
+        LAPPLY.FUN = function(X, FUN, ...) {
+            future.apply::future_lapply(X, FUN, future.seed = TRUE, ...)
+        },
+        nchunk = 2
+    )
+})
+```
+
+    ##    user  system elapsed 
+    ##   1.376   0.217   7.932
+
+``` r
+# Shut down the parallel workers
+future::plan(sequential)
+```
+
+``` r
+# Inspect
+terra::plot(g_parallel, main = "Geomorphons via Tiled Processing")
+```
+
+![](geomorphons-tiled_files/figure-html/unnamed-chunk-6-1.png)
+
+### Important Notes
+
+- **Overhead:** For small datasets like `salton`, the overhead of
+  setting up parallel sessions and tiling the data will make the process
+  *slower* than a simple sequential calculation. The benefits of
+  parallel processing become apparent with larger rasters.
+- **`future.seed = TRUE`:** Using `future.seed = TRUE` is highly
+  recommended to ensure that any random number generation is handled
+  properly across the parallel sessions, making your results
+  reproducible.
+- **Backend Flexibility:** The `future` package allows for many
+  different parallel backends. The
+  [`geomorphons()`](http://humus.rocks/rgeomorphon/reference/geomorphons.md)
+  code remains exactly the same.
+
+## Beyond Parallelism: The Flexibility of `LAPPLY.FUN`
+
+While
+[`future.apply::future_lapply`](https://future.apply.futureverse.org/reference/future_lapply.html)
+is the recommended way to achieve scalable, high-level parallelism, the
+`LAPPLY.FUN` argument is intentionally designed as a generic interface.
+It is not locked into the `futureverse` ecosystem. You can provide *any*
+**R** function that behaves like
+[`base::lapply()`](https://rdrr.io/r/base/lapply.html), giving you
+control over how tiles are processed.
+
+This hook makes the tile-processing loop customizable, allowing for
+logging, error handling, or integration with virtually any sequential or
+parallel looping mechanism in **R**.
+
+For example:
+
+1.  **Using Alternative Parallel Backends:** If you prefer a different
+    parallel framework, such as the one provided by the base `parallel`
+    package, you can easily integrate it.
+
+    ``` r
+    # Example using the base R parallel package
+    library(parallel)
+    cl <- makeCluster(2)
+
+    g_forms_par <- geomorphons(
+        dem,
+        search = 10,
+        flat = 0.1,
+        LAPPLY.FUN = function(X, FUN, ...) {
+            parLapply(cl, X, FUN, ...)
+        }
+    )
+
+    stopCluster(cl)
+    ```
+
+2.  **Injecting Progress Reporting and Logging:** For very large
+    datasets, processing can take a long time. You can use `LAPPLY.FUN`
+    to create a wrapper function that provides real-time feedback or
+    writes to a log file as each tile is completed. This doesn’t require
+    any parallel backend; it simply modifies the loop’s behavior.
+
+    In the example below, we create a custom function that prints a
+    message before and after processing each tile. Tiles are processed
+    sequentially with
+    [`base::lapply()`](https://rdrr.io/r/base/lapply.html)
+
+    ``` r
+    # Define a custom lapply-like function that adds reporting
+    reporting_lapply <- function(X, FUN, ...) {
+
+        reporting_FUN <- function(i) {
+            message(paste0("Starting tile #", i, " at ", Sys.time()))
+            result <- FUN(i, ...)
+            message(paste0("Finished tile #", i, " at ", Sys.time()))
+            return(result)
+        }
+
+        lapply(X, reporting_FUN)
+    }
+
+    g_forms_reported <- geomorphons(
+        dem,
+        search = 10,
+        flat = 0.1,
+        LAPPLY.FUN = reporting_lapply
+    )
+    ```
+
+    This prints a start and end message to the console for every tile
+    processed, giving you a live view of the progress.

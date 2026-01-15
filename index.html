@@ -22,7 +22,7 @@
 
     <a class="navbar-brand me-2" href="index.html">rgeomorphon</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -55,14 +55,10 @@
   <main id="main" class="col-md-9"><div class="section level1">
 <div class="page-header"><h1 id="rgeomorphon">rgeomorphon<a class="anchor" aria-label="anchor" href="#rgeomorphon"></a>
 </h1></div>
-<!--
-[![CRAN version](https://www.r-pkg.org/badges/version/rgeomorphon)](https://CRAN.R-project.org/package=rgeomorphon)
-[![CRAN status](https://badges.cranchecks.info/worst/rgeomorphon.svg)](https://cran.r-project.org/web/checks/check_results_rgeomorphon.html)
--->
 <!-- badges: start -->
 
-<p>A lightweight implementation of the geomorphon terrain form classification algorithm of Jasiewicz and Stepinski (2013) <a href="doi:10.1016/j.geomorph.2012.11.005" class="uri">doi:10.1016/j.geomorph.2012.11.005</a> based largely on the ‘GRASS GIS’ ‘r.geomorphon’ module.</p>
-<p>This implementation employs a novel algorithm written in C++ and ‘RcppParallel’.</p>
+<p>A lightweight implementation of the geomorphon terrain form classification algorithm of <a href="https://doi.org/10.1016/j.geomorph.2012.11.005" class="external-link">Jasiewicz and Stepinski (2013)</a> based largely on the GRASS GIS <a href="https://grass.osgeo.org/grass-stable/manuals/r.geomorphon.html" class="external-link">r.geomorphon</a> module.</p>
+<p>This implementation employs a novel algorithm written in C++ and {RcppParallel}.</p>
 <p>For the sake of simplicity, some GRASS-specific implementation details have not been added. See <code><a href="reference/geomorphons.html">?geomorphons</a></code> for details.</p>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
@@ -82,7 +78,7 @@
 <p><code>volcano</code> is a 10m by 10m grid of elevation values from Maunga Whau in the Auckland volcanic field of New Zealand.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://rspatial.org/" class="external-link">terra</a></span><span class="op">)</span></span>
-<span><span class="co">#&gt; terra 1.8.56</span></span>
+<span><span class="co">#&gt; terra 1.8.86</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/brownag/rgeomorphon/" class="external-link">rgeomorphon</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># PARAMETERS</span></span>
@@ -109,7 +105,7 @@
 <span>    <span class="op">)</span></span>
 <span><span class="op">}</span><span class="op">)</span></span>
 <span><span class="co">#&gt;    user  system elapsed </span></span>
-<span><span class="co">#&gt;   0.058   0.005   0.050</span></span>
+<span><span class="co">#&gt;   0.066   0.004   0.057</span></span>
 <span></span>
 <span><span class="co"># inspect result</span></span>
 <span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">dem</span>, <span class="va">rg</span><span class="op">)</span>, </span>
@@ -152,7 +148,7 @@
 <span>    <span class="op">)</span></span>
 <span><span class="op">}</span><span class="op">)</span></span>
 <span><span class="co">#&gt;    user  system elapsed </span></span>
-<span><span class="co">#&gt;   0.097   0.002   0.079</span></span>
+<span><span class="co">#&gt;   0.105   0.001   0.088</span></span>
 <span></span>
 <span><span class="co"># inspect result</span></span>
 <span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">dem</span>, <span class="va">rg</span><span class="op">)</span>, </span>
@@ -224,6 +220,8 @@
 <div class="dev-status">
 <h2 data-toc-skip>Dev status</h2>
 <ul class="list-unstyled">
+<li><a href="https://CRAN.R-project.org/package=rgeomorphon" class="external-link"><img src="https://www.r-pkg.org/badges/version/rgeomorphon" alt="CRAN version"></a></li>
+<li><a href="https://cran.r-project.org/web/checks/check_results_rgeomorphon.html" class="external-link"><img src="https://badges.cranchecks.info/worst/rgeomorphon.svg" alt="CRAN status"></a></li>
 <li><a href="https://brownag.r-universe.dev/" class="external-link"><img src="https://brownag.r-universe.dev/badges/rgeomorphon" alt="Development Version"></a></li>
 <li><a href="https://github.com/brownag/rgeomorphon/actions" class="external-link"><img src="https://github.com/brownag/rgeomorphon/actions/workflows/R-CMD-check.yaml/badge.svg" alt="R-CMD-check Build Status"></a></li>
 <li><a href="https://humus.rocks/rgeomorphon/" class="external-link"><img src="https://img.shields.io/badge/docs-HTML-informational" alt="rgeomorphon Manual"></a></li>
@@ -239,7 +237,7 @@
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
 </div>
 
     </footer>
