@@ -19,10 +19,10 @@ California Division of Fish and Wildlife. 2007. Bathymetric Contours
 salton
 }
 \description{
-Matrix derived from one foot contours of the Salton Sea floor. This data was
+Matrix derived from one foot contours of the Salton Sea floor. These data were
 created with the vertical datum NGVD29 and NAD83 California Teale Albers
-(EPSG:3110) projection. Each value in the matrix represents the elevation, in
-meters, of a 300 m x 300 m cell. Cell values are interpolated using a thin
+(\code{EPSG:3110}) projection. Each value in the matrix represents the elevation, in
+feet, of a 300 m x 300 m cell. Cell values are interpolated using a thin
 plate spline fit to an exhaustive sample of contour line vertices.
 }
 \examples{

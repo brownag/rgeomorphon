@@ -55,7 +55,7 @@ the Auckland volcanic field of New Zealand.
 
 ``` r
 library(terra)
-#> terra 1.8.86
+#> terra 1.9.11
 library(rgeomorphon)
 
 # PARAMETERS
@@ -63,13 +63,13 @@ SEARCH = 7       # outer search radius (cells)
 SKIP = 0         # inner skip radius (cells)
 FLAT = 1         # flat angle threshold (degrees)
 
-# classic volcano elevation data
+## classic volcano elevation data
 data("volcano", package = "datasets")
 
 # construct and georeference a SpatRaster object
-dem <- terra::rast(volcano)
-terra::crs(dem) <- terra::crs("EPSG:2193")
-terra::ext(dem) <- c(1756968, 1757578, 5917000, 5917870)
+dem <- terra::flip(terra::rast(volcano))
+terra::crs(dem) <- terra::crs("EPSG:27200")
+terra::ext(dem) <- c(2667400, 2668010, 6478700, 6479570)
 names(dem) <- "Elevation (meters)"
 
 # calculate geomorphons "forms"
@@ -82,7 +82,7 @@ system.time({
     )
 })
 #>    user  system elapsed 
-#>   0.066   0.004   0.057
+#>   0.069   0.002   0.055
 
 # inspect result
 plot(c(dem, rg), 
@@ -91,7 +91,7 @@ plot(c(dem, rg),
                 bg = "white"))
 ```
 
-<img src="man/figures/README-volcano-1.png" width="100%" />
+<img src="man/figures/README-volcano-1.png" alt="" width="100%" />
 
 ## Salton Sea Example
 
@@ -129,7 +129,7 @@ system.time({
     )
 })
 #>    user  system elapsed 
-#>   0.105   0.001   0.088
+#>   0.122   0.002   0.094
 
 # inspect result
 plot(c(dem, rg), 
@@ -139,7 +139,7 @@ plot(c(dem, rg),
                 cex = 0.85))
 ```
 
-<img src="man/figures/README-salton-1.png" width="100%" />
+<img src="man/figures/README-salton-1.png" alt="" width="100%" />
 
 # Citation
 
@@ -148,7 +148,7 @@ citation("rgeomorphon")
 #> To cite package 'rgeomorphon' in publications use:
 #> 
 #>   Brown A (2025). _rgeomorphon: A Lightweight Implementation of the
-#>   'Geomorphon' Algorithm_. R package version 0.3.0,
+#>   Geomorphon Algorithm_. R package version 0.3.0,
 #>   <https://github.com/brownag/rgeomorphon/>.
 #> 
 #>   Jasiewicz J, Stepinski T (2013). "Geomorphons - a pattern recognition
