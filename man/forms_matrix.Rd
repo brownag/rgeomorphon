@@ -52,12 +52,14 @@ DIST = 0         # flatness distance (cells)
 FLAT = 1         # flat angle threshold
 MODE = "anglev1" # comparison mode
 
-## classic volcano
+## classic volcano elevation data
 data("volcano", package = "datasets")
-dem <- terra::rast(volcano)
-terra::crs(dem) <- terra::crs("EPSG:2193")
-terra::ext(dem) <- c(1756968, 1757578, 5917000, 5917870)
-names(dem) <- "elevation"
+
+# construct and georeference a SpatRaster object
+dem <- terra::flip(terra::rast(volcano))
+terra::crs(dem) <- terra::crs("EPSG:27200")
+terra::ext(dem) <- c(2667400, 2668010, 6478700, 6479570)
+names(dem) <- "Elevation (meters)"
 
 # include original forms, positive, and negative output
 res <- geomorphons(
