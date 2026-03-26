@@ -78,7 +78,7 @@
 <p><code>volcano</code> is a 10m by 10m grid of elevation values from Maunga Whau in the Auckland volcanic field of New Zealand.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://rspatial.org/" class="external-link">terra</a></span><span class="op">)</span></span>
-<span><span class="co">#&gt; terra 1.8.86</span></span>
+<span><span class="co">#&gt; terra 1.9.11</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/brownag/rgeomorphon/" class="external-link">rgeomorphon</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># PARAMETERS</span></span>
@@ -86,13 +86,13 @@
 <span><span class="va">SKIP</span> <span class="op">=</span> <span class="fl">0</span>         <span class="co"># inner skip radius (cells)</span></span>
 <span><span class="va">FLAT</span> <span class="op">=</span> <span class="fl">1</span>         <span class="co"># flat angle threshold (degrees)</span></span>
 <span></span>
-<span><span class="co"># classic volcano elevation data</span></span>
+<span><span class="co">## classic volcano elevation data</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"volcano"</span>, package <span class="op">=</span> <span class="st">"datasets"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># construct and georeference a SpatRaster object</span></span>
-<span><span class="va">dem</span> <span class="op">&lt;-</span> <span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/rast.html" class="external-link">rast</a></span><span class="op">(</span><span class="va">volcano</span><span class="op">)</span></span>
-<span><span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/crs.html" class="external-link">crs</a></span><span class="op">(</span><span class="va">dem</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/crs.html" class="external-link">crs</a></span><span class="op">(</span><span class="st">"EPSG:2193"</span><span class="op">)</span></span>
-<span><span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/ext.html" class="external-link">ext</a></span><span class="op">(</span><span class="va">dem</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1756968</span>, <span class="fl">1757578</span>, <span class="fl">5917000</span>, <span class="fl">5917870</span><span class="op">)</span></span>
+<span><span class="va">dem</span> <span class="op">&lt;-</span> <span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/flip.html" class="external-link">flip</a></span><span class="op">(</span><span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/rast.html" class="external-link">rast</a></span><span class="op">(</span><span class="va">volcano</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/crs.html" class="external-link">crs</a></span><span class="op">(</span><span class="va">dem</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/crs.html" class="external-link">crs</a></span><span class="op">(</span><span class="st">"EPSG:27200"</span><span class="op">)</span></span>
+<span><span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/ext.html" class="external-link">ext</a></span><span class="op">(</span><span class="va">dem</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2667400</span>, <span class="fl">2668010</span>, <span class="fl">6478700</span>, <span class="fl">6479570</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rspatial.github.io/terra/reference/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">dem</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="st">"Elevation (meters)"</span></span>
 <span></span>
 <span><span class="co"># calculate geomorphons "forms"</span></span>
@@ -105,14 +105,14 @@
 <span>    <span class="op">)</span></span>
 <span><span class="op">}</span><span class="op">)</span></span>
 <span><span class="co">#&gt;    user  system elapsed </span></span>
-<span><span class="co">#&gt;   0.066   0.004   0.057</span></span>
+<span><span class="co">#&gt;   0.069   0.002   0.055</span></span>
 <span></span>
 <span><span class="co"># inspect result</span></span>
 <span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">dem</span>, <span class="va">rg</span><span class="op">)</span>, </span>
 <span>     plg <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>x <span class="op">=</span> <span class="st">"bottomleft"</span>, </span>
 <span>                bty <span class="op">=</span> <span class="st">"o"</span>, </span>
 <span>                bg <span class="op">=</span> <span class="st">"white"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<p><img src="reference/figures/README-volcano-1.png" width="100%"></p>
+<p><img src="reference/figures/README-volcano-1.png" alt="" width="100%"></p>
 </div>
 <div class="section level2">
 <h2 id="salton-sea-example">Salton Sea Example<a class="anchor" aria-label="anchor" href="#salton-sea-example"></a>
@@ -148,7 +148,7 @@
 <span>    <span class="op">)</span></span>
 <span><span class="op">}</span><span class="op">)</span></span>
 <span><span class="co">#&gt;    user  system elapsed </span></span>
-<span><span class="co">#&gt;   0.105   0.001   0.088</span></span>
+<span><span class="co">#&gt;   0.122   0.002   0.094</span></span>
 <span></span>
 <span><span class="co"># inspect result</span></span>
 <span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">dem</span>, <span class="va">rg</span><span class="op">)</span>, </span>
@@ -156,7 +156,7 @@
 <span>                bty <span class="op">=</span> <span class="st">"o"</span>, </span>
 <span>                bg <span class="op">=</span> <span class="st">"white"</span>,</span>
 <span>                cex <span class="op">=</span> <span class="fl">0.85</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<p><img src="reference/figures/README-salton-1.png" width="100%"></p>
+<p><img src="reference/figures/README-salton-1.png" alt="" width="100%"></p>
 </div>
 </div>
 <div class="section level1">
@@ -167,7 +167,7 @@
 <span><span class="co">#&gt; To cite package 'rgeomorphon' in publications use:</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;   Brown A (2025). _rgeomorphon: A Lightweight Implementation of the</span></span>
-<span><span class="co">#&gt;   'Geomorphon' Algorithm_. R package version 0.3.0,</span></span>
+<span><span class="co">#&gt;   Geomorphon Algorithm_. R package version 0.3.0,</span></span>
 <span><span class="co">#&gt;   &lt;https://github.com/brownag/rgeomorphon/&gt;.</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;   Jasiewicz J, Stepinski T (2013). "Geomorphons - a pattern recognition</span></span>

@@ -166,7 +166,7 @@ library(rgeomorphon)
 library(terra)
 ```
 
-    ## terra 1.8.93
+    ## terra 1.9.1
 
 ``` r
 library(future)
@@ -242,7 +242,7 @@ system.time({
 ```
 
     ##    user  system elapsed 
-    ##   1.376   0.217   7.932
+    ##   1.297   0.179   7.481
 
 ``` r
 # Shut down the parallel workers
