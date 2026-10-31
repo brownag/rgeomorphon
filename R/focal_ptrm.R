@@ -224,12 +224,13 @@ geomorphon_ptrm_focal <- function(
     # Fast path: use C++ implementation
     mat <- terra::as.matrix(remapped, wide = TRUE)
 
-    ptrm_result <- .geomorphon_ptrm_focal_cpp_wrapper(
-      mat,
-      radius,
-      model$coefficients,
-      model$intercept,
-      model$normalizer
+    ptrm_result <- geomorphon_ptrm_focal_cpp(
+      geomorphon_class = mat,
+      radius = as.integer(radius),
+      coefficients = model$coefficients,
+      intercept = model$intercept,
+      normalizer = model$normalizer,
+      na_value = NA_real_
     )
 
     result <- .new_ptrm_raster(geo_class)
@@ -300,22 +301,6 @@ geomorphon_ptrm_focal <- function(
   }
 
   names(result) <- "ptrm"
-  return(result)
-}
-
-#' @noRd
-.geomorphon_ptrm_focal_cpp_wrapper <- function(geo_matrix, radius, coefficients,
-                                               intercept, normalizer) {
-  # Wrapper to call C++ implementation with proper parameter setup
-  result <- geomorphon_ptrm_focal_cpp(
-    geomorphon_class = geo_matrix,
-    radius = as.integer(radius),
-    coefficients = coefficients,
-    intercept = intercept,
-    normalizer = normalizer,
-    na_value = NA_real_
-  )
-
   return(result)
 }
 

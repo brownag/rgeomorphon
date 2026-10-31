@@ -1,8 +1,7 @@
 // Focal edge detection using RcppParallel for high performance
-// [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::depends(RcppParallel)]]
 
-#include <RcppArmadillo.h>
+#include <Rcpp.h>
 #include <RcppParallel.h>
 
 // Worker class for parallel edge detection

@@ -1,8 +1,7 @@
 // Focal PTRM - Moving window PTRM calculation using RcppParallel
-// [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::depends(RcppParallel)]]
 
-#include <RcppArmadillo.h>
+#include <Rcpp.h>
 #include <RcppParallel.h>
 #include <vector>
 #include <cmath>
