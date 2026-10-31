@@ -253,7 +253,7 @@ system.time({
 ```
 
     ##    user  system elapsed 
-    ##   0.656   0.078   4.621
+    ##   1.148   0.115   7.990
 
 ``` r
 

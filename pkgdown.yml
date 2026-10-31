@@ -3,7 +3,7 @@ pkgdown: 2.2.1
 pkgdown_sha: ~
 articles:
   geomorphons-tiled: geomorphons-tiled.html
-last_built: 2026-10-31T22:09Z
+last_built: 2026-10-31T22:22Z
 urls:
   reference: http://humus.rocks/rgeomorphon/reference
   article: http://humus.rocks/rgeomorphon/articles
