@@ -1,3 +1,19 @@
+# rgeomorphon 0.4.0
+
+ - Added `geomorphon_ptrm()` for calculating the Perceived Terrain Realism Metric (PTRM) from a DEM or an existing geomorphon classification
+
+ - Added `geomorphon_ptrm_focal()` for spatially varying PTRM calculated over a circular moving window
+
+ - Added `geomorphon_concordance()` for measuring structural agreement between geomorphon and categorical maps
+
+ - Support for `forms4`, `forms5`, and `forms6` form systems in the PTRM functions
+
+ - Tunable `intercept` and `normalizer` PTRM model parameters
+
+ - Corrected focal PTRM window geometry, border handling, and radius interpretation
+
+ - Corrected concordance distance units and boundary metrics; removed the stale `...` argument
+
 # rgeomorphon 0.3.2
 
  - Added `geomorphon_ptrm()` function to calculate Perceived Terrain Realism Metric (Rajasekaran et al. 2022)

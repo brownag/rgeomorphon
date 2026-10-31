@@ -13,6 +13,8 @@ geomorphon_ptrm(
   dist = 0,
   forms = "forms10",
   coefficients = NULL,
+  intercept = -38.02,
+  normalizer = 69.96,
   ...
 )
 }
@@ -25,7 +27,9 @@ are calculated from the input DEM. When \code{"class"}, the input is assumed to
 be a pre-computed geomorphon classification. Default: \code{"dem"}.}
 
 \item{search}{Numeric. Search radius for geomorphon calculation (only used
-when \code{mode = "dem"}). Units depend on the CRS of the input. Default: \code{3}.}
+when \code{mode = "dem"}). Units depend on the CRS of the input. Default: \code{3}.
+This is a convenience default, not a value calibrated against the PTRM
+paper, so it should not be read as a validated choice.}
 
 \item{skip}{Numeric. Skip radius for geomorphon calculation (only used when
 \code{mode = "dem"}). Default: \code{0}.}
@@ -41,19 +45,26 @@ Default: \code{0}.}
 
 \item{coefficients}{Named numeric vector. Custom PTRM coefficients for each
 geomorphon class. If \code{NULL}, uses default values from Rajasekaran et al.
-(2022). Names should match geomorphon form names. Default: \code{NULL}.}
+(2022). Names should match geomorphon form names. A ten-form vector is
+reduced to the requested \code{forms} system. Default: \code{NULL}.}
+
+\item{intercept}{Numeric. PTRM intercept. Default: \code{-38.02}.}
+
+\item{normalizer}{Numeric. PTRM divisor. Must be finite and non-zero.
+Default: \code{69.96}.}
 
 \item{...}{Additional arguments passed to \code{\link[=geomorphons]{geomorphons()}} when
-\code{mode = "dem"}.}
+\code{mode = "dem"}. Ignored when \code{mode = "class"}.}
 }
 \value{
 A list containing:
 \describe{
-\item{\code{ptrm_score}}{Numeric. PTRM value on a scale from 0 to 1. Higher
-values indicate more realistic terrain.}
+\item{\code{ptrm_score}}{Numeric. PTRM value obtained by dividing the raw
+score by the normalizer. Scores are raw and may fall outside
+\verb{[0, 1]}; higher values indicate more realistic terrain.}
 \item{\code{raw_score}}{Numeric. Unnormalized score before division.}
-\item{\code{proportions}}{Named numeric vector. Proportion of each geomorphon
-form in the input.}
+\item{\code{proportions}}{Named numeric vector. Proportion of each observed
+geomorphon form in the input, named with the canonical system labels.}
 \item{\code{n_cells}}{Integer. Total number of valid (non-NA) cells analyzed.}
 }
 }
@@ -77,10 +88,13 @@ The PTRM is calculated using the formula:
 
 \deqn{PTRM = \frac{c_0 + \sum_{i=1}^{n} c_i \times p_i}{D}}
 
-where \eqn{c_0} is the intercept (-38.02), \eqn{c_i} are the coefficients
-for each geomorphon form, \eqn{p_i} are the proportions of each form in
-the terrain, and \eqn{D} is the divisor (69.96).
+where \eqn{c_0} is the intercept (-38.02 by default), \eqn{c_i} are the
+coefficients for each geomorphon form, \eqn{p_i} are the proportions of each
+form in the terrain, and \eqn{D} is the divisor (69.96 by default). The
+intercept, normalizer, and coefficients can all be overridden.
 
+The returned score is not clamped or rescaled, so it may fall outside
+\verb{[0, 1]} depending on the input distribution and the model parameters.
 Higher PTRM scores indicate more realistic terrain from a human perception
 perspective. Rajasekaran et al. (2022) found that real terrain from Arizona
 achieved a PTRM of 0.76, ranking in the 78th percentile for perceived

@@ -8,8 +8,7 @@ geomorphon_concordance(
   geo_rast,
   cat_rast,
   method = c("both", "nmi", "boundary"),
-  threshold_cells = 2,
-  ...
+  threshold_cells = 2
 )
 }
 \arguments{
@@ -24,10 +23,9 @@ vegetation map). Must have matching extent and resolution to \code{geo_rast}.}
 alignment only), or \code{"both"} (all metrics). Default: \code{"both"}.}
 
 \item{threshold_cells}{Integer. Buffer distance in cells for boundary
-concordance calculation. Categorical boundaries within this distance of
-geomorphon boundaries are counted as concordant. Default: \code{2}.}
-
-\item{...}{Reserved for future extensions.}
+concordance calculation, converted to map units with the cell size.
+Categorical boundary cells within this distance of the nearest
+geomorphon boundary cell are counted as concordant. Default: \code{2}.}
 }
 \value{
 A list with the following components (depending on \code{method}):
@@ -35,14 +33,14 @@ A list with the following components (depending on \code{method}):
 \item{\code{nmi}}{Numeric. Normalized Mutual Information (0-1). Higher values
 indicate stronger statistical association between classifications.
 Only included when method includes "nmi".}
-\item{\code{edge_offset}}{Numeric. Mean offset distance (in map units) from
-categorical boundaries to the nearest geomorphon boundary. Lower values
-indicate better boundary alignment. Only included when method includes
-"boundary".}
+\item{\code{edge_offset}}{Numeric. Mean distance (in map units) from each
+categorical boundary cell to the nearest geomorphon boundary cell.
+Lower values indicate better boundary alignment. Only included when
+method includes "boundary".}
 \item{\code{edge_concordance}}{Numeric. Proportion (0-1) of categorical
-boundaries within \code{threshold_cells} of geomorphon boundaries. Higher
-values indicate better alignment. Only included when method includes
-"boundary".}
+boundary cells within \code{threshold_cells} of the nearest geomorphon
+boundary cell. Higher values indicate better alignment. Only included
+when method includes "boundary".}
 \item{\code{n_cells}}{Integer. Total number of valid cells analyzed.}
 \item{\code{n_edges_geo}}{Integer. Number of geomorphon boundary cells.
 Only included when method includes "boundary".}
@@ -71,8 +69,6 @@ larger than available RAM:
 \item Increase available system memory
 \item Consider splitting the analysis into smaller regions
 }
-
-See \code{misc/MEMORY_CONSTRAINTS_ANALYSIS.md} for technical details.
 }
 \section{Information-Theoretic Concordance}{
 Normalized Mutual Information (NMI) measures the mutual dependence between
@@ -82,10 +78,11 @@ NMI of 1 indicates perfect association, while 0 indicates independence.
 
 \section{Boundary Alignment}{
 Boundary alignment measures physical proximity between geomorphon and
-categorical boundaries. The \code{edge_offset} is the median distance from
-categorical boundaries to the nearest geomorphon boundary. The
-\code{edge_concordance} is the proportion of categorical boundaries within a
-threshold distance.
+categorical boundaries. The \code{edge_offset} is the mean distance from each
+categorical boundary cell to the nearest geomorphon boundary cell, in map
+units of the input CRS. The \code{edge_concordance} is the proportion of
+categorical boundary cells within a threshold distance of the nearest
+geomorphon boundary cell.
 
 For rasters to be comparable, they must have matching extents and
 resolutions. Use \code{\link[terra:crop]{terra::crop()}}, \code{\link[terra:resample]{terra::resample()}}, or

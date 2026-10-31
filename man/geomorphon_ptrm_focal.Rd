@@ -9,6 +9,9 @@ geomorphon_ptrm_focal(
   radius = 3,
   mode = c("dem", "class"),
   coefficients = NULL,
+  forms = "forms10",
+  intercept = -38.02,
+  normalizer = 69.96,
   search = 3,
   skip = 0,
   flat_angle_deg = 1,
@@ -22,17 +25,26 @@ geomorphon_ptrm_focal(
 \item{x}{\code{SpatRaster}. Digital Elevation Model (when \code{mode = "dem"}) or
 pre-computed geomorphon classification (when \code{mode = "class"}).}
 
-\item{radius}{Numeric. Window radius in cells (not map units). Default: 3.
-Larger values compute PTRM from larger neighborhoods.}
+\item{radius}{Numeric. Integer window radius in cells (not map units).
+Default: 3. Larger values compute PTRM from larger neighborhoods.}
 
 \item{mode}{Character. Input type: \code{"dem"} to calculate geomorphons internally,
 or \code{"class"} if input is pre-computed geomorphon classification.
 Default: \code{"dem"}.}
 
-\item{coefficients}{Named numeric vector. Custom PTRM coefficients for each
-geomorphon form. If \code{NULL}, uses default values from Rajasekaran et al. (2022).
-Must have length 10 with names: flat, peak, ridge, shoulder, spur, slope,
-hollow, footslope, valley, depression. Default: \code{NULL}.}
+\item{coefficients}{Named numeric vector. Custom PTRM coefficients, either
+named for the requested form system (length k) or a named ten-form vector,
+which is reduced to the requested system. If \code{NULL}, uses the paper weights
+from Rajasekaran et al. (2022), derived for reduced form systems.
+Default: \code{NULL}.}
+
+\item{forms}{Character. Form system to use: \code{"forms10"}, \code{"forms6"},
+\code{"forms5"}, or \code{"forms4"}. Default: \code{"forms10"}.}
+
+\item{intercept}{Numeric. PTRM intercept. Default: \code{-38.02}.}
+
+\item{normalizer}{Numeric. PTRM normalizer; must be finite and non-zero.
+Default: \code{69.96}.}
 
 \item{search}{Numeric. Search radius for geomorphon calculation (only used
 when \code{mode = "dem"}). Default: 3.}
@@ -54,8 +66,8 @@ to disk instead of returned in memory. Default: \code{NULL}.}
 \item{...}{Additional arguments passed to \code{\link[=geomorphons]{geomorphons()}} when \code{mode = "dem"}.}
 }
 \value{
-A \code{SpatRaster} with focal PTRM scores. Values typically range from 0 to 1,
-but may extend beyond this range for unusual terrain. Border cells are NA.
+A \code{SpatRaster} with raw focal PTRM scores. Values are not normalized to
+\verb{[0, 1]} and may fall outside that range. Border cells are NA.
 }
 \description{
 Calculates Perceived Terrain Realism Metric (PTRM) for each pixel using
@@ -105,8 +117,8 @@ for each window (~38x speedup for typical parameters).
 
 \section{Window Type}{
 
-Uses a circular window based on Euclidean distance. For \code{radius = r},
-includes all cells where \code{sqrt(dx^2 + dy^2) <= r}.
+Uses a circular window based on Euclidean distance. For an integer
+\code{radius = r}, includes all cells where \code{sqrt(dx^2 + dy^2) <= r}.
 }
 
 \section{Border Handling}{
@@ -117,10 +129,11 @@ neighborhoods are incomplete. This prevents edge artifacts in the output.
 
 \section{Memory Requirements}{
 
-For small/medium rasters, uses fast C++ implementation requiring approximately
-2x raster size in RAM (input classification + output scores). For large rasters
-that exceed available memory, automatically falls back to \code{terra::focal()} which
-is slower but memory-efficient.
+For small/medium rasters, uses the fast C++ implementation requiring
+approximately 4 bytes per input cell plus 8 bytes per output cell (about
+12 bytes per cell) in RAM. For large rasters that exceed half of the
+available memory, automatically falls back to \code{terra::focal()}, which is
+slower but memory-efficient.
 }
 
 \examples{
