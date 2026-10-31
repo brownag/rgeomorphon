@@ -35,8 +35,9 @@ for a convenient accessor for the standard classification systems with
 ## Examples
 
 ``` r
+
 library(terra)
-#> terra 1.9.1
+#> terra 1.9.50
 library(rgeomorphon)
 
 # default values

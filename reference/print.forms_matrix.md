@@ -31,6 +31,7 @@ Invisibly returns the original object `x`.
 ## Examples
 
 ``` r
+
 print(forms_matrix_get(num_forms = 4))
 #> <forms_matrix> object
 #> 

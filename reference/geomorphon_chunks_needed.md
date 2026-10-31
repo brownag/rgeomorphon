@@ -51,6 +51,7 @@ geomorphon_chunks_needed(
 ## Examples
 
 ``` r
+
 data("salton", package = "rgeomorphon")
 
 x <- terra::rast(salton)

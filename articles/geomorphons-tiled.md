@@ -1,6 +1,7 @@
 # Parallel and Distributed Processing with 'rgeomorphon'
 
 ``` r
+
 library(rgeomorphon)
 ```
 
@@ -86,6 +87,7 @@ debugging or for situations where the overhead of parallelism isn’t
 worth it.
 
 ``` r
+
 library(future)
 
 # Process everything in the current R session, one tile after another.
@@ -101,6 +103,7 @@ the background on your local machine. Each session will work on a
 different tile of the raster.
 
 ``` r
+
 # Use 4 background R sessions on this computer
 future::plan(multisession, workers = 4)
 ```
@@ -118,6 +121,7 @@ several machines on a network, you can use the `cluster` backend. The
 to different machines for processing.
 
 ``` r
+
 # Distribute work to two specific machines on the local network
 future::plan(cluster, workers = c("machine1.local", "machine2.local"))
 ```
@@ -137,6 +141,7 @@ your call to
 remains identical.
 
 ``` r
+
 g_forms <- geomorphons(
     my_large_dem,
     search = 50,
@@ -162,13 +167,15 @@ Let’s demonstrate this with the `salton` dataset included with
 tiled processing.
 
 ``` r
+
 library(rgeomorphon)
 library(terra)
 ```
 
-    ## terra 1.9.1
+    ## terra 1.9.50
 
 ``` r
+
 library(future)
 library(future.apply)
 
@@ -192,6 +199,7 @@ processing of the input raster will need. This scaling factor is the
 number of equivalent “copies” of the input data you need to process it.
 
 ``` r
+
 # Scale up the memory needed (equivalent to number of input raster copies)
 Sys.setenv(R_RGEOMORPHON_MEM_SCALE_NEED = 1e7)
 
@@ -202,6 +210,7 @@ geomorphon_chunks_needed(dem)
     ## [1] 17
 
 ``` r
+
 # Unset the environment variable
 Sys.unsetenv("R_RGEOMORPHON_MEM_SCALE_NEED")
 ```
@@ -216,6 +225,7 @@ will use a tiled approach, we can set up our parallel plan and execute
 the calculation.
 
 ``` r
+
 # Set up a multisession future plan with 2 workers
 # This creates 2 background R sessions to do the work
 future::plan(multisession, workers = 2)
@@ -228,6 +238,7 @@ This tells
 to use the future backend for processing tiles
 
 ``` r
+
 system.time({
     g_parallel <- geomorphons(
         dem,
@@ -242,14 +253,16 @@ system.time({
 ```
 
     ##    user  system elapsed 
-    ##   1.297   0.179   7.481
+    ##   0.656   0.078   4.621
 
 ``` r
+
 # Shut down the parallel workers
 future::plan(sequential)
 ```
 
 ``` r
+
 # Inspect
 terra::plot(g_parallel, main = "Geomorphons via Tiled Processing")
 ```
@@ -293,6 +306,7 @@ For example:
     package, you can easily integrate it.
 
     ``` r
+
     # Example using the base R parallel package
     library(parallel)
     cl <- makeCluster(2)
@@ -321,6 +335,7 @@ For example:
     [`base::lapply()`](https://rdrr.io/r/base/lapply.html)
 
     ``` r
+
     # Define a custom lapply-like function that adds reporting
     reporting_lapply <- function(X, FUN, ...) {
 

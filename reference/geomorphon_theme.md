@@ -40,6 +40,7 @@ the geomorphon form names.
 ## Examples
 
 ``` r
+
 geomorphon_theme(1:10)
 #>  [1] "Flat"      "Peak"      "Ridge"     "Shoulder"  "Spur"      "Slope"    
 #>  [7] "Hollow"    "Footslope" "Valley"    "Pit"      

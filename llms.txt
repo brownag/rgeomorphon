@@ -20,12 +20,14 @@ for details.
 You can install {rgeomorphon} from CRAN:
 
 ``` r
+
 install.packages("rgeomorphon")
 ```
 
 And you can install the development version from GitHub:
 
 ``` r
+
 # install.packages("remotes")
 remotes::install_github("brownag/rgeomorphon")
 ```
@@ -39,6 +41,7 @@ This is a basic example using the classic R `volcano` dataset and
 the Auckland volcanic field of New Zealand.
 
 ``` r
+
 library(terra)
 #> terra 1.9.11
 library(rgeomorphon)
@@ -88,6 +91,7 @@ See
 for details.
 
 ``` r
+
 library(terra)
 library(rgeomorphon)
 
@@ -131,6 +135,7 @@ plot(c(dem, rg),
 # Citation
 
 ``` r
+
 citation("rgeomorphon")
 #> To cite package 'rgeomorphon' in publications use:
 #> 

@@ -29,6 +29,7 @@ foot) - Salton Sea (ds426). Available online:
 ## Examples
 
 ``` r
+
 str(salton)
 #>  num [1:161, 1:165] NaN NaN NaN NaN NaN NaN NaN NaN NaN NaN ...
 #>  - attr(*, "crs")= chr "PROJCRS[\"NAD83 / California Albers\",\n    BASEGEOGCRS[\"NAD83\",\n        DATUM[\"North American Datum 1983\""| __truncated__
@@ -42,13 +43,13 @@ terra::ext(dem) <- attr(salton, "extent")
 names(dem) <- "Elevation (feet)"
 
 dem
-#> class       : SpatRaster 
+#> class       : SpatRaster
 #> size        : 161, 165, 1  (nrow, ncol, nlyr)
 #> resolution  : 300, 300  (x, y)
 #> extent      : 363300, 412800, -538100, -489800  (xmin, xmax, ymin, ymax)
-#> coord. ref. : NAD83 / California Albers (EPSG:3310) 
+#> coord. ref. : NAD83 / California Albers (EPSG:3310)
 #> source(s)   : memory
-#> name        : Elevation (feet) 
-#> min value   :        -278.1904 
-#> max value   :        -216.2552 
+#> name        : Elevation (feet)
+#> min value   :      -278.190357
+#> max value   :      -216.255212
 ```
