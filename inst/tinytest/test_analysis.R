@@ -264,6 +264,28 @@ if (requireNamespace("terra", quietly = TRUE)) {
   expect_true(conc_thresh3$edge_concordance >= conc_thresh1$edge_concordance,
               info = "Larger threshold should have >= concordance")
 
+  # Threshold must be a finite, non-negative whole number for boundary methods.
+  for (boundary_method in c("boundary", "both")) {
+    for (invalid_threshold in list(NULL, numeric(0), c(1, 2), NA_real_, NaN,
+                                   Inf, -Inf, -1, 1.5, "2", TRUE)) {
+      expect_error(
+        geomorphon_concordance(geo, cat_map, method = boundary_method,
+                               threshold_cells = invalid_threshold),
+        pattern = "threshold_cells",
+        info = paste("Invalid threshold should error for", boundary_method)
+      )
+    }
+    for (valid_threshold in list(0, 0L, 2, 2L)) {
+      expect_true(is.list(geomorphon_concordance(
+        geo, cat_map, method = boundary_method,
+        threshold_cells = valid_threshold
+      )), info = "Zero and positive whole-number doubles and integers are valid")
+    }
+  }
+  expect_true(is.list(geomorphon_concordance(
+    geo, cat_map, method = "nmi", threshold_cells = -1
+  )), info = "NMI-only method does not validate boundary threshold")
+
   # Test 18: Error handling - non-SpatRaster inputs
   expect_error(geomorphon_concordance(volcano, cat_map),
                pattern = "SpatRaster",
@@ -365,11 +387,11 @@ if (requireNamespace("terra", quietly = TRUE)) {
               info = "edge_concordance should lie in [0, 1]")
 
   # Test 28: Fallback edge detection matches the C++ path
-  edge_mat <- matrix(1, nrow = 8, ncol = 8)
-  edge_mat[2:4, 3:5] <- 2
-  edge_mat[3, 6] <- 2
-  edge_mat[5, 6] <- 3
-  edge_mat[6, 2] <- NA
+  # Rectangular dimensions expose row/column transposition mistakes.
+  edge_mat <- matrix(1, nrow = 7, ncol = 9)
+  edge_mat[3, 2] <- NA
+  edge_mat[4, 6] <- 2
+  edge_mat[5, 7] <- NA
   edge_rast <- make_concordance_raster(edge_mat)
 
   edges_cpp <- rgeomorphon:::.detect_edges(edge_rast)
@@ -381,6 +403,52 @@ if (requireNamespace("terra", quietly = TRUE)) {
     terra::values(edges_fallback, mat = FALSE),
     terra::values(edges_cpp, mat = FALSE),
     info = "Fallback and C++ edge masks should be identical"
+  )
+
+  # NA is not a class: (4,2) has an NA neighbor and only class-1 valid neighbors.
+  same_class_neighborhood <- edge_mat[3:5, 1:3]
+  expect_true(anyNA(same_class_neighborhood))
+  expect_true(all(same_class_neighborhood[!is.na(same_class_neighborhood)] ==
+                    edge_mat[4, 2]))
+  # Use [row, column], not flattened R matrix indices (terra cells are row-major).
+  edge_values <- terra::as.matrix(edges_cpp, wide = TRUE)
+  expect_equal(edge_values[4, 2], 0,
+               info = "NA alone does not make a valid cell an edge")
+  expect_equal(edge_values[4, 6], 1,
+               info = "Differing valid neighbors remain edges even next to NA")
+  expect_equal(edge_values[3, 5], 1,
+               info = "A diagonal differing neighbor counts with 8-connectivity")
+
+  # Only the class-2 cell and its eight neighbors are edges, excluding NA centers.
+  expected_edges <- matrix(0, nrow = 7, ncol = 9)
+  expected_edges[3:5, 5:7] <- 1
+  expected_edges[is.na(edge_mat)] <- NA
+  expected_edges[c(1, 7), ] <- NA
+  expected_edges[, c(1, 9)] <- NA
+  expect_equal(edge_values, expected_edges,
+               info = "Complete edge mask includes NA centers and all four borders")
+  expect_equal(terra::as.matrix(edges_fallback, wide = TRUE), expected_edges,
+               info = "Fallback also matches the independently specified mask")
+
+  # Geographic CRS warning is limited to methods that request boundary metrics.
+  geo_ll <- make_concordance_raster(geo_a)
+  terra::crs(geo_ll) <- "EPSG:4326"
+  cat_ll <- geo_ll
+  terra::values(cat_ll) <- as.vector(t(cat_a))
+  expect_warning(
+    geomorphon_concordance(geo_ll, cat_ll, method = "boundary"),
+    pattern = "Geographic CRS"
+  )
+  expect_warning(
+    geomorphon_concordance(geo_ll, cat_ll, method = "both"),
+    pattern = "Geographic CRS"
+  )
+  expect_silent(
+    geomorphon_concordance(geo_ll, cat_ll, method = "nmi")
+  )
+  expect_silent(
+    geomorphon_concordance(make_concordance_raster(geo_a),
+                           make_concordance_raster(cat_a), method = "both")
   )
 
   # ===========================================================================

@@ -25,7 +25,10 @@ alignment only), or \code{"both"} (all metrics). Default: \code{"both"}.}
 \item{threshold_cells}{Integer. Buffer distance in cells for boundary
 concordance calculation, converted to map units with the cell size.
 Categorical boundary cells within this distance of the nearest
-geomorphon boundary cell are counted as concordant. Default: \code{2}.}
+geomorphon boundary cell are counted as concordant. Must be a finite,
+non-negative whole number when \code{method} includes boundary metrics.
+Geographic (longitude/latitude) CRS data trigger a warning because
+boundary distances are calculated in CRS map units. Default: \code{2}.}
 }
 \value{
 A list with the following components (depending on \code{method}):

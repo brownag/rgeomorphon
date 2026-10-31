@@ -102,8 +102,8 @@
     )
 
     # terra::boundaries() includes border cells, so we need to set them to NA
-    # to match the behavior of focal_edge_cpp(). ignoreNA = TRUE makes cells
-    # adjacent to NA non-edges, matching the C++ neighbor comparison.
+    # to match the behavior of focal_edge_cpp(). ignoreNA = TRUE skips NA
+    # neighbors; differing valid neighbors still make a cell an edge.
     result <- terra::boundaries(x, classes = TRUE, directions = 8,
                                 ignoreNA = TRUE)
 
@@ -501,7 +501,10 @@ geomorphon_ptrm <- function(x,
 #' @param threshold_cells Integer. Buffer distance in cells for boundary
 #'   concordance calculation, converted to map units with the cell size.
 #'   Categorical boundary cells within this distance of the nearest
-#'   geomorphon boundary cell are counted as concordant. Default: `2`.
+#'   geomorphon boundary cell are counted as concordant. Must be a finite,
+#'   non-negative whole number when `method` includes boundary metrics.
+#'   Geographic (longitude/latitude) CRS data trigger a warning because
+#'   boundary distances are calculated in CRS map units. Default: `2`.
 #'
 #' @return A list with the following components (depending on `method`):
 #'   \describe{
@@ -594,6 +597,24 @@ geomorphon_concordance <- function(geo_rast,
 
   # Validate method parameter
   method <- match.arg(method)
+
+  # Validate threshold only when boundary distances are requested.
+  if (method %in% c("boundary", "both")) {
+    if (!is.numeric(threshold_cells) || length(threshold_cells) != 1L ||
+        !is.finite(threshold_cells) || threshold_cells < 0 ||
+        threshold_cells != floor(threshold_cells)) {
+      stop("'threshold_cells' must be a finite, non-negative whole number",
+           call. = FALSE)
+    }
+
+    if (terra::is.lonlat(geo_rast)) {
+      warning(
+        "Geographic CRS detected; boundary distances are in CRS map units. ",
+        "Use a projected CRS for meaningful geomorphon distance calculations.",
+        call. = FALSE
+      )
+    }
+  }
 
   # Check extents match
   if (!isTRUE(all.equal(terra::ext(geo_rast), terra::ext(cat_rast)))) {
