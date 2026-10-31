@@ -1,4 +1,4 @@
 url: http://humus.rocks/rgeomorphon/
+destination: docs/site
 template:
   bootstrap: 5
-
