@@ -450,7 +450,7 @@ geomorphon_ptrm <- function(x,
   names(proportions) <- model$labels[match(observed, model$classes)]
 
   # Ensure every class in the model is represented, in class-code order
-  full_proportions <- stats::setNames(rep(0, length(model$coefficients)),
+  full_proportions <- setNames(rep(0, length(model$coefficients)),
                                model$labels)
   full_proportions[names(proportions)] <- proportions
 
