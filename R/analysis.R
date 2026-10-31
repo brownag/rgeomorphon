@@ -78,24 +78,13 @@
 }
 
 #' @noRd
-.detect_edges <- function(x) {
+.detect_edges <- function(x, force_fallback = FALSE) {
   # Memory-aware edge detection: uses fast C++ for small/medium rasters,
   # falls back to terra::boundaries() for large rasters that don't fit in RAM
 
-  # Estimate memory requirements for C++ implementation
-  # Formula: 2x raster size (input + output matrices as doubles)
-  raster_bytes <- terra::ncell(x) * 8
-  total_bytes_needed <- raster_bytes * 2
-  total_gb_needed <- total_bytes_needed / 1e9
-
-  # Get available system memory (in GB)
-  mem_info <- terra::mem_info(x, print = FALSE)
-  available_gb <- mem_info["available"]
-
-  # Use C++ if raster fits comfortably in available memory (with 50% safety margin)
-  memory_threshold_gb <- available_gb / 2
-
-  if (total_gb_needed < memory_threshold_gb) {
+  # C++ working set: input + output matrices as doubles.
+  # force_fallback exists so tests can exercise the terra path on small rasters.
+  if (!force_fallback && .focal_memory_ok(x, bytes_per_cell = 16)) {
     # Fast path: use C++ implementation
     mat <- terra::as.matrix(x, wide = TRUE)
     edge_mat <- focal_edge_cpp(mat, na_value = NA_real_)
@@ -113,8 +102,10 @@
     )
 
     # terra::boundaries() includes border cells, so we need to set them to NA
-    # to match the behavior of focal_edge_cpp()
-    result <- terra::boundaries(x, classes = TRUE, directions = 8)
+    # to match the behavior of focal_edge_cpp(). ignoreNA = TRUE makes cells
+    # adjacent to NA non-edges, matching the C++ neighbor comparison.
+    result <- terra::boundaries(x, classes = TRUE, directions = 8,
+                                ignoreNA = TRUE)
 
     # Set border cells to NA to match focal_edge_cpp behavior
     # (focal_edge_cpp excludes borders to prevent artifacts in concordance analysis)
@@ -494,10 +485,11 @@ geomorphon_ptrm <- function(x,
 #' # Boundary Alignment
 #'
 #' Boundary alignment measures physical proximity between geomorphon and
-#' categorical boundaries. The `edge_offset` is the median distance from
-#' categorical boundaries to the nearest geomorphon boundary. The
-#' `edge_concordance` is the proportion of categorical boundaries within a
-#' threshold distance.
+#' categorical boundaries. The `edge_offset` is the mean distance from each
+#' categorical boundary cell to the nearest geomorphon boundary cell, in map
+#' units of the input CRS. The `edge_concordance` is the proportion of
+#' categorical boundary cells within a threshold distance of the nearest
+#' geomorphon boundary cell.
 #'
 #' @param geo_rast `SpatRaster`. Geomorphon classification raster (typically
 #'   output from [geomorphons()]).
@@ -507,23 +499,23 @@ geomorphon_ptrm <- function(x,
 #'   `"nmi"` (Normalized Mutual Information only), `"boundary"` (boundary
 #'   alignment only), or `"both"` (all metrics). Default: `"both"`.
 #' @param threshold_cells Integer. Buffer distance in cells for boundary
-#'   concordance calculation. Categorical boundaries within this distance of
-#'   geomorphon boundaries are counted as concordant. Default: `2`.
-#' @param ... Reserved for future extensions.
+#'   concordance calculation, converted to map units with the cell size.
+#'   Categorical boundary cells within this distance of the nearest
+#'   geomorphon boundary cell are counted as concordant. Default: `2`.
 #'
 #' @return A list with the following components (depending on `method`):
 #'   \describe{
 #'     \item{`nmi`}{Numeric. Normalized Mutual Information (0-1). Higher values
 #'       indicate stronger statistical association between classifications.
 #'       Only included when method includes "nmi".}
-#'     \item{`edge_offset`}{Numeric. Mean offset distance (in map units) from
-#'       categorical boundaries to the nearest geomorphon boundary. Lower values
-#'       indicate better boundary alignment. Only included when method includes
-#'       "boundary".}
+#'     \item{`edge_offset`}{Numeric. Mean distance (in map units) from each
+#'       categorical boundary cell to the nearest geomorphon boundary cell.
+#'       Lower values indicate better boundary alignment. Only included when
+#'       method includes "boundary".}
 #'     \item{`edge_concordance`}{Numeric. Proportion (0-1) of categorical
-#'       boundaries within `threshold_cells` of geomorphon boundaries. Higher
-#'       values indicate better alignment. Only included when method includes
-#'       "boundary".}
+#'       boundary cells within `threshold_cells` of the nearest geomorphon
+#'       boundary cell. Higher values indicate better alignment. Only included
+#'       when method includes "boundary".}
 #'     \item{`n_cells`}{Integer. Total number of valid cells analyzed.}
 #'     \item{`n_edges_geo`}{Integer. Number of geomorphon boundary cells.
 #'       Only included when method includes "boundary".}
@@ -556,8 +548,6 @@ geomorphon_ptrm <- function(x,
 #' - Increase available system memory
 #' - Consider splitting the analysis into smaller regions
 #'
-#' See `misc/MEMORY_CONSTRAINTS_ANALYSIS.md` for technical details.
-#'
 #' @seealso [geomorphons()], [terra::boundaries()]
 #'
 #' @export
@@ -586,8 +576,7 @@ geomorphon_ptrm <- function(x,
 geomorphon_concordance <- function(geo_rast,
                                   cat_rast,
                                   method = c("both", "nmi", "boundary"),
-                                  threshold_cells = 2,
-                                  ...) {
+                                  threshold_cells = 2) {
 
   # Validate terra package availability
   if (!requireNamespace("terra", quietly = TRUE)) {
@@ -673,32 +662,26 @@ geomorphon_concordance <- function(geo_rast,
 
     # Calculate distance metrics if there are edges
     if (n_edges_geo > 0 && n_edges_cat > 0) {
-      # Create a raster with NA where there are no cat edges, and non-NA elsewhere
-      # Then compute distance from non-NA to NA cells
-      cat_edge_dist_rast <- cat_edges
+      # Keep only geomorphon edge cells as non-NA targets, then measure the
+      # distance from every cell to the nearest geomorphon boundary.
+      geo_edge_dist_rast <- geo_edges
+      terra::values(geo_edge_dist_rast)[geo_edge_vals != 1] <- NA
 
-      # Set NA where there are NO edges, and keep values where there ARE edges
-      terra::values(cat_edge_dist_rast)[cat_edge_vals != 1] <- NA
+      geo_edge_dist <- terra::distance(geo_edge_dist_rast)
 
-      # Compute distance from NA cells to nearest non-NA cell
-      # This gives us the distance from each cell to the nearest cat edge
-      cat_edge_dist <- terra::distance(cat_edge_dist_rast)
+      # Sample those map-unit distances at categorical edge cells
+      geo_edge_dist_vals <- terra::values(geo_edge_dist, mat = FALSE)
+      cat_edge_dists <- geo_edge_dist_vals[cat_edge_vals == 1]
+      cat_edge_dists <- cat_edge_dists[!is.na(cat_edge_dists)]
 
-      # Extract distances at geomorphon edge cells
-      cat_edge_dist_vals <- terra::values(cat_edge_dist, mat = FALSE)
-      geo_edge_dists <- cat_edge_dist_vals[geo_edge_vals == 1]
-      geo_edge_dists <- geo_edge_dists[!is.na(geo_edge_dists)]
-
-      if (length(geo_edge_dists) > 0) {
-        # Convert to map units
+      if (length(cat_edge_dists) > 0) {
+        # terra::distance() already returns map units; do not rescale again
         cell_size <- terra::res(geo_rast)[1]
-        edge_dists_mapunits <- geo_edge_dists * cell_size
-
-        # Calculate metrics
-        result$edge_offset <- mean(edge_dists_mapunits, na.rm = TRUE)
         threshold_mapunits <- threshold_cells * cell_size
-        result$edge_concordance <- sum(edge_dists_mapunits <= threshold_mapunits,
-                                       na.rm = TRUE) / length(geo_edge_dists)
+
+        result$edge_offset <- mean(cat_edge_dists)
+        result$edge_concordance <- sum(cat_edge_dists <= threshold_mapunits) /
+          length(cat_edge_dists)
       } else {
         result$edge_offset <- NA_real_
         result$edge_concordance <- NA_real_

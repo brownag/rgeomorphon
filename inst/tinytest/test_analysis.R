@@ -311,11 +311,83 @@ if (requireNamespace("terra", quietly = TRUE)) {
   expect_true(conc_both$n_edges_geo >= 0, "n_edges_geo should be non-negative")
   expect_true(conc_both$n_edges_cat >= 0, "n_edges_cat should be non-negative")
 
+  # Test 25: Edge offset uses map units and is not double-scaled
+  make_concordance_raster <- function(mat, res = 1) {
+    r <- terra::rast(
+      nrows = nrow(mat), ncols = ncol(mat),
+      xmin = 0, xmax = ncol(mat) * res,
+      ymin = 0, ymax = nrow(mat) * res,
+      crs = "EPSG:3857"
+    )
+    terra::values(r) <- as.vector(t(mat))
+    r
+  }
+
+  geo_a <- matrix(1, nrow = 7, ncol = 7)
+  geo_a[, 4:7] <- 2
+  cat_a <- matrix(1, nrow = 7, ncol = 7)
+  cat_a[, 6:7] <- 2
+
+  conc_a <- geomorphon_concordance(
+    make_concordance_raster(geo_a, res = 30),
+    make_concordance_raster(cat_a, res = 30),
+    method = "boundary"
+  )
+
+  # Categorical edges are 1 and 2 cells from the nearest geomorphon edge
+  expect_equal(conc_a$edge_offset, 45, tolerance = 1e-8,
+               info = "edge_offset should be in map units, without double scaling")
+
+  # Test 26: Edge offset is a mean, not a median, on asymmetric offsets
+  geo_b <- matrix(1, nrow = 9, ncol = 9)
+  geo_b[, 5:9] <- 2
+  cat_b <- matrix(1, nrow = 9, ncol = 9)
+  cat_b[2, 6:9] <- 2
+  cat_b[3:8, 8:9] <- 2
+
+  conc_b <- geomorphon_concordance(
+    make_concordance_raster(geo_b),
+    make_concordance_raster(cat_b),
+    method = "boundary",
+    threshold_cells = 2
+  )
+
+  # Distance counts 0:2, 1:2, 2:7, 3:7; mean = 37/18, median = 2
+  expect_equal(conc_b$edge_offset, 37 / 18, tolerance = 1e-8,
+               info = "edge_offset should be the mean, not the median")
+  expect_false(isTRUE(all.equal(conc_b$edge_offset, 2)),
+               info = "Asymmetric offsets should distinguish mean from median")
+
+  # Test 27: Edge concordance matches a manually computed proportion
+  expect_equal(conc_b$edge_concordance, 11 / 18, tolerance = 1e-8,
+               info = "edge_concordance should be the proportion within threshold")
+  expect_true(conc_b$edge_concordance >= 0 && conc_b$edge_concordance <= 1,
+              info = "edge_concordance should lie in [0, 1]")
+
+  # Test 28: Fallback edge detection matches the C++ path
+  edge_mat <- matrix(1, nrow = 8, ncol = 8)
+  edge_mat[2:4, 3:5] <- 2
+  edge_mat[3, 6] <- 2
+  edge_mat[5, 6] <- 3
+  edge_mat[6, 2] <- NA
+  edge_rast <- make_concordance_raster(edge_mat)
+
+  edges_cpp <- rgeomorphon:::.detect_edges(edge_rast)
+  edges_fallback <- suppressWarnings(
+    rgeomorphon:::.detect_edges(edge_rast, force_fallback = TRUE)
+  )
+
+  expect_equal(
+    terra::values(edges_fallback, mat = FALSE),
+    terra::values(edges_cpp, mat = FALSE),
+    info = "Fallback and C++ edge masks should be identical"
+  )
+
   # ===========================================================================
   # Integration Tests
   # ===========================================================================
 
-  # Test 25: Full workflow with PTRM and concordance
+  # Test 29: Full workflow with PTRM and concordance
   e <- terra::ext(dem)
   dem_subset <- terra::crop(dem, terra::ext(e[1] + 100, e[1] + 400, e[3] + 100, e[3] + 400))
   geo_subset <- geomorphons(dem_subset, search = 5)
