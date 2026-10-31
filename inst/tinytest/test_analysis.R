@@ -82,6 +82,131 @@ if (requireNamespace("terra", quietly = TRUE)) {
                pattern = "valid",
                info = "Should error on all-NA raster")
 
+  # Test 10a: Known two-class proportions match the hand-computed formula
+  two_class <- terra::rast(nrows = 2, ncols = 2,
+                           xmin = 0, xmax = 2, ymin = 0, ymax = 2)
+  terra::values(two_class) <- c(1, 1, 1, 6)  # flat: 3/4, slope: 1/4
+
+  ptrm_two <- geomorphon_ptrm(two_class, mode = "class")
+  expected_two <- (-38.02 + 0.75 * 25.12 + 0.25 * 28.95) / 69.96
+
+  expect_equal(ptrm_two$ptrm_score, expected_two, tolerance = 1e-10,
+               info = "Two-class score should match the hand-computed PTRM")
+  expect_equal(ptrm_two$raw_score, expected_two * 69.96, tolerance = 1e-10,
+               info = "Raw score should be the unnormalized PTRM numerator")
+  expect_equal(unname(ptrm_two$proportions), c(0.75, 0.25),
+               tolerance = 1e-10,
+               info = "Two-class proportions should match the cell counts")
+  expect_identical(names(ptrm_two$proportions), c("flat", "slope"),
+                   info = "Proportions should use canonical system labels")
+
+  # Test 10b: Single-class raster uses that class's coefficient, not -0.543
+  single_ridge <- terra::rast(nrows = 2, ncols = 2,
+                              xmin = 0, xmax = 2, ymin = 0, ymax = 2)
+  terra::values(single_ridge) <- 3  # ridge
+
+  ptrm_single <- geomorphon_ptrm(single_ridge, mode = "class")
+  expect_equal(ptrm_single$ptrm_score, (-38.02 + 7.59) / 69.96,
+               tolerance = 1e-10,
+               info = "Single-class score should include that class's weight")
+  expect_equal(ptrm_single$ptrm_score, -0.434962835906232,
+               tolerance = 1e-12,
+               info = "Single ridge score should match the literal expectation")
+  expect_false(isTRUE(all.equal(ptrm_single$ptrm_score, -0.543453401943968)),
+               info = "Single-class score must not collapse to the intercept-only value")
+
+  # Test 10c: Reduced form systems return finite scores and system labels
+  reduced_systems <- list(
+    forms4 = c(1, 3, 6, 9),
+    forms5 = c(1, 2, 3, 6, 9),
+    forms6 = c(1, 3, 4, 6, 8, 9)
+  )
+  expected_labels <- list(
+    forms4 = c("flat", "ridge", "slope", "valley"),
+    forms5 = c("flat", "peak", "ridge", "slope", "valley"),
+    forms6 = c("flat", "ridge", "shoulder", "slope", "footslope",
+               "valley")
+  )
+
+  for (system in names(reduced_systems)) {
+    codes <- reduced_systems[[system]]
+    r <- terra::rast(nrows = 1, ncols = length(codes),
+                     xmin = 0, xmax = length(codes), ymin = 0, ymax = 1)
+    terra::values(r) <- codes
+
+    ptrm_reduced <- geomorphon_ptrm(r, mode = "class", forms = system)
+
+    expect_true(is.finite(ptrm_reduced$ptrm_score),
+                info = paste(system, "score should be finite"))
+    expect_identical(names(ptrm_reduced$proportions), expected_labels[[system]],
+                     info = paste(system, "proportions should be named by system"))
+    expect_equal(sum(ptrm_reduced$proportions), 1.0, tolerance = 1e-10,
+                 info = paste(system, "proportions should sum to 1"))
+  }
+
+  # Test 10d: A ten-form custom vector reduces to the derived defaults
+  paper_coefficients <- c(
+    flat = 25.12, peak = 1.75, ridge = 7.59, shoulder = 7.31, spur = 9.02,
+    slope = 28.95, hollow = 6.71, footslope = 7.63, valley = 9.61,
+    depression = 3.55
+  )
+
+  for (system in c("forms4", "forms5", "forms6")) {
+    codes <- reduced_systems[[system]]
+    r <- terra::rast(nrows = 1, ncols = length(codes),
+                     xmin = 0, xmax = length(codes), ymin = 0, ymax = 1)
+    terra::values(r) <- codes
+
+    ptrm_default <- geomorphon_ptrm(r, mode = "class", forms = system)
+    ptrm_ten <- geomorphon_ptrm(r, mode = "class", forms = system,
+                               coefficients = paper_coefficients)
+
+    expect_equal(ptrm_ten$ptrm_score, ptrm_default$ptrm_score,
+                 tolerance = 1e-10,
+                 info = paste(system, "ten-form custom vector should match defaults"))
+  }
+
+  # Test 10e: Intercept and normalizer overrides change the score as expected
+  ptrm_override <- geomorphon_ptrm(two_class, mode = "class",
+                                   intercept = -10, normalizer = 10)
+  expected_override <- (-10 + 0.75 * 25.12 + 0.25 * 28.95) / 10
+
+  expect_equal(ptrm_override$ptrm_score, expected_override,
+               tolerance = 1e-10,
+               info = "Override score should use the supplied constants")
+  expect_false(isTRUE(all.equal(ptrm_override$ptrm_score,
+                                ptrm_two$ptrm_score)),
+               info = "Overrides should change the score")
+
+  # Test 10f: Invalid model parameters and coefficients error
+  expect_error(geomorphon_ptrm(two_class, mode = "class", normalizer = 0),
+               pattern = "non-zero",
+               info = "normalizer = 0 should error")
+  expect_error(
+    geomorphon_ptrm(two_class, mode = "class", forms = "forms4",
+                    coefficients = c(flat = 1, ridge = 2, slope = 3,
+                                     peak = 4)),
+    pattern = "must be named for",
+    info = "Wrong coefficient names should error"
+  )
+  expect_error(
+    geomorphon_ptrm(two_class, mode = "class",
+                    coefficients = c(flat = 1, peak = 2, ridge = 3)),
+    pattern = "must be named for",
+    info = "Wrong coefficient length should error"
+  )
+
+  # Test 10g: Codes outside the requested system error informatively
+  out_of_system <- terra::rast(nrows = 1, ncols = 2,
+                               xmin = 0, xmax = 2, ymin = 0, ymax = 1)
+  terra::values(out_of_system) <- c(1, 2)
+
+  expect_error(
+    geomorphon_ptrm(out_of_system, mode = "class", forms = "forms4"),
+    pattern = "Invalid geomorphon codes for forms4: 2",
+    info = "Out-of-system codes should name the invalid codes and system"
+  )
+
   # ===========================================================================
   # Concordance Function Tests
   # ===========================================================================

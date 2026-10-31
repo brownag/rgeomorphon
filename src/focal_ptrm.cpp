@@ -7,7 +7,9 @@
 #include <vector>
 #include <cmath>
 
-// Circular mask for window extraction
+// Circular mask for window extraction.
+// Canonical rule: include cell (dr, dc) when sqrt(dr^2 + dc^2) <= radius.
+// With radius = 0 this yields only the centre cell (0, 0).
 struct CircularMask {
     std::vector<std::pair<int, int>> offsets;  // Pre-computed (row_offset, col_offset) pairs
     int radius;
@@ -16,7 +18,7 @@ struct CircularMask {
         for (int dr = -r; dr <= r; ++dr) {
             for (int dc = -r; dc <= r; ++dc) {
                 double dist = std::sqrt(dr * dr + dc * dc);
-                if (dist <= r + 0.5) {  // Include cells on boundary
+                if (dist <= r) {
                     offsets.push_back({dr, dc});
                 }
             }
@@ -26,7 +28,7 @@ struct CircularMask {
 
 // Worker class for parallel focal PTRM calculation
 struct PTRMFocalWorker : public RcppParallel::Worker {
-    // Input: geomorphon classification matrix (classes 1-10)
+    // Input: geomorphon classification matrix (class codes 1..k)
     const RcppParallel::RMatrix<int> geo_mat;
 
     // Output: PTRM scores
@@ -35,7 +37,7 @@ struct PTRMFocalWorker : public RcppParallel::Worker {
     // Pre-computed circular mask
     const CircularMask& mask;
 
-    // PTRM coefficients (length 10, indexed 0-9 for classes 1-10)
+    // PTRM coefficients (length k, indexed 0..k-1 for classes 1..k)
     std::vector<double> coeffs;
 
     // PTRM formula constants
@@ -62,6 +64,7 @@ struct PTRMFocalWorker : public RcppParallel::Worker {
     void operator()(std::size_t begin_row, std::size_t end_row) {
         int nrows = geo_mat.nrow();
         int ncols = geo_mat.ncol();
+        int k = static_cast<int>(coeffs.size());
 
         for (std::size_t r = begin_row; r < end_row; ++r) {
             for (int c = 0; c < ncols; ++c) {
@@ -76,8 +79,8 @@ struct PTRMFocalWorker : public RcppParallel::Worker {
                 }
 
                 // Count geomorphon classes in circular window
-                // classes are 1-10, so use array of size 10 (indices 0-9)
-                int counts[10] = {0};
+                // class codes 1..k are valid (indices 0..k-1)
+                std::vector<int> counts(k, 0);
                 int total_valid = 0;
 
                 // Iterate through offset pairs in circular mask
@@ -91,7 +94,7 @@ struct PTRMFocalWorker : public RcppParallel::Worker {
 
                         // Check if value is not NA (NA_INTEGER in R)
                         // R uses INT_MIN as NA
-                        if (geo_class != NA_INTEGER && geo_class >= 1 && geo_class <= 10) {
+                        if (geo_class != NA_INTEGER && geo_class >= 1 && geo_class <= k) {
                             counts[geo_class - 1]++;
                             total_valid++;
                         }
@@ -106,7 +109,7 @@ struct PTRMFocalWorker : public RcppParallel::Worker {
 
                 // Calculate PTRM score
                 double weighted_sum = 0.0;
-                for (int i = 0; i < 10; ++i) {
+                for (int i = 0; i < k; ++i) {
                     double proportion = counts[i] / (double)total_valid;
                     weighted_sum += proportion * coeffs[i];
                 }
@@ -121,12 +124,21 @@ struct PTRMFocalWorker : public RcppParallel::Worker {
     }
 };
 
+// Focal PTRM kernel.
+//
+// Window: canonical circular mask, i.e. include (dr, dc) when
+//   sqrt(dr^2 + dc^2) <= radius.
+// Classes: generic k = coefficients.size() classes. Valid input codes are
+// 1..k; NA_INTEGER and codes outside 1..k are ignored. The R wrapper is
+// responsible for remapping reduced-system codes to 1..k before calling
+// this kernel.
+//
 //' @noRd
 // [[Rcpp::export]]
 Rcpp::NumericMatrix geomorphon_ptrm_focal_cpp(
     Rcpp::IntegerMatrix geomorphon_class,
     int radius,
-    Rcpp::NumericVector coefficients,  // Length 10, indexed 0-9 for classes 1-10
+    Rcpp::NumericVector coefficients,  // Length k, indexed 0..k-1 for classes 1..k
     double intercept,                   // -38.02
     double normalizer,                  // 69.96
     double na_value                     // NA_REAL
@@ -136,8 +148,8 @@ Rcpp::NumericMatrix geomorphon_ptrm_focal_cpp(
         Rcpp::stop("radius must be non-negative");
     }
 
-    if (coefficients.size() != 10) {
-        Rcpp::stop("coefficients must have length 10");
+    if (coefficients.size() < 1) {
+        Rcpp::stop("coefficients must have length >= 1");
     }
 
     // Create circular mask

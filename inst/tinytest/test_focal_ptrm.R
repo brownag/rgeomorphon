@@ -4,215 +4,129 @@ library(tinytest)
 library(rgeomorphon)
 
 if (requireNamespace("terra", quietly = TRUE)) {
-  # Setup: Load test data
-  data("volcano", package = "datasets")
-  dem <- terra::rast(volcano)
-  terra::crs(dem) <- terra::crs("EPSG:2193")
-  terra::ext(dem) <- c(1756968, 1757578, 5917000, 5917870)
-
-  # Test 1: Basic functionality - returns SpatRaster
-  expect_true({
-    ptrm_focal <- geomorphon_ptrm_focal(dem, radius = 3, mode = "dem")
-    inherits(ptrm_focal, "SpatRaster")
-  })
-
-  # Test 2: Output values are finite (no Inf or NaN)
-  expect_true({
-    ptrm_focal <- geomorphon_ptrm_focal(dem, radius = 3, mode = "dem")
-    vals <- terra::values(ptrm_focal, na.rm = TRUE)
-    all(is.finite(vals))
-  })
-
-  # Test 3: Border cells are NA (width = radius)
-  expect_true({
-    ptrm_focal <- geomorphon_ptrm_focal(dem, radius = 3, mode = "dem")
-    mat <- terra::as.matrix(ptrm_focal, wide = TRUE)
-    n_border_na <- sum(is.na(mat[1:3, ]))  # Top border
-    n_border_na > 0  # Should have some NA values
-  })
-
-  # Test 4: Larger radius produces more NA cells
-  expect_true({
-    ptrm_r3 <- geomorphon_ptrm_focal(dem, radius = 3, mode = "dem")
-    ptrm_r5 <- geomorphon_ptrm_focal(dem, radius = 5, mode = "dem")
-
-    mat_r3 <- terra::as.matrix(ptrm_r3, wide = TRUE)
-    mat_r5 <- terra::as.matrix(ptrm_r5, wide = TRUE)
-
-    na_count_r3 <- sum(is.na(mat_r3))
-    na_count_r5 <- sum(is.na(mat_r5))
-
-    na_count_r5 > na_count_r3
-  })
-
-  # Test 5: mode="dem" vs mode="class" consistency
-  expect_true({
-    # Pre-calculate geomorphons with same parameters
-    geo_pre <- geomorphons(dem, search = 3, skip = 0)
-
-    # Calculate focal PTRM from DEM
-    ptrm_from_dem <- geomorphon_ptrm_focal(dem, radius = 3, mode = "dem",
-                                            search = 3, skip = 0)
-
-    # Calculate focal PTRM from pre-computed geomorphons
-    ptrm_from_class <- geomorphon_ptrm_focal(geo_pre, radius = 3, mode = "class")
-
-    # Results should be identical
-    vals_dem <- terra::values(ptrm_from_dem)
-    vals_class <- terra::values(ptrm_from_class)
-
-    # Use near-equality due to floating point precision
-    all.equal(vals_dem, vals_class, tolerance = 1e-10) == TRUE
-  })
-
-  # Test 6: Different radii produce different results
-  expect_true({
-    ptrm_r2 <- geomorphon_ptrm_focal(dem, radius = 2, mode = "dem")
-    ptrm_r5 <- geomorphon_ptrm_focal(dem, radius = 5, mode = "dem")
-
-    vals_r2 <- terra::values(ptrm_r2, na.rm = TRUE)
-    vals_r5 <- terra::values(ptrm_r5, na.rm = TRUE)
-
-    # Should not be identical
-    !identical(vals_r2, vals_r5)
-  })
-
-  # Test 7: Custom coefficients work
-  expect_true({
-    # Create custom coefficients (all equal weight)
-    custom_coeffs <- setNames(
-      rep(1, 10),
-      c("flat", "peak", "ridge", "shoulder", "spur",
-        "slope", "hollow", "footslope", "valley", "depression")
+  make_raster <- function(values, nrow = NULL, ncol = NULL) {
+    if (is.null(nrow)) {
+      nrow <- base::nrow(values)
+      ncol <- base::ncol(values)
+    }
+    r <- terra::rast(
+      nrows = nrow,
+      ncols = ncol,
+      xmin = 0,
+      xmax = ncol,
+      ymin = 0,
+      ymax = nrow
     )
+    vals <- if (is.matrix(values)) as.vector(t(values)) else values
+    terra::values(r) <- vals
+    r
+  }
 
-    ptrm_custom <- geomorphon_ptrm_focal(
-      dem,
-      radius = 3,
-      mode = "dem",
-      coefficients = custom_coeffs
+  flat_score <- (25.12 - 38.02) / 69.96
+
+  # Hand-computed score: constant 3x3, radius 1 (cross of 5 flat cells)
+  r3 <- make_raster(matrix(1, nrow = 3, ncol = 3))
+  ptrm3 <- geomorphon_ptrm_focal(r3, radius = 1, mode = "class")
+  vals3 <- as.vector(terra::values(ptrm3))
+  expect_equal(vals3[5], flat_score, tolerance = 1e-12)
+  expect_true(all(is.na(vals3[-5])))
+
+  # Border width equals radius
+  r7 <- make_raster(matrix(1, nrow = 7, ncol = 7))
+  ptrm_r2 <- geomorphon_ptrm_focal(r7, radius = 2, mode = "class")
+  mat_r2 <- terra::as.matrix(ptrm_r2, wide = TRUE)
+  expect_true(all(is.na(mat_r2[1:2, ])))
+  expect_true(all(is.na(mat_r2[6:7, ])))
+  expect_true(all(is.na(mat_r2[, 1:2])))
+  expect_true(all(is.na(mat_r2[, 6:7])))
+  expect_true(all(!is.na(mat_r2[3:5, 3:5])))
+
+  # Radius 0 is valid and has no border NAs (centre cell only)
+  ptrm_r0 <- geomorphon_ptrm_focal(r3, radius = 0, mode = "class")
+  vals_r0 <- as.vector(terra::values(ptrm_r0))
+  expect_true(all(!is.na(vals_r0)))
+  expect_equal(vals_r0, rep(flat_score, 9), tolerance = 1e-12)
+
+  # C++ vs fallback parity on identical remapped input
+  pattern <- matrix(((seq_len(49) - 1) %% 10) + 1, nrow = 7, ncol = 7,
+                    byrow = TRUE)
+  pattern[2, 3] <- NA
+  pattern[4, 4] <- NA
+  pattern[1, 1] <- 99  # outside the forms10 system, mapped to NA
+  r_pattern <- make_raster(pattern)
+  model <- rgeomorphon:::.get_ptrm_model("forms10", NULL, -38.02, 69.96)
+  ptrm_cpp <- rgeomorphon:::.geomorphon_ptrm_focal_impl(
+    r_pattern, 2, model, force_cpp = TRUE
+  )
+  ptrm_fallback <- rgeomorphon:::.geomorphon_ptrm_focal_impl(
+    r_pattern, 2, model, force_cpp = FALSE
+  )
+  expect_equal(
+    terra::values(ptrm_cpp),
+    terra::values(ptrm_fallback),
+    tolerance = 1e-10
+  )
+
+  # Output metadata: fresh raster named ptrm, no levels, numeric values
+  expect_equal(names(ptrm_cpp), "ptrm")
+  no_levels <- function(r) {
+    lv <- terra::levels(r)
+    is.null(lv) || length(lv) == 0 ||
+      all(vapply(
+        lv,
+        function(z) is.null(z) || length(z) == 0 ||
+          (is.character(z) && all(!nzchar(z))),
+        logical(1)
+      ))
+  }
+  expect_true(no_levels(ptrm_cpp))
+  expect_true(is.numeric(terra::values(ptrm_cpp)))
+  expect_equal(terra::ncell(ptrm_cpp), 49)
+
+  # Reduced form systems produce finite scores
+  for (form_system in c("forms4", "forms5", "forms6")) {
+    ptrm_form <- geomorphon_ptrm_focal(
+      r3, radius = 1, mode = "class", forms = form_system
     )
+    expect_true(is.finite(as.vector(terra::values(ptrm_form))[5]))
+  }
 
-    inherits(ptrm_custom, "SpatRaster")
-  })
+  # mode = "dem" forwards forms to geomorphons and keeps ... pass-through
+  dem <- make_raster(matrix(seq_len(49), nrow = 7, ncol = 7))
+  ptrm_dem <- geomorphon_ptrm_focal(
+    dem, radius = 1, mode = "dem", search = 1, forms = "forms4"
+  )
+  expect_true(any(is.finite(terra::values(ptrm_dem))))
 
-  # Test 8: Default coefficients are applied
-  expect_true({
-    ptrm_default <- geomorphon_ptrm_focal(dem, radius = 3, mode = "dem")
+  # Class codes outside the requested system are not counted
+  r_outside <- make_raster(matrix(2, nrow = 3, ncol = 3))
+  ptrm_outside <- geomorphon_ptrm_focal(
+    r_outside, radius = 1, mode = "class", forms = "forms4"
+  )
+  expect_true(all(is.na(terra::values(ptrm_outside))))
 
-    # Explicit coefficients from Rajasekaran et al. (2022)
-    explicit_coeffs <- c(
-      flat = 25.12, peak = 1.75, ridge = 7.59, shoulder = 7.31,
-      spur = 9.02, slope = 28.95, hollow = 6.71, footslope = 7.63,
-      valley = 9.61, depression = 3.55
+  # Radius validation
+  expect_error(
+    geomorphon_ptrm_focal(r3, radius = -1, mode = "class"),
+    "non-negative"
+  )
+  expect_error(
+    geomorphon_ptrm_focal(r3, radius = 1.5, mode = "class"),
+    "whole number"
+  )
+  expect_error(
+    geomorphon_ptrm_focal(r3, radius = 2, mode = "class"),
+    "too large"
+  )
+
+  # Invalid coefficient names are rejected by the shared model helper
+  bad_coeffs <- setNames(rep(1, 10), paste0("form", 1:10))
+  expect_error(
+    geomorphon_ptrm_focal(
+      r3, radius = 1, mode = "class", coefficients = bad_coeffs
     )
+  )
 
-    ptrm_explicit <- geomorphon_ptrm_focal(
-      dem,
-      radius = 3,
-      mode = "dem",
-      coefficients = explicit_coeffs
-    )
-
-    vals_default <- terra::values(ptrm_default)
-    vals_explicit <- terra::values(ptrm_explicit)
-
-    all.equal(vals_default, vals_explicit, tolerance = 1e-10) == TRUE
-  })
-
-  # Test 9: Small radius (radius = 1) works
-  expect_true({
-    ptrm_r1 <- geomorphon_ptrm_focal(dem, radius = 1, mode = "dem")
-    inherits(ptrm_r1, "SpatRaster")
-  })
-
-  # Test 10: Zero radius - only center pixel (mostly NA)
-  expect_true({
-    ptrm_r0 <- geomorphon_ptrm_focal(dem, radius = 0, mode = "dem")
-    mat <- terra::as.matrix(ptrm_r0, wide = TRUE)
-    # With radius 0, all cells should be NA (window is just center, no neighbors)
-    # Actually, with radius 0, it should count just the center cell itself
-    inherits(ptrm_r0, "SpatRaster")
-  })
-
-  # Test 11: Error handling - invalid radius
-  expect_error({
-    geomorphon_ptrm_focal(dem, radius = -1, mode = "dem")
-  })
-
-  # Test 12: Error handling - invalid mode
-  expect_error({
-    geomorphon_ptrm_focal(dem, radius = 3, mode = "invalid")
-  })
-
-  # Test 13: Error handling - non-SpatRaster input
-  expect_error({
-    geomorphon_ptrm_focal(terra::as.matrix(volcano), radius = 3, mode = "dem")
-  })
-
-  # Test 14: Error handling - invalid coefficients length
-  expect_error({
-    bad_coeffs <- c(1, 2, 3)  # Wrong length
-    geomorphon_ptrm_focal(dem, radius = 3, mode = "dem",
-                          coefficients = bad_coeffs)
-  })
-
-  # Test 15: Error handling - invalid coefficients names
-  expect_error({
-    bad_coeffs <- setNames(rep(1, 10), paste0("form", 1:10))  # Wrong names
-    geomorphon_ptrm_focal(dem, radius = 3, mode = "dem",
-                          coefficients = bad_coeffs)
-  })
-
-  # Test 16: Interior cells have non-NA values
-  expect_true({
-    ptrm_focal <- geomorphon_ptrm_focal(dem, radius = 2, mode = "dem")
-    mat <- terra::as.matrix(ptrm_focal, wide = TRUE)
-    nrows <- nrow(mat)
-    ncols <- ncol(mat)
-
-    # Check interior cells (excluding borders)
-    interior <- mat[3:(nrows-2), 3:(ncols-2)]
-    # At least some interior cells should have non-NA values
-    any(!is.na(interior))
-  })
-
-  # Test 17: Consistency with geomorphons output structure
-  expect_true({
-    geo <- geomorphons(dem, search = 3)
-    ptrm_focal <- geomorphon_ptrm_focal(geo, radius = 3, mode = "class")
-
-    # Should have same dimensions as input
-    identical(dim(ptrm_focal), dim(geo))
-  })
-
-  # Test 18: No artifacts in interior (reasonable values)
-  expect_true({
-    ptrm_focal <- geomorphon_ptrm_focal(dem, radius = 3, mode = "dem")
-    vals <- terra::values(ptrm_focal, na.rm = TRUE)
-
-    # PTRM scores typically between -1 and 2 (formula can produce values outside [0,1])
-    # but should be reasonable (not Inf, NaN, or extreme outliers)
-    all(vals > -10 & vals < 10)
-  })
-
-  # Test 19: Mode="class" with invalid classification (out of range)
-  # This should still work but count only valid classes
-  expect_true({
-    geo <- geomorphons(dem, search = 3)
-    # geomorphons should only produce classes 1-10
-    ptrm_focal <- geomorphon_ptrm_focal(geo, radius = 3, mode = "class")
-    inherits(ptrm_focal, "SpatRaster")
-  })
-
-  # Test 20: Reproducibility - same input produces same output
-  expect_true({
-    ptrm1 <- geomorphon_ptrm_focal(dem, radius = 3, mode = "dem")
-    ptrm2 <- geomorphon_ptrm_focal(dem, radius = 3, mode = "dem")
-
-    vals1 <- terra::values(ptrm1)
-    vals2 <- terra::values(ptrm2)
-
-    all.equal(vals1, vals2, tolerance = 1e-10) == TRUE
-  })
+  # Shared memory gate helper is callable with a bytes-per-cell argument
+  expect_true(is.logical(rgeomorphon:::.focal_memory_ok(r3, 12)))
 }

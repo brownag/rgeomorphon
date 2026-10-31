@@ -160,6 +160,117 @@
   )
 }
 
+#' @noRd
+.get_ptrm_model <- function(forms = "forms10",
+                            coefficients = NULL,
+                            intercept = -38.02,
+                            normalizer = 69.96) {
+  form_systems <- c("forms10", "forms6", "forms5", "forms4")
+
+  if (!is.character(forms) || length(forms) != 1L || !forms %in% form_systems) {
+    stop(
+      "'forms' must be one of: ",
+      paste(form_systems, collapse = ", "),
+      call. = FALSE
+    )
+  }
+
+  if (!is.numeric(intercept) || length(intercept) != 1L ||
+      !is.finite(intercept)) {
+    stop("'intercept' must be a length-1 finite numeric value", call. = FALSE)
+  }
+
+  if (!is.numeric(normalizer) || length(normalizer) != 1L ||
+      !is.finite(normalizer) || normalizer == 0) {
+    stop(
+      "'normalizer' must be a length-1 finite, non-zero numeric value",
+      call. = FALSE
+    )
+  }
+
+  # Paper weights for the ten-form system are the single source of truth
+  paper <- .get_ptrm_coefficients()
+  paper_labels <- names(paper)
+
+  num_forms <- as.integer(sub("^forms", "", forms))
+  forms_table <- get_forms_matrix_cpp(num_forms)
+  ten_form_table <- get_forms_matrix_cpp(10L)
+
+  # Reachable codes are the non-zero (non-G_NONE) entries of the forms matrix
+  classes <- sort(unique(as.vector(forms_table)[as.vector(forms_table) != 0]))
+  k <- length(classes)
+  if (k < 1L) {
+    stop("The requested form system has no reachable classes", call. = FALSE)
+  }
+  labels <- paper_labels[classes]
+
+  # Average the ten-form paper weights over every reachable (negative,
+  # positive) pair that maps to each reduced class, repeats included
+  reduce_weights <- function(weights) {
+    vapply(
+      classes,
+      function(cl) {
+        ten_classes <- ten_form_table[forms_table == cl]
+        mean(weights[ten_classes])
+      },
+      numeric(1)
+    )
+  }
+
+  if (is.null(coefficients)) {
+    coefficients <- if (num_forms == 10L) {
+      paper
+    } else {
+      reduce_weights(paper)
+    }
+  } else {
+    if (!is.numeric(coefficients) || is.null(names(coefficients))) {
+      stop("'coefficients' must be a named numeric vector", call. = FALSE)
+    }
+
+    coeff_names <- tolower(names(coefficients))
+    if (anyDuplicated(coeff_names)) {
+      stop("'coefficients' must not contain duplicate names", call. = FALSE)
+    }
+
+    if (length(coefficients) == k && all(labels %in% coeff_names)) {
+      coefficients <- coefficients[match(labels, coeff_names)]
+    } else if (length(coefficients) == length(paper_labels) &&
+               all(paper_labels %in% coeff_names)) {
+      ten_weights <- coefficients[match(paper_labels, coeff_names)]
+      names(ten_weights) <- paper_labels
+      coefficients <- if (num_forms == 10L) {
+        ten_weights
+      } else {
+        reduce_weights(ten_weights)
+      }
+    } else {
+      stop(
+        "'coefficients' must be named for the ",
+        forms,
+        " classes (",
+        paste(labels, collapse = ", "),
+        ") or for all ten geomorphon forms",
+        call. = FALSE
+      )
+    }
+
+    if (any(!is.finite(coefficients))) {
+      stop("'coefficients' must contain only finite values", call. = FALSE)
+    }
+  }
+
+  names(coefficients) <- labels
+
+  list(
+    classes = classes,
+    labels = labels,
+    coefficients = coefficients,
+    intercept = intercept,
+    normalizer = normalizer
+  )
+}
+
 #' Calculate Perceived Terrain Realism Metric (PTRM)
 #'
 #' Calculates the Perceived Terrain Realism Metric based on the distribution
@@ -185,6 +296,8 @@
 #'   be a pre-computed geomorphon classification. Default: `"dem"`.
 #' @param search Numeric. Search radius for geomorphon calculation (only used
 #'   when `mode = "dem"`). Units depend on the CRS of the input. Default: `3`.
+#'   This is a convenience default, not a value calibrated against the PTRM
+#'   paper, so it should not be read as a validated choice.
 #' @param skip Numeric. Skip radius for geomorphon calculation (only used when
 #'   `mode = "dem"`). Default: `0`.
 #' @param flat_angle_deg Numeric. Flatness angle threshold in degrees (only
@@ -195,17 +308,22 @@
 #'   `"forms5"`, or `"forms4"`. Default: `"forms10"`.
 #' @param coefficients Named numeric vector. Custom PTRM coefficients for each
 #'   geomorphon class. If `NULL`, uses default values from Rajasekaran et al.
-#'   (2022). Names should match geomorphon form names. Default: `NULL`.
+#'   (2022). Names should match geomorphon form names. A ten-form vector is
+#'   reduced to the requested `forms` system. Default: `NULL`.
+#' @param intercept Numeric. PTRM intercept. Default: `-38.02`.
+#' @param normalizer Numeric. PTRM divisor. Must be finite and non-zero.
+#'   Default: `69.96`.
 #' @param ... Additional arguments passed to [geomorphons()] when
-#'   `mode = "dem"`.
+#'   `mode = "dem"`. Ignored when `mode = "class"`.
 #'
 #' @return A list containing:
 #'   \describe{
-#'     \item{`ptrm_score`}{Numeric. PTRM value on a scale from 0 to 1. Higher
-#'       values indicate more realistic terrain.}
+#'     \item{`ptrm_score`}{Numeric. PTRM value obtained by dividing the raw
+#'       score by the normalizer. Scores are raw and may fall outside
+#'       `[0, 1]`; higher values indicate more realistic terrain.}
 #'     \item{`raw_score`}{Numeric. Unnormalized score before division.}
-#'     \item{`proportions`}{Named numeric vector. Proportion of each geomorphon
-#'       form in the input.}
+#'     \item{`proportions`}{Named numeric vector. Proportion of each observed
+#'       geomorphon form in the input, named with the canonical system labels.}
 #'     \item{`n_cells`}{Integer. Total number of valid (non-NA) cells analyzed.}
 #'   }
 #'
@@ -214,10 +332,13 @@
 #'
 #' \deqn{PTRM = \frac{c_0 + \sum_{i=1}^{n} c_i \times p_i}{D}}
 #'
-#' where \eqn{c_0} is the intercept (-38.02), \eqn{c_i} are the coefficients
-#' for each geomorphon form, \eqn{p_i} are the proportions of each form in
-#' the terrain, and \eqn{D} is the divisor (69.96).
+#' where \eqn{c_0} is the intercept (-38.02 by default), \eqn{c_i} are the
+#' coefficients for each geomorphon form, \eqn{p_i} are the proportions of each
+#' form in the terrain, and \eqn{D} is the divisor (69.96 by default). The
+#' intercept, normalizer, and coefficients can all be overridden.
 #'
+#' The returned score is not clamped or rescaled, so it may fall outside
+#' `[0, 1]` depending on the input distribution and the model parameters.
 #' Higher PTRM scores indicate more realistic terrain from a human perception
 #' perspective. Rajasekaran et al. (2022) found that real terrain from Arizona
 #' achieved a PTRM of 0.76, ranking in the 78th percentile for perceived
@@ -265,6 +386,8 @@ geomorphon_ptrm <- function(x,
                            dist = 0,
                            forms = "forms10",
                            coefficients = NULL,
+                           intercept = -38.02,
+                           normalizer = 69.96,
                            ...) {
 
   # Validate terra package availability
@@ -280,6 +403,14 @@ geomorphon_ptrm <- function(x,
   # Validate mode parameter
   mode <- match.arg(mode)
 
+  # Resolve the PTRM model (classes, labels, coefficients, constants)
+  model <- .get_ptrm_model(
+    forms = forms,
+    coefficients = coefficients,
+    intercept = intercept,
+    normalizer = normalizer
+  )
+
   # Get geomorphon classification
   if (mode == "dem") {
     # Calculate geomorphons from DEM
@@ -292,7 +423,7 @@ geomorphon_ptrm <- function(x,
       forms = forms,
       ...
     )
-  } else if (mode == "class") {
+  } else {
     # Use input as geomorphon classification
     geo <- x
   }
@@ -307,44 +438,37 @@ geomorphon_ptrm <- function(x,
 
   # Calculate proportions from frequency table
   freq_table <- table(vals)
+  observed <- as.integer(names(freq_table))
+
+  # Codes must belong to the requested form system
+  invalid <- setdiff(observed, model$classes)
+  if (length(invalid) > 0) {
+    stop(
+      "Invalid geomorphon codes for ",
+      forms,
+      ": ",
+      paste(sort(invalid), collapse = ", "),
+      " (expected one of: ",
+      paste(model$classes, collapse = ", "),
+      ")",
+      call. = FALSE
+    )
+  }
+
   proportions <- as.numeric(freq_table) / n_cells
+  names(proportions) <- model$labels[match(observed, model$classes)]
 
-  # Get form categories to map numeric values to form names
-  form_cats <- geomorphon_categories()
-
-  # Map proportions to form names
-  form_indices <- as.integer(names(freq_table))
-  form_names <- form_cats$form[form_indices]
-  names(proportions) <- form_names
-
-  # Get or validate coefficients
-  if (is.null(coefficients)) {
-    coefficients <- .get_ptrm_coefficients()
-  }
-
-  # Validate coefficient structure
-  if (any(is.na(coefficients))) {
-    stop("Coefficients contain NA values. Please provide valid coefficients",
-         call. = FALSE)
-  }
-
-  # Ensure all geomorphon forms are represented in proportions
-  full_proportions <- setNames(rep(0, length(coefficients)), names(coefficients))
-  for (i in seq_along(proportions)) {
-    form_name <- names(proportions)[i]
-    if (form_name %in% names(full_proportions)) {
-      full_proportions[form_name] <- proportions[i]
-    }
-  }
+  # Ensure every class in the model is represented, in class-code order
+  full_proportions <- setNames(rep(0, length(model$coefficients)),
+                               model$labels)
+  full_proportions[names(proportions)] <- proportions
 
   # Calculate weighted sum
-  weighted_sum <- sum(full_proportions * coefficients, na.rm = TRUE)
+  weighted_sum <- sum(full_proportions * model$coefficients)
 
-  # Apply PTRM formula: (intercept + weighted_sum) / divisor
-  intercept <- -38.02
-  normalizer <- 69.96
-  raw_score <- intercept + weighted_sum
-  ptrm_score <- raw_score / normalizer
+  # Apply PTRM formula: (intercept + weighted_sum) / normalizer
+  raw_score <- model$intercept + weighted_sum
+  ptrm_score <- raw_score / model$normalizer
 
   # Return structured result
   list(
