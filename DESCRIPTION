@@ -12,7 +12,7 @@ Description: A lightweight implementation of the geomorphon terrain
 License: GPL (>= 3)
 Depends: R (>= 3.6.2)
 Imports: Rcpp, RcppParallel
-LinkingTo: Rcpp, RcppArmadillo, RcppParallel
+LinkingTo: Rcpp, RcppParallel
 Suggests: 
     terra,
     future.apply,
