@@ -1,34 +1,12 @@
 # rgeomorphon 0.4.0
 
- - Added `geomorphon_ptrm()` for calculating the Perceived Terrain Realism Metric (PTRM) from a DEM or an existing geomorphon classification
+ - Added `geomorphon_ptrm()` to measure perceived terrain realism (0–1) from a DEM or geomorphon map
 
- - Added `geomorphon_ptrm_focal()` for spatially varying PTRM calculated over a circular moving window
+   - Including focal-window calculations, `forms4`/`forms5`/`forms6` support, and tunable model parameters.
 
- - Added `geomorphon_concordance()` for measuring structural agreement between geomorphon and categorical maps
+ - Added `geomorphon_concordance()` to compare map structure using NMI and boundary-alignment metrics.
 
- - Support for `forms4`, `forms5`, and `forms6` form systems in the PTRM functions
-
- - Tunable `intercept` and `normalizer` PTRM model parameters
-
- - Corrected focal PTRM window geometry, border handling, and radius interpretation
-
- - Corrected concordance distance units and boundary metrics; removed the stale `...` argument
-
-# rgeomorphon 0.3.2
-
- - Added `geomorphon_ptrm()` function to calculate Perceived Terrain Realism Metric (Rajasekaran et al. 2022)
-   - Quantifies human-perceived terrain realism on a 0-1 scale
-   - Supports calculation from DEMs or pre-computed geomorphon classifications
-   - Based on proportional distribution of 10 standard geomorphon types
-
- - Added `geomorphon_concordance()` function to measure structural agreement between geomorphon and categorical maps
-   - Normalized Mutual Information (NMI) for statistical association
-   - Boundary alignment metrics (edge offset and edge concordance)
-   - No assumptions about 1-to-1 class equivalency between maps
-
- - Internal helper functions for entropy and mutual information calculations (no new package dependencies)
-
- - Comprehensive unit tests for new analysis functions
+ - Added internal information-theory helpers and tests; no new dependencies.
 
 # rgeomorphon 0.3.0
 
