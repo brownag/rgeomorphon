@@ -78,6 +78,23 @@
 }
 
 #' @noRd
+.calculate_homogeneity_completeness <- function(x, y) {
+  # Remove NAs (paired), matching the data domain used for concordance NMI.
+  valid <- !is.na(x) & !is.na(y)
+  x <- x[valid]
+  y <- y[valid]
+
+  hx <- .calculate_entropy(x)
+  hy <- .calculate_entropy(y)
+  mi <- .calculate_mutual_information(x, y)
+
+  list(
+    homogeneity = if (hx > 0) mi / hx else NA_real_,
+    completeness = if (hy > 0) mi / hy else NA_real_
+  )
+}
+
+#' @noRd
 .detect_edges <- function(x, force_fallback = FALSE) {
   # Memory-aware edge detection: uses fast C++ for small/medium rasters,
   # falls back to terra::boundaries() for large rasters that don't fit in RAM
@@ -481,6 +498,16 @@ geomorphon_ptrm <- function(x,
 #' Normalized Mutual Information (NMI) measures the mutual dependence between
 #' two categorical variables, independent of the specific class mappings. An
 #' NMI of 1 indicates perfect association, while 0 indicates independence.
+#' When NMI is requested, the result also includes directional `homogeneity`
+#' and `completeness`. With `cat_rast` as the reference,
+#' `homogeneity = I(geo; cat) / H(cat)` and
+#' `completeness = I(geo; cat) / H(geo)`. Swapping the rasters swaps these two
+#' values but leaves NMI unchanged. When both entropies are positive, their
+#' harmonic mean equals NMI. A component with a zero entropy denominator is
+#' `NA_real_`; the other component is zero when defined. If both maps are
+#' constant, both components are `NA_real_` while existing NMI remains 0.
+#' These additive components do not change the existing NMI calculation or
+#' values.
 #'
 #' # Boundary Alignment
 #'
@@ -531,7 +558,18 @@ geomorphon_ptrm <- function(x,
 #'   \describe{
 #'     \item{`nmi`}{Numeric. Normalized Mutual Information (0-1). Higher values
 #'       indicate stronger statistical association between classifications.
-#'       Only included when method includes "nmi".}
+#'       Existing NMI behavior is unchanged. Only included when method includes
+#'       "nmi".}
+#'     \item{`homogeneity`}{Numeric. `I(geo; cat) / H(cat)`, measuring how
+#'       well the geomorphon classes determine the categorical reference.
+#'       `NA_real_` when `H(cat) = 0`; otherwise zero for a constant geomorphon
+#'       map against a varying categorical map. Included only for methods
+#'       "nmi" and "both".}
+#'     \item{`completeness`}{Numeric. `I(geo; cat) / H(geo)`, measuring how
+#'       completely the categorical classes capture geomorphon information.
+#'       `NA_real_` when `H(geo) = 0`; otherwise zero for a constant categorical
+#'       map against a varying geomorphon map. Included only for methods
+#'       "nmi" and "both".}
 #'     \item{`edge_offset`}{Numeric. Mean distance (in map units) from each
 #'       categorical boundary cell to the nearest geomorphon boundary cell.
 #'       Lower values indicate better boundary alignment. Only included when
@@ -566,9 +604,15 @@ geomorphon_ptrm <- function(x,
 #' [terra::disagg()] to align rasters before calling this function.
 #'
 #' The NMI is symmetric and normalized to the range 0-1, with higher values
-#' indicating stronger association regardless of how classes map to each other. The
-#' boundary metrics are useful for validating whether geomorphological
-#' transitions correspond to ecological or pedological boundaries.
+#' indicating stronger association regardless of how classes map to each other.
+#' Homogeneity and completeness are directional: `cat_rast` is the reference
+#' for their definitions, so swapping inputs exchanges the scores. If both
+#' marginal entropies are positive, their harmonic mean equals NMI. A zero
+#' denominator yields `NA_real_` for that component; for two constant maps both
+#' components are `NA_real_` and NMI remains 0. These fields are returned only
+#' by `method = "nmi"` or `"both"`, not by `"boundary"`. The boundary metrics
+#' are useful for validating whether geomorphological transitions correspond
+#' to ecological or pedological boundaries.
 #'
 #' @note
 #' **Memory Requirements:** This function performs edge detection on both input
@@ -687,6 +731,11 @@ geomorphon_concordance <- function(geo_rast,
 
     # Calculate NMI
     result$nmi <- .calculate_nmi(geo_vals_clean, cat_vals_clean)
+    components <- .calculate_homogeneity_completeness(
+      cat_vals_clean, geo_vals_clean
+    )
+    result$homogeneity <- components$homogeneity
+    result$completeness <- components$completeness
     result$n_cells <- n_cells
 
     # Add contingency table

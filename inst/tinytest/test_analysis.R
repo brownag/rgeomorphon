@@ -220,6 +220,8 @@ if (requireNamespace("terra", quietly = TRUE)) {
 
   expect_true(inherits(conc_both, "list"), "Should return a list")
   expect_true("nmi" %in% names(conc_both), "Should have nmi with method='both'")
+  expect_true(all(c("homogeneity", "completeness") %in% names(conc_both)),
+              info = "NMI components should be returned with method='both'")
   expect_true("edge_offset" %in% names(conc_both),
               info = "Should have edge_offset with method='both'")
   expect_true("edge_concordance" %in% names(conc_both),
@@ -239,6 +241,8 @@ if (requireNamespace("terra", quietly = TRUE)) {
   expect_true(conc_perfect$nmi >= 0.99, "Perfect concordance NMI should be ~1.0")
   expect_true("contingency_table" %in% names(conc_perfect),
               info = "Should have contingency_table with NMI method")
+  expect_true(all(c("homogeneity", "completeness") %in% names(conc_perfect)),
+              info = "NMI components should be returned with method='nmi'")
 
   # Test 15: NMI only method
   conc_nmi <- geomorphon_concordance(geo, cat_map, method = "nmi")
@@ -254,6 +258,9 @@ if (requireNamespace("terra", quietly = TRUE)) {
                info = "Should not have nmi with method='boundary'")
   expect_true("edge_offset" %in% names(conc_boundary),
               info = "Should have edge_offset with method='boundary'")
+  expect_false(any(c("homogeneity", "completeness") %in%
+                   names(conc_boundary)),
+               info = "Boundary-only output should omit NMI components")
 
   # Test 17: Different threshold_cells values
   conc_thresh1 <- geomorphon_concordance(geo, cat_map, method = "boundary",
@@ -344,6 +351,95 @@ if (requireNamespace("terra", quietly = TRUE)) {
     terra::values(r) <- as.vector(t(mat))
     r
   }
+
+  # Directional information summaries use category as the reference. For
+  # [[3, 1], [1, 3]], both entropies are 1 bit and MI is
+  # 1 - H(1/4, 3/4) = 0.1887218755 bits.
+  information_geo <- matrix(c(1, 1, 1, 1, 2, 2, 2, 2), nrow = 1)
+  information_cat <- matrix(c(1, 1, 1, 2, 1, 2, 2, 2), nrow = 1)
+  information_result <- geomorphon_concordance(
+    make_concordance_raster(information_geo),
+    make_concordance_raster(information_cat), method = "nmi"
+  )
+  expected_information <- 1 - (-0.25 * log2(0.25) - 0.75 * log2(0.75))
+  expect_equal(information_result$homogeneity, expected_information,
+               tolerance = 1e-10)
+  expect_equal(information_result$completeness, expected_information,
+               tolerance = 1e-10)
+  expect_equal(information_result$nmi, expected_information,
+               tolerance = 1e-10)
+  expect_equal(2 * information_result$homogeneity *
+                 information_result$completeness /
+                 (information_result$homogeneity +
+                    information_result$completeness),
+               information_result$nmi, tolerance = 1e-10)
+
+  # Unequal marginals make the two directional components distinct; swapping
+  # arguments exchanges them while preserving NMI.
+  asymmetric_geo <- matrix(c(1, 1, 1, 1, 1, 1, 2, 2), nrow = 1)
+  asymmetric_cat <- matrix(c(1, 1, 1, 1, 2, 2, 2, 2), nrow = 1)
+  asymmetric_result <- geomorphon_concordance(
+    make_concordance_raster(asymmetric_geo),
+    make_concordance_raster(asymmetric_cat), method = "nmi"
+  )
+  asymmetric_swapped <- geomorphon_concordance(
+    make_concordance_raster(asymmetric_cat),
+    make_concordance_raster(asymmetric_geo), method = "nmi"
+  )
+  expect_equal(asymmetric_result$homogeneity,
+               asymmetric_swapped$completeness, tolerance = 1e-10)
+  expect_equal(asymmetric_result$completeness,
+               asymmetric_swapped$homogeneity, tolerance = 1e-10)
+  expect_equal(asymmetric_result$nmi, asymmetric_swapped$nmi,
+               tolerance = 1e-10)
+
+  # Constant reference/target maps exercise zero-entropy conventions and
+  # paired-NA filtering without changing existing NMI behavior.
+  constant_map <- matrix(1, nrow = 1, ncol = 8)
+  varying_map <- matrix(c(1, 1, 1, 1, 2, 2, 2, 2), nrow = 1)
+  constant_cat <- geomorphon_concordance(
+    make_concordance_raster(varying_map), make_concordance_raster(constant_map),
+    method = "nmi"
+  )
+  expect_identical(constant_cat$homogeneity, NA_real_)
+  expect_identical(constant_cat$completeness, 0)
+  expect_identical(constant_cat$nmi, 0)
+  constant_geo <- geomorphon_concordance(
+    make_concordance_raster(constant_map), make_concordance_raster(varying_map),
+    method = "nmi"
+  )
+  expect_identical(constant_geo$homogeneity, 0)
+  expect_identical(constant_geo$completeness, NA_real_)
+  expect_identical(constant_geo$nmi, 0)
+  both_constant <- geomorphon_concordance(
+    make_concordance_raster(constant_map), make_concordance_raster(constant_map),
+    method = "nmi"
+  )
+  expect_identical(both_constant$homogeneity, NA_real_)
+  expect_identical(both_constant$completeness, NA_real_)
+  expect_identical(both_constant$nmi, 0)
+
+  na_geo <- asymmetric_geo
+  na_cat <- asymmetric_cat
+  na_geo[1, 1] <- NA_real_
+  na_cat[1, 2] <- NA_real_
+  na_result <- geomorphon_concordance(
+    make_concordance_raster(na_geo), make_concordance_raster(na_cat),
+    method = "nmi"
+  )
+  na_valid <- !is.na(na_geo) & !is.na(na_cat)
+  na_geo_valid <- na_geo[na_valid]
+  na_cat_valid <- na_cat[na_valid]
+  na_entropy <- function(x) {
+    p <- as.numeric(table(x)) / length(x)
+    -sum(p * log2(p))
+  }
+  na_mi <- na_entropy(na_geo_valid) + na_entropy(na_cat_valid) -
+    na_entropy(paste(na_geo_valid, na_cat_valid, sep = "_"))
+  expect_equal(na_result$homogeneity, na_mi / na_entropy(na_cat_valid),
+               tolerance = 1e-10)
+  expect_equal(na_result$completeness, na_mi / na_entropy(na_geo_valid),
+               tolerance = 1e-10)
 
   geo_a <- matrix(1, nrow = 7, ncol = 7)
   geo_a[, 4:7] <- 2
