@@ -457,6 +457,19 @@ if (requireNamespace("terra", quietly = TRUE)) {
     }
     mask
   }
+  oracle_scores <- function(geo_mat, cat_mat, xres = 1, yres = 1,
+                            threshold_cells = 1) {
+    shared <- !is.na(geo_mat) & !is.na(cat_mat)
+    geo_xy <- boundary_coordinates(reference_mask(geo_mat, shared), xres, yres)
+    cat_xy <- boundary_coordinates(reference_mask(cat_mat, shared), xres, yres)
+    if (!nrow(geo_xy) || !nrow(cat_xy)) return(c(NA_real_, NA_real_, NA_real_))
+    g2c <- brute_nearest(geo_xy, cat_xy)
+    c2g <- brute_nearest(cat_xy, geo_xy)
+    p <- mean(c2g <= threshold_cells * xres)
+    r <- mean(g2c <= threshold_cells * xres)
+    c(if (p + r == 0) 0 else 2 * p * r / (p + r),
+      max(mean(g2c), mean(c2g)), (mean(g2c) + mean(c2g)) / 2)
+  }
 
   # Manual checks: coincident centers are 0; adjacent centers are 2 by 3.
   point_a <- matrix(c(0.5, 1.5), nrow = 1)
@@ -509,6 +522,113 @@ if (requireNamespace("terra", quietly = TRUE)) {
   expect_equal(asym_result$edge_offset, 0)
   expect_equal(asym_result$edge_concordance, 1)
 
+  asym_oracle <- oracle_scores(geo_asym, cat_asym, threshold_cells = 1)
+  expect_equal(unname(unlist(asym_result[c("edge_f1", "edge_mhd", "edge_chamfer")])),
+               asym_oracle, tolerance = 1e-8)
+
+  # Symmetric shared-domain summaries match the independent coordinate oracle.
+  fixture_geo_xy <- boundary_coordinates(expected_shared_geo)
+  fixture_cat_xy <- boundary_coordinates(expected_shared_cat)
+  fixture_geo_to_cat <- brute_nearest(fixture_geo_xy, fixture_cat_xy)
+  fixture_cat_to_geo <- brute_nearest(fixture_cat_xy, fixture_geo_xy)
+  fixture_p <- mean(fixture_cat_to_geo <= 1)
+  fixture_r <- mean(fixture_geo_to_cat <= 1)
+  expect_equal(fixture_legacy$edge_f1, 2 * fixture_p * fixture_r /
+                 (fixture_p + fixture_r), tolerance = 1e-8)
+  expect_equal(fixture_legacy$edge_mhd,
+               max(mean(fixture_geo_to_cat), mean(fixture_cat_to_geo)),
+               tolerance = 1e-8)
+  expect_equal(fixture_legacy$edge_chamfer,
+               mean(c(mean(fixture_geo_to_cat), mean(fixture_cat_to_geo))),
+               tolerance = 1e-8)
+
+  # Rectangular cells use x/y center spacing in distance, but threshold uses x.
+  rectangular_geo <- fixture_geo
+  rectangular_cat <- fixture_cat
+  rect_geo_r <- terra::rast(nrows = 7, ncols = 9, xmin = 0, xmax = 18,
+                            ymin = 0, ymax = 21, crs = "EPSG:3857")
+  rect_cat_r <- terra::rast(nrows = 7, ncols = 9, xmin = 0, xmax = 18,
+                            ymin = 0, ymax = 21, crs = "EPSG:3857")
+  terra::values(rect_geo_r) <- as.vector(t(rectangular_geo))
+  terra::values(rect_cat_r) <- as.vector(t(rectangular_cat))
+  rect_result <- geomorphon_concordance(rect_geo_r, rect_cat_r,
+                                        method = "boundary", threshold_cells = 2)
+  expect_equal(unname(unlist(rect_result[c("edge_f1", "edge_mhd", "edge_chamfer")])),
+               oracle_scores(rectangular_geo, rectangular_cat, 2, 3, 2),
+               tolerance = 1e-8)
+
+  asym_swapped <- geomorphon_concordance(
+    make_concordance_raster(cat_asym), make_concordance_raster(geo_asym),
+    method = "boundary", threshold_cells = 1
+  )
+  expect_equal(asym_result$edge_f1, asym_swapped$edge_f1, tolerance = 1e-8)
+  expect_equal(asym_result$edge_mhd, asym_swapped$edge_mhd, tolerance = 1e-8)
+  expect_equal(asym_result$edge_chamfer, asym_swapped$edge_chamfer,
+               tolerance = 1e-8)
+  expect_equal(asym_result$n_edges_geo, 10)
+  expect_equal(asym_result$n_edges_cat, 10)
+  expect_equal(asym_result$edge_offset, 0)
+  expect_equal(asym_result$edge_concordance, 1)
+
+  # New fields are boundary-only outputs; NMI retains its established shape.
+  expect_false(any(c("edge_f1", "edge_mhd", "edge_chamfer") %in%
+                   names(geomorphon_concordance(
+                     geo_fixture_rast, cat_fixture_rast, method = "nmi"))))
+  expect_true(all(c("edge_f1", "edge_mhd", "edge_chamfer") %in%
+                   names(geomorphon_concordance(
+                     geo_fixture_rast, cat_fixture_rast, method = "both"))))
+
+  # Empty shared boundaries produce typed missing scores, but retain legacy
+  # no-valid-pairs behavior for methods that calculate NMI.
+  empty_shared <- fixture_geo
+  empty_shared[] <- NA_real_
+  empty_boundary_result <- geomorphon_concordance(
+    make_concordance_raster(empty_shared),
+    make_concordance_raster(empty_shared), method = "boundary"
+  )
+  expect_identical(empty_boundary_result$edge_f1, NA_real_)
+  expect_identical(empty_boundary_result$edge_mhd, NA_real_)
+  expect_identical(empty_boundary_result$edge_chamfer, NA_real_)
+  constant_fixture <- matrix(1, 7, 9)
+  one_empty_result <- geomorphon_concordance(
+    geo_fixture_rast, make_concordance_raster(constant_fixture),
+    method = "boundary"
+  )
+  expect_identical(one_empty_result$edge_f1, NA_real_)
+  expect_identical(one_empty_result$edge_mhd, NA_real_)
+  expect_identical(one_empty_result$edge_chamfer, NA_real_)
+  expect_error(geomorphon_concordance(
+    make_concordance_raster(empty_shared), make_concordance_raster(empty_shared),
+    method = "both"), pattern = "No overlapping valid cells")
+
+  # Zero-match F1 and positive-distance summaries on a displaced boundary.
+  shifted_fixture <- matrix(1, 7, 9)
+  shifted_fixture[, 7:9] <- 2
+  shifted_result <- geomorphon_concordance(
+    geo_fixture_rast, make_concordance_raster(shifted_fixture),
+    method = "boundary", threshold_cells = 0
+  )
+  expect_equal(shifted_result$edge_f1, 0)
+  expect_true(shifted_result$edge_mhd > 0)
+  expect_true(shifted_result$edge_chamfer > 0)
+  expect_equal(geomorphon_concordance(
+    geo_fixture_rast, cat_fixture_rast, method = "boundary",
+    threshold_cells = 10)$edge_f1, 1)
+
+  # A shared-domain hole is not an edge; compare expected masks independently.
+  hole_geo <- fixture_geo
+  hole_cat <- fixture_cat
+  hole_geo[4, 4] <- NA_real_
+  hole_cat[4, 4] <- NA_real_
+  hole_valid <- !is.na(hole_geo) & !is.na(hole_cat)
+  expect_equal(reference_mask(hole_geo, hole_valid),
+               reference_mask(fixture_geo, hole_valid))
+  hole_result <- geomorphon_concordance(
+    make_concordance_raster(hole_geo), make_concordance_raster(hole_cat),
+    method = "boundary", threshold_cells = 1
+  )
+  expect_true(is.finite(hole_result$edge_f1))
+
   # No-overlap and empty-boundary coordinate sets are explicit oracle fixtures.
   empty_mask <- matrix(FALSE, 5, 7)
   expect_equal(nrow(boundary_coordinates(empty_mask)), 0L)
@@ -527,11 +647,46 @@ if (requireNamespace("terra", quietly = TRUE)) {
   diagonal_expected[c(1, 7), ] <- FALSE
   diagonal_expected[, c(1, 7)] <- FALSE
   expect_equal(reference_mask(diagonal_fixture), diagonal_expected)
+  diagonal_result <- geomorphon_concordance(
+    make_concordance_raster(diagonal_fixture),
+    make_concordance_raster(diagonal_fixture), method = "boundary",
+    threshold_cells = 0
+  )
+  expect_equal(unname(unlist(diagonal_result[
+    c("edge_f1", "edge_mhd", "edge_chamfer")])),
+    oracle_scores(diagonal_fixture, diagonal_fixture, threshold_cells = 0),
+    tolerance = 1e-8)
   border_fixture <- matrix(1, 7, 7)
   border_fixture[1, 4:7] <- 2
   border_expected <- reference_mask(border_fixture)
   expect_false(any(border_expected[c(1, 7), ]))
   expect_false(any(border_expected[, c(1, 7)]))
+  border_result <- geomorphon_concordance(
+    make_concordance_raster(border_fixture),
+    make_concordance_raster(fixture_geo[, 1:7]), method = "boundary",
+    threshold_cells = 1
+  )
+  expect_equal(unname(unlist(border_result[
+    c("edge_f1", "edge_mhd", "edge_chamfer")])),
+    oracle_scores(border_fixture, fixture_geo[, 1:7]), tolerance = 1e-8)
+
+  # Controlled extra boundary keeps recall high but lowers symmetric F1.
+  excess_fixture <- fixture_geo
+  excess_fixture[3:5, 3:4] <- 2
+  excess_masks_valid <- !is.na(fixture_geo) & !is.na(excess_fixture)
+  excess_geo_xy <- boundary_coordinates(
+    reference_mask(fixture_geo, excess_masks_valid))
+  excess_cat_xy <- boundary_coordinates(
+    reference_mask(excess_fixture, excess_masks_valid))
+  excess_recall <- mean(brute_nearest(excess_geo_xy, excess_cat_xy) <= 1)
+  excess_result <- geomorphon_concordance(
+    geo_fixture_rast, make_concordance_raster(excess_fixture),
+    method = "boundary", threshold_cells = 1
+  )
+  expect_equal(excess_result$edge_f1,
+               oracle_scores(fixture_geo, excess_fixture)[1], tolerance = 1e-8)
+  expect_true(excess_recall >= 0.8)
+  expect_true(excess_result$edge_f1 < fixture_legacy$edge_f1)
 
   # Rectangular cells use both resolutions in the independent oracle; a
   # threshold at 2 map units includes the vertical displacement, not 3 units.

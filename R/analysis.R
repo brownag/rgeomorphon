@@ -711,6 +711,60 @@ geomorphon_concordance <- function(geo_rast,
       result$edge_offset <- NA_real_
       result$edge_concordance <- NA_real_
     }
+
+    # New symmetric scores use only cells valid in both inputs. Keep this
+    # separate from the legacy per-input edge masks and their output fields.
+    geo_shared <- geo_rast
+    cat_shared <- cat_rast
+    shared_valid <- !is.na(terra::values(geo_rast, mat = FALSE)) &
+      !is.na(terra::values(cat_rast, mat = FALSE))
+    geo_shared_vals <- terra::values(geo_shared, mat = FALSE)
+    cat_shared_vals <- terra::values(cat_shared, mat = FALSE)
+    geo_shared_vals[!shared_valid] <- NA
+    cat_shared_vals[!shared_valid] <- NA
+    terra::values(geo_shared) <- geo_shared_vals
+    terra::values(cat_shared) <- cat_shared_vals
+
+    geo_shared_edges <- .detect_edges(geo_shared)
+    cat_shared_edges <- .detect_edges(cat_shared)
+    geo_shared_edge_vals <- terra::values(geo_shared_edges, mat = FALSE)
+    cat_shared_edge_vals <- terra::values(cat_shared_edges, mat = FALSE)
+    geo_shared_edge <- geo_shared_edge_vals == 1
+    cat_shared_edge <- cat_shared_edge_vals == 1
+    n_geo_shared_edges <- sum(geo_shared_edge, na.rm = TRUE)
+    n_cat_shared_edges <- sum(cat_shared_edge, na.rm = TRUE)
+
+    if (n_geo_shared_edges > 0 && n_cat_shared_edges > 0) {
+      geo_targets <- geo_shared_edges
+      cat_targets <- cat_shared_edges
+      terra::values(geo_targets)[!geo_shared_edge] <- NA
+      terra::values(cat_targets)[!cat_shared_edge] <- NA
+      to_geo <- terra::values(terra::distance(geo_targets), mat = FALSE)
+      to_cat <- terra::values(terra::distance(cat_targets), mat = FALSE)
+      geo_to_cat <- to_cat[geo_shared_edge]
+      cat_to_geo <- to_geo[cat_shared_edge]
+      geo_to_cat <- geo_to_cat[!is.na(geo_to_cat)]
+      cat_to_geo <- cat_to_geo[!is.na(cat_to_geo)]
+      if (length(geo_to_cat) > 0 && length(cat_to_geo) > 0) {
+        threshold_mapunits <- threshold_cells * terra::res(geo_rast)[1]
+        precision <- mean(cat_to_geo <= threshold_mapunits)
+        recall <- mean(geo_to_cat <= threshold_mapunits)
+        result$edge_f1 <- if (precision + recall == 0) 0 else
+          2 * precision * recall / (precision + recall)
+        geo_to_cat_mean <- mean(geo_to_cat)
+        cat_to_geo_mean <- mean(cat_to_geo)
+        result$edge_mhd <- max(geo_to_cat_mean, cat_to_geo_mean)
+        result$edge_chamfer <- (geo_to_cat_mean + cat_to_geo_mean) / 2
+      } else {
+        result$edge_f1 <- NA_real_
+        result$edge_mhd <- NA_real_
+        result$edge_chamfer <- NA_real_
+      }
+    } else {
+      result$edge_f1 <- NA_real_
+      result$edge_mhd <- NA_real_
+      result$edge_chamfer <- NA_real_
+    }
   }
 
   return(result)

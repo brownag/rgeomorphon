@@ -2,8 +2,8 @@
 
 Last updated: 2026-11-01
 Plan: `planning/EXECUTION_PLAN_3.md`
-Status: Wave 1 complete; wave 2 ready.
-Implementation: task 3.1.1 complete; baseline test-context repair completed.
+Status: Wave 2 complete; wave 3 ready.
+Implementation: tasks 3.1.1 and 3.2.1 complete; baseline test-context repair completed.
 
 ## Decisions
 
@@ -32,7 +32,7 @@ Unrelated modified/untracked files existed at intake; preserve them and use scop
 | Wave | Task | Title | Depends on | Status |
 |---|---|---|---|---|
 | 1 | 3.1.1 | Legacy fixtures and independent distance oracle | green preflight | done |
-| 2 | 3.2.1 | Three shared-domain symmetric scores and tests | 3.1.1 | pending |
+| 2 | 3.2.1 | Three shared-domain symmetric scores and tests | 3.1.1 | done |
 | 3 | 3.3.1 | Concordance documentation and generation | 3.2.1 | pending |
 
 ## Plan review
@@ -41,7 +41,7 @@ Spec review: PASS (2026-11-01), independent read-only review; no findings.
 Standards review: PASS (2026-11-01), independent read-only review; low-priority
 test-gate hardening applied. Commands require terra, nonempty results, all
 passing results, and full-suite analysis coverage. Wave scopes unchanged.
-Final user approval: granted on 2026-11-01. Wave 1 worker completed; wave 2 not started.
+Final user approval: granted on 2026-11-01. Waves 1–2 complete; wave 3 not started.
 
 ## Preflight report — 2026-11-01
 
@@ -61,4 +61,14 @@ Final user approval: granted on 2026-11-01. Wave 1 worker completed; wave 2 not 
 - Reinstalled with `R CMD INSTALL --library=/tmp/opencode/rgeomorphon-plan3/lib .` — PASS.
 - Focused installed-package analysis command from plan 3.1.1 — 149 results, 0 failures.
 - Full suite after wave: 222 results, 0 failures; expected geographic-coordinate warning only.
-- Remaining gap: no zero-boundary production-output assertion; new fields are deferred to 3.2.1.
+- Empty-boundary production outputs are covered in task 3.2.1.
+
+## 3.2.1
+
+- Status: implemented additive shared-domain scores; legacy calculations and outputs remain unchanged. Symmetry and typed-empty behavior checked.
+- Files: `R/analysis.R` (new calculations after legacy boundary block); `inst/tinytest/test_analysis.R` (oracle, asymmetric masks, rectangular cells, diagonal/border, excess-boundary, empty semantics).
+- Install: `R CMD INSTALL --library=/tmp/opencode/rgeomorphon-plan3/lib .` — PASS.
+- Focused command: `R_LIBS="/tmp/opencode/rgeomorphon-plan3/lib:${R_LIBS}" Rscript -e 'stopifnot(requireNamespace("terra", quietly=TRUE)); r <- tinytest::run_test_file("inst/tinytest/test_analysis.R"); print(r); d <- as.data.frame(r); stopifnot(nrow(d) > 0L, all(d$result))'` — PASS, 181 results, 0 failures.
+- Prior retry run: same focused command — 174 results, 3 failed assertions before fixture corrections; final rerun passes.
+- Full suite after wave: 254 results, 0 failures; expected geographic-coordinate warning only.
+- Deviations/gotchas: none. Wave board updated by orchestrator.
