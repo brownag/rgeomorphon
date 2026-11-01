@@ -64,6 +64,43 @@ r <- rasterize(x, y10, "mukey")
 
 geomorphon_concordance(g, r)
 
-geomorphon_ptrm(g)
+geomorphon_ptrm(g, mode = "class")
 
-p <- geomorphon_ptrm_focal(g, 10)
+p <- geomorphon_ptrm_focal(g, radius = 10, mode = "class")
+
+plot(p)
+
+# query mapunit and muaggatt attributes for categorical raster levels
+mukeys <- sort(unique(x$mukey))
+mu_tab <- soilDB::SDA_query(sprintf("
+  SELECT
+    mu.mukey,
+    mu.musym,
+    mu.muname,
+    mu.mukind,
+    mu.farmlndcl,
+    ma.slopegraddcp,
+    ma.slopegradwta,
+    ma.drclassdcd,
+    ma.hydgrpdcd,
+    ma.aws0100wta
+  FROM mapunit AS mu
+  LEFT JOIN muaggatt AS ma ON mu.mukey = ma.mukey
+  WHERE mu.mukey IN (%s)
+  ORDER BY mu.mukey
+", paste(mukeys, collapse = ",")))
+attr(mu_tab, "SDA_id") <- NULL
+
+# package 10m DEM and rasterized SSURGO mukey grid as matrices with CRS and extent attributes
+dem_mat <- matrix(round(as.matrix(y10), 2), nrow = nrow(y10), ncol = ncol(y10), byrow = TRUE)
+mukey_mat <- matrix(as.integer(as.matrix(r)), nrow = nrow(r), ncol = ncol(r), byrow = TRUE)
+
+scorpion <- list(
+  dem = dem_mat,
+  mukey = mukey_mat,
+  mapunit = mu_tab
+)
+attr(scorpion, "crs") <- terra::crs(y10)
+attr(scorpion, "extent") <- terra::ext(y10)[1:4]
+
+usethis::use_data(scorpion, compress = "bzip2", overwrite = TRUE)
