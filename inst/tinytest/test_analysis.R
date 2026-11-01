@@ -352,36 +352,34 @@ if (requireNamespace("terra", quietly = TRUE)) {
     r
   }
 
-  # Directional information summaries use category as the reference. For
-  # [[3, 1], [1, 3]], both entropies are 1 bit and MI is
-  # 1 - H(1/4, 3/4) = 0.1887218755 bits.
-  information_geo <- matrix(c(1, 1, 1, 1, 2, 2, 2, 2), nrow = 1)
-  information_cat <- matrix(c(1, 1, 1, 2, 1, 2, 2, 2), nrow = 1)
-  information_result <- geomorphon_concordance(
-    make_concordance_raster(information_geo),
-    make_concordance_raster(information_cat), method = "nmi"
-  )
-  expected_information <- 1 - (-0.25 * log2(0.25) - 0.75 * log2(0.75))
-  expect_equal(information_result$homogeneity, expected_information,
-               tolerance = 1e-10)
-  expect_equal(information_result$completeness, expected_information,
-               tolerance = 1e-10)
-  expect_equal(information_result$nmi, expected_information,
-               tolerance = 1e-10)
-  expect_equal(2 * information_result$homogeneity *
-                 information_result$completeness /
-                 (information_result$homogeneity +
-                    information_result$completeness),
-               information_result$nmi, tolerance = 1e-10)
-
-  # Unequal marginals make the two directional components distinct; swapping
-  # arguments exchanges them while preserving NMI.
+  # Contingency table [[4, 2], [0, 2]] (geomorphon rows, category columns):
+  # H(cat)=1, H(geo)=H(1/4, 3/4), H(geo,cat)=1.5, so
+  # I=H(geo)-0.5. The unequal marginal entropies give distinct components.
   asymmetric_geo <- matrix(c(1, 1, 1, 1, 1, 1, 2, 2), nrow = 1)
   asymmetric_cat <- matrix(c(1, 1, 1, 1, 2, 2, 2, 2), nrow = 1)
+  asymmetric_geo_entropy <- -(0.75 * log2(0.75) + 0.25 * log2(0.25))
+  asymmetric_mi <- asymmetric_geo_entropy - 0.5
+  expected_homogeneity <- asymmetric_mi
+  expected_completeness <- asymmetric_mi / asymmetric_geo_entropy
+  expected_nmi <- 2 * asymmetric_mi / (1 + asymmetric_geo_entropy)
   asymmetric_result <- geomorphon_concordance(
     make_concordance_raster(asymmetric_geo),
     make_concordance_raster(asymmetric_cat), method = "nmi"
   )
+  expect_equal(asymmetric_result$homogeneity, expected_homogeneity,
+               tolerance = 1e-10)
+  expect_equal(asymmetric_result$completeness, expected_completeness,
+               tolerance = 1e-10)
+  expect_equal(asymmetric_result$nmi, expected_nmi, tolerance = 1e-10)
+  expect_true(abs(asymmetric_result$homogeneity -
+                    asymmetric_result$completeness) > 1e-3,
+              info = "Unequal marginal entropies should yield distinct components")
+  expect_equal(2 * asymmetric_result$homogeneity *
+                 asymmetric_result$completeness /
+                 (asymmetric_result$homogeneity +
+                    asymmetric_result$completeness),
+               asymmetric_result$nmi, tolerance = 1e-10)
+
   asymmetric_swapped <- geomorphon_concordance(
     make_concordance_raster(asymmetric_cat),
     make_concordance_raster(asymmetric_geo), method = "nmi"
