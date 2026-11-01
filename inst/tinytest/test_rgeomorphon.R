@@ -64,6 +64,24 @@ if (requireNamespace("terra", quietly = TRUE)) {
 
     expect_equivalent(terra::nlyr(c(res, res2)), 7)
 
+    # simplified SpatRaster output must keep its values and levels
+    geo_simplified <- geomorphons(dem, search = 3, simplify = TRUE)
+    geo_full <- geomorphons(dem, search = 3)
+
+    expect_true(inherits(geo_simplified, 'SpatRaster'))
+    expect_equivalent(terra::nlyr(geo_simplified), 1L)
+    expect_true(all(!is.na(terra::values(geo_simplified))))
+    expect_equivalent(
+        as.vector(terra::values(geo_simplified)),
+        as.vector(terra::values(geo_full[[1]]))
+    )
+    expect_equivalent(names(geo_simplified), names(geo_full[[1]]))
+    expect_equivalent(nrow(terra::cats(geo_simplified)[[1]]), 10)
+    expect_equivalent(
+        terra::cats(geo_simplified)[[1]]$form,
+        geomorphon_categories()$form
+    )
+
     expect_silent({
         rg <- geomorphons(
             dem,
