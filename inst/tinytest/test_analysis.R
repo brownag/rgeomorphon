@@ -394,9 +394,9 @@ if (requireNamespace("terra", quietly = TRUE)) {
   edge_mat[5, 7] <- NA
   edge_rast <- make_concordance_raster(edge_mat)
 
-  edges_cpp <- .detect_edges(edge_rast)
+  edges_cpp <- rgeomorphon:::.detect_edges(edge_rast)
   edges_fallback <- suppressWarnings(
-    .detect_edges(edge_rast, force_fallback = TRUE)
+    rgeomorphon:::.detect_edges(edge_rast, force_fallback = TRUE)
   )
 
   expect_equal(
@@ -429,6 +429,116 @@ if (requireNamespace("terra", quietly = TRUE)) {
                info = "Complete edge mask includes NA centers and all four borders")
   expect_equal(terra::as.matrix(edges_fallback, wide = TRUE), expected_edges,
                info = "Fallback also matches the independently specified mask")
+
+  # Task 3.1.1: tiny coordinate fixtures and independent nearest-center oracle.
+  # Matrices use [row, column]; coordinates are cell centers in EPSG:3857.
+  boundary_coordinates <- function(mask, xres = 1, yres = 1) {
+    ij <- which(mask, arr.ind = TRUE)
+    if (nrow(ij) == 0L) return(matrix(numeric(), ncol = 2L))
+    cbind(x = (ij[, 2] - 0.5) * xres,
+          y = (nrow(mask) - ij[, 1] + 0.5) * yres)
+  }
+  brute_nearest <- function(from, to) {
+    if (!nrow(from) || !nrow(to)) return(numeric())
+    vapply(seq_len(nrow(from)), function(i) {
+      min(sqrt(rowSums((to - matrix(from[i, ], nrow(to), 2L,
+                                    byrow = TRUE))^2)))
+    }, numeric(1))
+  }
+  reference_mask <- function(mat, valid = !is.na(mat)) {
+    mask <- matrix(FALSE, nrow(mat), ncol(mat))
+    for (i in 2:(nrow(mat) - 1L)) {
+      for (j in 2:(ncol(mat) - 1L)) {
+        if (!valid[i, j]) next
+        neighbors <- mat[(i - 1L):(i + 1L), (j - 1L):(j + 1L)]
+        neighbor_valid <- valid[(i - 1L):(i + 1L), (j - 1L):(j + 1L)]
+        mask[i, j] <- any(neighbor_valid & neighbors != mat[i, j])
+      }
+    }
+    mask
+  }
+
+  # Manual checks: coincident centers are 0; adjacent centers are 2 by 3.
+  point_a <- matrix(c(0.5, 1.5), nrow = 1)
+  point_b <- matrix(c(2.5, 4.5), nrow = 1)
+  expect_equal(brute_nearest(point_a, point_a), 0)
+  expect_equal(brute_nearest(point_a, point_b), 3.605551275,
+               tolerance = 1e-8)
+  expect_true(brute_nearest(point_a, point_b) > 3)
+  expect_true(brute_nearest(point_a, point_b) <= sqrt(13))
+  expect_false(brute_nearest(point_a, point_b) <= 3)
+  expect_equal(brute_nearest(point_a, point_a) <= 0, TRUE)
+  expect_equal(brute_nearest(point_a, point_b) <= 0, FALSE)
+
+  # Shared-domain fixture expectation is specified from class contrasts, not
+  # production edge detection; differing NA masks exclude those cells first.
+  fixture_geo <- matrix(1, 7, 9)
+  fixture_geo[, 5:9] <- 2
+  fixture_cat <- fixture_geo
+  fixture_cat[, 6:9] <- 2
+  expected_geo_fixture <- reference_mask(fixture_geo)
+  expected_cat_fixture <- reference_mask(fixture_cat)
+  expect_equal(nrow(which(expected_geo_fixture, arr.ind = TRUE)), 10)
+  expect_equal(nrow(which(expected_cat_fixture, arr.ind = TRUE)), 10)
+  shared_valid <- !is.na(fixture_geo) & !is.na(fixture_cat)
+  expected_shared_geo <- reference_mask(fixture_geo, shared_valid)
+  expected_shared_cat <- reference_mask(fixture_cat, shared_valid)
+  expect_equal(expected_shared_geo, expected_geo_fixture)
+  expect_equal(expected_shared_cat, expected_cat_fixture)
+  geo_fixture_rast <- make_concordance_raster(fixture_geo)
+  cat_fixture_rast <- make_concordance_raster(fixture_cat)
+  fixture_legacy <- geomorphon_concordance(
+    geo_fixture_rast, cat_fixture_rast, method = "boundary", threshold_cells = 1
+  )
+  expect_equal(fixture_legacy$n_edges_geo, 10)
+  expect_equal(fixture_legacy$n_edges_cat, 10)
+  expect_equal(fixture_legacy$edge_offset, 0)
+  expect_equal(fixture_legacy$edge_concordance, 1)
+
+  # With asymmetric NA masks, legacy edge counts remain per-input; pin outputs.
+  geo_asym <- fixture_geo
+  cat_asym <- fixture_cat
+  geo_asym[4, 3] <- NA
+  cat_asym[4, 7] <- NA
+  asym_result <- geomorphon_concordance(
+    make_concordance_raster(geo_asym), make_concordance_raster(cat_asym),
+    method = "boundary", threshold_cells = 1
+  )
+  expect_equal(asym_result$n_edges_geo, 10)
+  expect_equal(asym_result$n_edges_cat, 10)
+  expect_equal(asym_result$edge_offset, 0)
+  expect_equal(asym_result$edge_concordance, 1)
+
+  # No-overlap and empty-boundary coordinate sets are explicit oracle fixtures.
+  empty_mask <- matrix(FALSE, 5, 7)
+  expect_equal(nrow(boundary_coordinates(empty_mask)), 0L)
+  no_overlap_a <- matrix(c(0.5, 0.5), nrow = 1)
+  no_overlap_b <- matrix(c(20.5, 20.5), nrow = 1)
+  expect_true(brute_nearest(no_overlap_a, no_overlap_b) > 1)
+  expect_equal(brute_nearest(no_overlap_a, matrix(numeric(), ncol = 2)),
+               numeric())
+
+  # Explicit diagonal and border fixtures: 8-neighbor mask expected by
+  # coordinates, with raster borders excluded from edge candidates.
+  diagonal_fixture <- matrix(1, 7, 7)
+  diagonal_fixture[4, 4] <- 2
+  diagonal_expected <- matrix(FALSE, 7, 7)
+  diagonal_expected[3:5, 3:5] <- TRUE
+  diagonal_expected[c(1, 7), ] <- FALSE
+  diagonal_expected[, c(1, 7)] <- FALSE
+  expect_equal(reference_mask(diagonal_fixture), diagonal_expected)
+  border_fixture <- matrix(1, 7, 7)
+  border_fixture[1, 4:7] <- 2
+  border_expected <- reference_mask(border_fixture)
+  expect_false(any(border_expected[c(1, 7), ]))
+  expect_false(any(border_expected[, c(1, 7)]))
+
+  # Rectangular cells use both resolutions in the independent oracle; a
+  # threshold at 2 map units includes the vertical displacement, not 3 units.
+  anisotropic_a <- matrix(c(0.5, 1.5), nrow = 1)
+  anisotropic_b <- matrix(c(0.5, 4.5), nrow = 1)
+  expect_equal(brute_nearest(anisotropic_a, anisotropic_b), 3)
+  expect_true(brute_nearest(anisotropic_a, anisotropic_b) > 2)
 
   # Geographic CRS warning is limited to methods that request boundary metrics.
   geo_ll <- make_concordance_raster(geo_a)
