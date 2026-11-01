@@ -489,7 +489,28 @@ geomorphon_ptrm <- function(x,
 #' categorical boundary cell to the nearest geomorphon boundary cell, in map
 #' units of the input CRS. The `edge_concordance` is the proportion of
 #' categorical boundary cells within a threshold distance of the nearest
-#' geomorphon boundary cell.
+#' geomorphon boundary cell. These legacy summaries retain their directional
+#' definitions and per-input valid masks.
+#'
+#' The additive `edge_f1`, `edge_mhd`, and `edge_chamfer` summaries are
+#' symmetric. They detect boundaries for both maps only within their shared
+#' non-`NA` cells. `edge_f1` is threshold-based: precision and recall are the
+#' proportions of boundary cells in each map within the threshold of a boundary
+#' in the other map, and F1 is their harmonic mean (range 0-1). It is not a
+#' kernel F1 or a one-to-one matched-boundary score. `edge_mhd` is the maximum
+#' of the two directed mean nearest-boundary distances; despite its name, it is
+#' not the classical maximum Hausdorff distance. `edge_chamfer` is the mean of
+#' those directed means. The distance summaries are non-negative and use input
+#' CRS map units. Each new score is `NA_real_` if either shared-domain boundary
+#' set is empty.
+#'
+#' Shared-domain edges use the existing eight-neighbor rule and exclude raster
+#' borders. Mask holes are not boundaries and do not block nearest-boundary
+#' distances. `threshold_cells` is multiplied by the x-resolution, including
+#' for rectangular cells; distance calculations use both cell dimensions.
+#' When input NA masks differ, legacy counts and directional summaries still
+#' use their existing per-input masks, so they need not describe the edges used
+#' by the new shared-domain scores.
 #'
 #' @param geo_rast `SpatRaster`. Geomorphon classification raster (typically
 #'   output from [geomorphons()]).
@@ -519,6 +540,17 @@ geomorphon_ptrm <- function(x,
 #'       boundary cells within `threshold_cells` of the nearest geomorphon
 #'       boundary cell. Higher values indicate better alignment. Only included
 #'       when method includes "boundary".}
+#'     \item{`edge_f1`}{Numeric. Symmetric threshold-based boundary F1 (0-1).
+#'       `NA_real_` if either shared-domain boundary set is empty. Included
+#'       when method includes "boundary".}
+#'     \item{`edge_mhd`}{Numeric. Maximum of the two directed mean
+#'       nearest-boundary distances, in map units; not classical maximum
+#'       Hausdorff distance. `NA_real_` if either shared-domain boundary set is
+#'       empty. Included when method includes "boundary".}
+#'     \item{`edge_chamfer`}{Numeric. Mean of the two directed mean
+#'       nearest-boundary distances, in map units. `NA_real_` if either
+#'       shared-domain boundary set is empty. Included when method includes
+#'       "boundary".}
 #'     \item{`n_cells`}{Integer. Total number of valid cells analyzed.}
 #'     \item{`n_edges_geo`}{Integer. Number of geomorphon boundary cells.
 #'       Only included when method includes "boundary".}
@@ -575,6 +607,7 @@ geomorphon_ptrm <- function(x,
 #' conc <- geomorphon_concordance(geo, cat_map)
 #' print(conc$nmi)
 #' print(conc$edge_concordance)
+#' print(conc[c("edge_f1", "edge_mhd", "edge_chamfer")])
 #'
 geomorphon_concordance <- function(geo_rast,
                                   cat_rast,
