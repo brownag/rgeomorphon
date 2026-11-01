@@ -668,6 +668,117 @@ if (requireNamespace("terra", quietly = TRUE)) {
   expect_false(any(c("edge_f1", "edge_mhd", "edge_chamfer") %in%
                    names(geomorphon_concordance(
                      geo_fixture_rast, cat_fixture_rast, method = "nmi"))))
+  nmi_null_result <- geomorphon_concordance(
+    geo_fixture_rast, cat_fixture_rast, method = "nmi"
+  )
+  expect_true(all(c("mean_null_nmi", "delta_nmi", "nmi_null_shifts",
+                    "null_shifts_evaluated") %in% names(nmi_null_result)))
+  expect_false("mean_null_edge_f1" %in% names(nmi_null_result))
+  expect_equal(nmi_null_result$null_shifts_evaluated, 62L)
+  # The capped shift schedule is independently specified by flattened ranks.
+  large_nr <- 13L
+  large_nc <- 13L
+  large_n <- large_nr * large_nc
+  large_geo <- matrix(rep(c(1, 2, 3), length.out = large_n), large_nr, large_nc)
+  large_cat <- matrix(rep(c(1, 1, 2, 3), length.out = large_n), large_nr, large_nc)
+  large_null <- rgeomorphon:::spatial_null_cpp(
+    as.vector(t(large_geo)), as.vector(t(large_cat)), large_nr, large_nc,
+    20, FALSE, TRUE
+  )
+  expect_equal(large_null$evaluated, 128L)
+  direct_shift_f1 <- function(dr, dc, threshold) {
+    shifted <- large_cat
+    for (r in seq_len(large_nr)) for (cc in seq_len(large_nc)) {
+      shifted[r, cc] <- large_cat[(r - dr - 1L) %% large_nr + 1L,
+                                  (cc - dc - 1L) %% large_nc + 1L]
+    }
+    valid <- matrix(TRUE, large_nr, large_nc)
+    ge <- reference_mask(large_geo, valid)
+    ce <- reference_mask(shifted, valid)
+    hit_rate <- function(from, to) {
+      ij_from <- which(from, arr.ind = TRUE)
+      ij_to <- which(to, arr.ind = TRUE)
+      if (!nrow(ij_from) || !nrow(ij_to)) return(NA_real_)
+      mean(vapply(seq_len(nrow(ij_from)), function(k) {
+        any(vapply(seq_len(nrow(ij_to)), function(j) {
+          rr <- abs(ij_from[k, 1] - ij_to[j, 1])
+          cc <- abs(ij_from[k, 2] - ij_to[j, 2])
+          min(rr, large_nr - rr)^2 + min(cc, large_nc - cc)^2 <= threshold^2
+        }, logical(1)))
+      }, logical(1)))
+    }
+    p <- hit_rate(ce, ge); r <- hit_rate(ge, ce)
+    if (is.na(p) || is.na(r)) return(NA_real_)
+    if (p + r == 0) 0 else 2 * p * r / (p + r)
+  }
+  direct_scores <- vapply(0:127, function(i) {
+    rank <- floor((i + 0.5) * (large_n - 1) / 128)
+    q <- rank + 1
+    direct_shift_f1(q %/% large_nc, q %% large_nc, 20)
+  }, numeric(1))
+  expect_equal(large_null$edge_mean, mean(direct_scores), tolerance = 1e-12)
+
+  # Independently verify the capped NMI null schedule on a rectangular raster
+  # with distinct geo/category missing-value masks.
+  null_nr <- 5L
+  null_nc <- 7L
+  null_n <- null_nr * null_nc
+  null_geo <- matrix(rep(c(1, 1, 2, 3), length.out = null_n), null_nr, null_nc)
+  null_cat <- matrix(rep(c(1, 2, 2, 3, 1), length.out = null_n), null_nr, null_nc)
+  null_geo[c(2, 6, 19)] <- NA_real_
+  null_cat[c(4, 11, 28)] <- NA_real_
+  null_cpp <- function() rgeomorphon:::spatial_null_cpp(
+    as.vector(t(null_geo)), as.vector(t(null_cat)), null_nr, null_nc,
+    0, TRUE, FALSE
+  )
+  null_entropy <- function(x) {
+    p <- as.numeric(table(x)) / length(x)
+    -sum(p * log2(p))
+  }
+  null_shifts <- min(128L, null_n - 1L)
+  direct_nmi <- vapply(seq_len(null_shifts) - 1L, function(i) {
+    rank <- floor((i + 0.5) * (null_n - 1) / null_shifts)
+    q <- rank + 1L
+    dr <- q %/% null_nc
+    dc <- q %% null_nc
+    shifted_cat <- matrix(NA_real_, null_nr, null_nc)
+    for (r in seq_len(null_nr)) for (cc in seq_len(null_nc)) {
+      shifted_cat[r, cc] <- null_cat[(r - dr - 1L) %% null_nr + 1L,
+                                      (cc - dc - 1L) %% null_nc + 1L]
+    }
+    valid <- !is.na(null_geo) & !is.na(shifted_cat)
+    if (!any(valid)) return(NA_real_)
+    gv <- null_geo[valid]
+    cv <- shifted_cat[valid]
+    hg <- null_entropy(gv)
+    hc <- null_entropy(cv)
+    if (hg + hc == 0) return(0)
+    hj <- null_entropy(paste(gv, cv, sep = "_"))
+    max(0, min(1, 2 * max(0, hg + hc - hj) / (hg + hc)))
+  }, numeric(1))
+  direct_eligible <- direct_nmi[!is.na(direct_nmi)]
+  null_first <- null_cpp()
+  null_repeat <- null_cpp()
+  expect_equal(null_first$nmi_mean, mean(direct_eligible), tolerance = 1e-12)
+  expect_equal(null_first$nmi_eligible, length(direct_eligible))
+  expect_identical(null_repeat$nmi_mean, null_first$nmi_mean)
+  expect_identical(null_repeat$nmi_eligible, null_first$nmi_eligible)
+
+  expect_equal(nmi_null_result$delta_nmi,
+               nmi_null_result$nmi - nmi_null_result$mean_null_nmi,
+               tolerance = 1e-12)
+  expect_true(nmi_null_result$nmi_null_shifts <=
+              nmi_null_result$null_shifts_evaluated)
+  boundary_null_result <- geomorphon_concordance(
+    geo_fixture_rast, cat_fixture_rast, method = "boundary",
+    threshold_cells = 1
+  )
+  expect_true(all(c("mean_null_edge_f1", "delta_edge_f1",
+                    "edge_f1_null_shifts") %in% names(boundary_null_result)))
+  expect_false("mean_null_nmi" %in% names(boundary_null_result))
+  expect_equal(boundary_null_result$delta_edge_f1,
+               boundary_null_result$edge_f1 - boundary_null_result$mean_null_edge_f1,
+               tolerance = 1e-12)
   expect_true(all(c("edge_f1", "edge_mhd", "edge_chamfer") %in%
                    names(geomorphon_concordance(
                      geo_fixture_rast, cat_fixture_rast, method = "both"))))
@@ -708,6 +819,11 @@ if (requireNamespace("terra", quietly = TRUE)) {
   expect_equal(geomorphon_concordance(
     geo_fixture_rast, cat_fixture_rast, method = "boundary",
     threshold_cells = 10)$edge_f1, 1)
+  expect_equal(geomorphon_concordance(
+    geo_fixture_rast, cat_fixture_rast, method = "boundary",
+    threshold_cells = 1e9)$edge_f1,
+    oracle_scores(fixture_geo, fixture_cat, threshold_cells = 1e9)[1],
+    tolerance = 1e-8)
 
   # A shared-domain hole is not an edge; compare expected masks independently.
   hole_geo <- fixture_geo

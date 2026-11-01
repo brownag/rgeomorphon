@@ -73,6 +73,26 @@ Only included when method includes "boundary".}
 Only included when method includes "boundary".}
 \item{\code{contingency_table}}{Matrix. Cross-tabulation of geomorphon vs.
 categorical classes. Only included when method includes "nmi".}
+\item{\code{mean_null_nmi}}{Numeric. Arithmetic mean NMI across eligible
+deterministic spatial translations. \code{NA_real_} if no shifts have
+paired-valid cells. Included only for methods "nmi" and "both".}
+\item{\code{delta_nmi}}{Numeric. Observed \code{nmi} minus \code{mean_null_nmi}; may be
+negative and is \code{NA_real_} if either score is \code{NA}. Included only for
+methods "nmi" and "both".}
+\item{\code{nmi_null_shifts}}{Integer. Number of evaluated shifts eligible
+for the NMI null mean (shifts with paired-valid cells). Included only
+for methods "nmi" and "both".}
+\item{\code{mean_null_edge_f1}}{Numeric. Arithmetic mean edge F1 across
+shifts with nonempty edge sets. \code{NA_real_} if no shifts are eligible.
+Included only for methods "boundary" and "both".}
+\item{\code{delta_edge_f1}}{Numeric. Observed \code{edge_f1} minus
+\code{mean_null_edge_f1}; may be negative and is \code{NA_real_} if either score
+is \code{NA}. Included only for methods "boundary" and "both".}
+\item{\code{edge_f1_null_shifts}}{Integer. Number of evaluated shifts
+eligible for the edge-F1 null mean (both edge sets nonempty). Included
+only for methods "boundary" and "both".}
+\item{\code{null_shifts_evaluated}}{Integer. Number of non-identity shifts
+evaluated for the null ensemble, shared by the requested metrics.}
 }
 }
 \description{
@@ -154,6 +174,30 @@ components are \code{NA_real_} and NMI remains 0. These fields are returned only
 by \code{method = "nmi"} or \code{"both"}, not by \code{"boundary"}. The boundary metrics
 are useful for validating whether geomorphological transitions correspond
 to ecological or pedological boundaries.
+
+The additive spatial-null summaries compare the observed alignment with a
+deterministic sample of up to 128 non-identity circular translations of
+\code{cat_rast}; all candidate shifts are used when fewer than 128 exist. The
+schedule is defined for a raster with \code{nr} rows and \code{nc} columns by
+\code{M = nr * nc - 1}, \code{S = min(128, M)}, and
+\code{k_i = floor((i + 0.5) * M / S)} for \verb{i = 0, ..., S - 1}. For each index,
+\code{q = k_i + 1} and the row/column shift is
+\verb{(dr, dc) = (q \%/\% nc, q \%\% nc)}. Using zero-based coordinates, the source
+category at destination \verb{(r, c)} is
+\verb{[(r - dr) mod nr, (c - dc) mod nc]}; the geomorphon map stays fixed.
+Outputs contain aggregate summaries only, not per-shift scores. The
+category values and their \code{NA} mask move together, and paired-valid cells
+are recomputed for each shift. NMI uses base-2 entropy and is zero when both
+marginal entropies are zero. Null edge F1 uses shared-valid eight-neighbor
+edges (excluding image borders) and toroidal Euclidean distances in cell
+coordinates with \code{threshold_cells}; a shift with either edge set empty is
+ineligible for its mean. Null summaries are arithmetic means over eligible
+shifts; deltas are observed minus mean and are not clamped. With no eligible
+shifts, the corresponding summary and delta are \code{NA_real_} and its eligible
+count is zero. These are descriptive contrasts against this translation
+ensemble, not adjusted mutual information, calibrated scores, p-values, or
+evidence of statistical significance. NMI-null fields are returned only for
+\code{method = "nmi"} or \code{"both"}; edge-F1-null fields only for \code{method = "boundary"} or \code{"both"}. \code{null_shifts_evaluated} is always returned.
 }
 
 \examples{

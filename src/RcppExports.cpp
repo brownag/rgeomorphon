@@ -84,6 +84,23 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// spatial_null_cpp
+List spatial_null_cpp(NumericVector geo, NumericVector cat, int nr, int nc, double threshold, bool do_nmi, bool do_edge);
+RcppExport SEXP _rgeomorphon_spatial_null_cpp(SEXP geoSEXP, SEXP catSEXP, SEXP nrSEXP, SEXP ncSEXP, SEXP thresholdSEXP, SEXP do_nmiSEXP, SEXP do_edgeSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type geo(geoSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type cat(catSEXP);
+    Rcpp::traits::input_parameter< int >::type nr(nrSEXP);
+    Rcpp::traits::input_parameter< int >::type nc(ncSEXP);
+    Rcpp::traits::input_parameter< double >::type threshold(thresholdSEXP);
+    Rcpp::traits::input_parameter< bool >::type do_nmi(do_nmiSEXP);
+    Rcpp::traits::input_parameter< bool >::type do_edge(do_edgeSEXP);
+    rcpp_result_gen = Rcpp::wrap(spatial_null_cpp(geo, cat, nr, nc, threshold, do_nmi, do_edge));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_rgeomorphon_focal_edge_cpp", (DL_FUNC) &_rgeomorphon_focal_edge_cpp, 2},
@@ -91,6 +108,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_rgeomorphon_get_forms_grass_enum", (DL_FUNC) &_rgeomorphon_get_forms_grass_enum, 0},
     {"_rgeomorphon_get_forms_matrix_cpp", (DL_FUNC) &_rgeomorphon_get_forms_matrix_cpp, 1},
     {"_rgeomorphon_geomorphons_cpp_worker", (DL_FUNC) &_rgeomorphon_geomorphons_cpp_worker, 15},
+    {"_rgeomorphon_spatial_null_cpp", (DL_FUNC) &_rgeomorphon_spatial_null_cpp, 7},
     {NULL, NULL, 0}
 };
 

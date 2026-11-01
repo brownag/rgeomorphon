@@ -596,6 +596,26 @@ geomorphon_ptrm <- function(x,
 #'       Only included when method includes "boundary".}
 #'     \item{`contingency_table`}{Matrix. Cross-tabulation of geomorphon vs.
 #'       categorical classes. Only included when method includes "nmi".}
+#'     \item{`mean_null_nmi`}{Numeric. Arithmetic mean NMI across eligible
+#'       deterministic spatial translations. `NA_real_` if no shifts have
+#'       paired-valid cells. Included only for methods "nmi" and "both".}
+#'     \item{`delta_nmi`}{Numeric. Observed `nmi` minus `mean_null_nmi`; may be
+#'       negative and is `NA_real_` if either score is `NA`. Included only for
+#'       methods "nmi" and "both".}
+#'     \item{`nmi_null_shifts`}{Integer. Number of evaluated shifts eligible
+#'       for the NMI null mean (shifts with paired-valid cells). Included only
+#'       for methods "nmi" and "both".}
+#'     \item{`mean_null_edge_f1`}{Numeric. Arithmetic mean edge F1 across
+#'       shifts with nonempty edge sets. `NA_real_` if no shifts are eligible.
+#'       Included only for methods "boundary" and "both".}
+#'     \item{`delta_edge_f1`}{Numeric. Observed `edge_f1` minus
+#'       `mean_null_edge_f1`; may be negative and is `NA_real_` if either score
+#'       is `NA`. Included only for methods "boundary" and "both".}
+#'     \item{`edge_f1_null_shifts`}{Integer. Number of evaluated shifts
+#'       eligible for the edge-F1 null mean (both edge sets nonempty). Included
+#'       only for methods "boundary" and "both".}
+#'     \item{`null_shifts_evaluated`}{Integer. Number of non-identity shifts
+#'       evaluated for the null ensemble, shared by the requested metrics.}
 #'   }
 #'
 #' @details
@@ -613,6 +633,31 @@ geomorphon_ptrm <- function(x,
 #' by `method = "nmi"` or `"both"`, not by `"boundary"`. The boundary metrics
 #' are useful for validating whether geomorphological transitions correspond
 #' to ecological or pedological boundaries.
+#'
+#' The additive spatial-null summaries compare the observed alignment with a
+#' deterministic sample of up to 128 non-identity circular translations of
+#' `cat_rast`; all candidate shifts are used when fewer than 128 exist. The
+#' schedule is defined for a raster with `nr` rows and `nc` columns by
+#' `M = nr * nc - 1`, `S = min(128, M)`, and
+#' `k_i = floor((i + 0.5) * M / S)` for `i = 0, ..., S - 1`. For each index,
+#' `q = k_i + 1` and the row/column shift is
+#' `(dr, dc) = (q %/% nc, q %% nc)`. Using zero-based coordinates, the source
+#' category at destination `(r, c)` is
+#' `[(r - dr) mod nr, (c - dc) mod nc]`; the geomorphon map stays fixed.
+#' Outputs contain aggregate summaries only, not per-shift scores. The
+#' category values and their `NA` mask move together, and paired-valid cells
+#' are recomputed for each shift. NMI uses base-2 entropy and is zero when both
+#' marginal entropies are zero. Null edge F1 uses shared-valid eight-neighbor
+#' edges (excluding image borders) and toroidal Euclidean distances in cell
+#' coordinates with `threshold_cells`; a shift with either edge set empty is
+#' ineligible for its mean. Null summaries are arithmetic means over eligible
+#' shifts; deltas are observed minus mean and are not clamped. With no eligible
+#' shifts, the corresponding summary and delta are `NA_real_` and its eligible
+#' count is zero. These are descriptive contrasts against this translation
+#' ensemble, not adjusted mutual information, calibrated scores, p-values, or
+#' evidence of statistical significance. NMI-null fields are returned only for
+#' `method = "nmi"` or `"both"`; edge-F1-null fields only for `method =
+#' "boundary"` or `"both"`. `null_shifts_evaluated` is always returned.
 #'
 #' @note
 #' **Memory Requirements:** This function performs edge detection on both input
@@ -848,6 +893,27 @@ geomorphon_concordance <- function(geo_rast,
       result$edge_chamfer <- NA_real_
     }
   }
+
+  # Additive toroidal spatial-null summaries. The C++ helper processes shifts
+  # serially and leaves all legacy observed scores untouched.
+  null <- spatial_null_cpp(
+    terra::values(geo_rast, mat = FALSE),
+    terra::values(cat_rast, mat = FALSE),
+    terra::nrow(geo_rast), terra::ncol(geo_rast),
+    as.numeric(threshold_cells), method %in% c("nmi", "both"),
+    method %in% c("boundary", "both")
+  )
+  if (method %in% c("nmi", "both")) {
+    result$mean_null_nmi <- null$nmi_mean
+    result$delta_nmi <- result$nmi - null$nmi_mean
+    result$nmi_null_shifts <- null$nmi_eligible
+  }
+  if (method %in% c("boundary", "both")) {
+    result$mean_null_edge_f1 <- null$edge_mean
+    result$delta_edge_f1 <- result$edge_f1 - null$edge_mean
+    result$edge_f1_null_shifts <- null$edge_eligible
+  }
+  result$null_shifts_evaluated <- null$evaluated
 
   return(result)
 }
