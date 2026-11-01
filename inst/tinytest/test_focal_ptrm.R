@@ -54,11 +54,11 @@ if (requireNamespace("terra", quietly = TRUE)) {
   pattern[4, 4] <- NA
   pattern[1, 1] <- 99  # outside the forms10 system, mapped to NA
   r_pattern <- make_raster(pattern)
-  model <- rgeomorphon:::.get_ptrm_model("forms10", NULL, -38.02, 69.96)
-  ptrm_cpp <- rgeomorphon:::.geomorphon_ptrm_focal_impl(
+  model <- .get_ptrm_model("forms10", NULL, -38.02, 69.96)
+  ptrm_cpp <- .geomorphon_ptrm_focal_impl(
     r_pattern, 2, model, force_cpp = TRUE
   )
-  ptrm_fallback <- rgeomorphon:::.geomorphon_ptrm_focal_impl(
+  ptrm_fallback <- .geomorphon_ptrm_focal_impl(
     r_pattern, 2, model, force_cpp = FALSE
   )
   expect_equal(
@@ -128,5 +128,5 @@ if (requireNamespace("terra", quietly = TRUE)) {
   )
 
   # Shared memory gate helper is callable with a bytes-per-cell argument
-  expect_true(is.logical(rgeomorphon:::.focal_memory_ok(r3, 12)))
+  expect_true(is.logical(.focal_memory_ok(r3, 12)))
 }

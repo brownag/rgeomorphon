@@ -394,9 +394,9 @@ if (requireNamespace("terra", quietly = TRUE)) {
   edge_mat[5, 7] <- NA
   edge_rast <- make_concordance_raster(edge_mat)
 
-  edges_cpp <- rgeomorphon:::.detect_edges(edge_rast)
+  edges_cpp <- .detect_edges(edge_rast)
   edges_fallback <- suppressWarnings(
-    rgeomorphon:::.detect_edges(edge_rast, force_fallback = TRUE)
+    .detect_edges(edge_rast, force_fallback = TRUE)
   )
 
   expect_equal(
