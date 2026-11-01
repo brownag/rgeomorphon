@@ -35,7 +35,18 @@ A list with the following components (depending on \code{method}):
 \describe{
 \item{\code{nmi}}{Numeric. Normalized Mutual Information (0-1). Higher values
 indicate stronger statistical association between classifications.
-Only included when method includes "nmi".}
+Existing NMI behavior is unchanged. Only included when method includes
+"nmi".}
+\item{\code{homogeneity}}{Numeric. \verb{I(geo; cat) / H(cat)}, measuring how
+well the geomorphon classes determine the categorical reference.
+\code{NA_real_} when \code{H(cat) = 0}; otherwise zero for a constant geomorphon
+map against a varying categorical map. Included only for methods
+"nmi" and "both".}
+\item{\code{completeness}}{Numeric. \verb{I(geo; cat) / H(geo)}, measuring how
+completely the categorical classes capture geomorphon information.
+\code{NA_real_} when \code{H(geo) = 0}; otherwise zero for a constant categorical
+map against a varying geomorphon map. Included only for methods
+"nmi" and "both".}
 \item{\code{edge_offset}}{Numeric. Mean distance (in map units) from each
 categorical boundary cell to the nearest geomorphon boundary cell.
 Lower values indicate better boundary alignment. Only included when
@@ -88,6 +99,16 @@ larger than available RAM:
 Normalized Mutual Information (NMI) measures the mutual dependence between
 two categorical variables, independent of the specific class mappings. An
 NMI of 1 indicates perfect association, while 0 indicates independence.
+When NMI is requested, the result also includes directional \code{homogeneity}
+and \code{completeness}. With \code{cat_rast} as the reference,
+\verb{homogeneity = I(geo; cat) / H(cat)} and
+\verb{completeness = I(geo; cat) / H(geo)}. Swapping the rasters swaps these two
+values but leaves NMI unchanged. When both entropies are positive, their
+harmonic mean equals NMI. A component with a zero entropy denominator is
+\code{NA_real_}; the other component is zero when defined. If both maps are
+constant, both components are \code{NA_real_} while existing NMI remains 0.
+These additive components do not change the existing NMI calculation or
+values.
 }
 
 \section{Boundary Alignment}{
@@ -124,9 +145,15 @@ resolutions. Use \code{\link[terra:crop]{terra::crop()}}, \code{\link[terra:resa
 \code{\link[terra:disaggregate]{terra::disagg()}} to align rasters before calling this function.
 
 The NMI is symmetric and normalized to the range 0-1, with higher values
-indicating stronger association regardless of how classes map to each other. The
-boundary metrics are useful for validating whether geomorphological
-transitions correspond to ecological or pedological boundaries.
+indicating stronger association regardless of how classes map to each other.
+Homogeneity and completeness are directional: \code{cat_rast} is the reference
+for their definitions, so swapping inputs exchanges the scores. If both
+marginal entropies are positive, their harmonic mean equals NMI. A zero
+denominator yields \code{NA_real_} for that component; for two constant maps both
+components are \code{NA_real_} and NMI remains 0. These fields are returned only
+by \code{method = "nmi"} or \code{"both"}, not by \code{"boundary"}. The boundary metrics
+are useful for validating whether geomorphological transitions correspond
+to ecological or pedological boundaries.
 }
 
 \examples{
