@@ -160,8 +160,8 @@ When input NA masks differ, legacy counts and directional summaries still
 use their existing per-input masks, so they need not describe the edges used
 by the new shared-domain scores.
 
-For rasters to be comparable, they must have matching extents and
-resolutions. Use \code{\link[terra:crop]{terra::crop()}}, \code{\link[terra:resample]{terra::resample()}}, or
+For rasters to be comparable, they must have matching row and column counts,
+extents, and resolutions. Use \code{\link[terra:crop]{terra::crop()}}, \code{\link[terra:resample]{terra::resample()}}, or
 \code{\link[terra:disaggregate]{terra::disagg()}} to align rasters before calling this function.
 
 The NMI is symmetric and normalized to the range 0-1, with higher values

@@ -619,8 +619,8 @@ geomorphon_ptrm <- function(x,
 #'   }
 #'
 #' @details
-#' For rasters to be comparable, they must have matching extents and
-#' resolutions. Use [terra::crop()], [terra::resample()], or
+#' For rasters to be comparable, they must have matching row and column counts,
+#' extents, and resolutions. Use [terra::crop()], [terra::resample()], or
 #' [terra::disagg()] to align rasters before calling this function.
 #'
 #' The NMI is symmetric and normalized to the range 0-1, with higher values

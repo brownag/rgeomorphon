@@ -825,6 +825,48 @@ if (requireNamespace("terra", quietly = TRUE)) {
     oracle_scores(fixture_geo, fixture_cat, threshold_cells = 1e9)[1],
     tolerance = 1e-8)
 
+  # The C++ helper checks dimensions before allocating; products larger than
+  # signed-int range must not wrap to a misleading cell count.
+  expect_error(rgeomorphon:::spatial_null_cpp(
+    1, 1, .Machine$integer.max, .Machine$integer.max, 0, TRUE, FALSE
+  ), pattern = "value vectors must match")
+
+  # Match R's is.na semantics: exclude NA and NaN, retain infinities as classes.
+  nonfinite_geo <- matrix(c(1, 1, NaN, Inf, 2, 2, -Inf, NA_real_), 2, 4,
+                          byrow = TRUE)
+  nonfinite_cat <- matrix(c(1, 2, Inf, 3, 2, 2, -Inf, NA_real_), 2, 4,
+                          byrow = TRUE)
+  nonfinite_null <- rgeomorphon:::spatial_null_cpp(
+    as.vector(t(nonfinite_geo)), as.vector(t(nonfinite_cat)), 2L, 4L,
+    0, TRUE, FALSE
+  )
+  entropy_r <- function(x) {
+    p <- as.numeric(table(x)) / length(x)
+    -sum(p * log2(p))
+  }
+  direct_nonfinite <- vapply(0:6, function(i) {
+    rank <- floor((i + 0.5) * 7 / 7)
+    q <- rank + 1L
+    dr <- q %/% 4L
+    dc <- q %% 4L
+    shifted <- matrix(NA_real_, 2, 4)
+    for (r in 1:2) for (cc in 1:4) {
+      shifted[r, cc] <- nonfinite_cat[(r - dr - 1L) %% 2L + 1L,
+                                       (cc - dc - 1L) %% 4L + 1L]
+    }
+    valid <- !is.na(nonfinite_geo) & !is.na(shifted)
+    if (!any(valid)) return(NA_real_)
+    gv <- nonfinite_geo[valid]
+    cv <- shifted[valid]
+    hg <- entropy_r(gv); hc <- entropy_r(cv)
+    if (hg + hc == 0) return(0)
+    hj <- entropy_r(paste(gv, cv, sep = "_"))
+    2 * max(0, hg + hc - hj) / (hg + hc)
+  }, numeric(1))
+  expect_equal(nonfinite_null$nmi_mean, mean(direct_nonfinite, na.rm = TRUE),
+               tolerance = 1e-12)
+  expect_equal(nonfinite_null$nmi_eligible, sum(!is.na(direct_nonfinite)))
+
   # A shared-domain hole is not an edge; compare expected masks independently.
   hole_geo <- fixture_geo
   hole_cat <- fixture_cat
