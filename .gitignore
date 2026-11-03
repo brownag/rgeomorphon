@@ -11,3 +11,5 @@ docs/*
 !docs/decisions/
 !docs/decisions/**
 inst/doc
+/doc/
+/Meta/

@@ -1,3 +1,13 @@
+# rgeomorphon 0.4.0
+
+ - Added `geomorphon_ptrm()` to measure perceived terrain realism (0–1) from a DEM or geomorphon map
+
+   - Including focal-window calculations, `forms4`/`forms5`/`forms6` support, and tunable model parameters.
+
+ - Added `geomorphon_concordance()` to compare map structure using NMI and boundary-alignment metrics.
+
+ - Added internal information-theory helpers and tests; no new dependencies.
+
 # rgeomorphon 0.3.0
 
  - Added support for tiled processing for rasters too large to fit in memory
