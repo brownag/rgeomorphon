@@ -346,6 +346,33 @@ if (requireNamespace("terra", quietly = TRUE)) {
                pattern = "matching",
                info = "Should error on mismatched resolutions/extents")
 
+  # Test 20a: CRS compatibility (matching defined and both undefined pass).
+  geo_matching_crs <- geo
+  terra::crs(geo_matching_crs) <- terra::crs(geo)
+  expect_true(is.list(geomorphon_concordance(geo, geo_matching_crs,
+                                             method = "nmi")),
+              info = "Should accept matching defined CRS")
+
+  geo_no_crs <- geo
+  terra::crs(geo_no_crs) <- ""
+  cat_no_crs <- cat_map
+  terra::crs(cat_no_crs) <- ""
+  expect_true(is.list(geomorphon_concordance(geo_no_crs, cat_no_crs,
+                                             method = "nmi")),
+              info = "Should accept two undefined CRS values")
+
+  geo_other_crs <- geo
+  terra::crs(geo_other_crs) <- "EPSG:3857"
+  expect_error(geomorphon_concordance(geo, geo_other_crs, method = "nmi"),
+               pattern = "matching coordinate reference systems",
+               info = "Should reject different defined CRS values")
+  expect_error(geomorphon_concordance(geo, cat_no_crs, method = "nmi"),
+               pattern = "matching coordinate reference systems",
+               info = "Should reject one defined and one undefined CRS")
+  expect_error(geomorphon_concordance(geo_no_crs, cat_map, method = "nmi"),
+               pattern = "matching coordinate reference systems",
+               info = "Should reject undefined geo CRS and defined categorical CRS")
+
   # Test 21: Error handling - all NA rasters
   empty_cat <- cat_map
   terra::values(empty_cat) <- NA

@@ -750,6 +750,14 @@ geomorphon_concordance <- function(geo_rast,
   }
 
   # Check extents match
+  crs_geo <- terra::crs(geo_rast)
+  crs_cat <- terra::crs(cat_rast)
+  if (nzchar(crs_geo) != nzchar(crs_cat) ||
+      (nzchar(crs_geo) && !isTRUE(terra::same.crs(geo_rast, cat_rast)))) {
+    stop("Rasters must have matching coordinate reference systems (CRS).",
+         call. = FALSE)
+  }
+
   if (!isTRUE(all.equal(terra::ext(geo_rast), terra::ext(cat_rast)))) {
     stop("Rasters must have matching extents. ",
          "Use terra::crop() or terra::resample() to align them.",
