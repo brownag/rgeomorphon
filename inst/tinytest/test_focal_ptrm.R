@@ -67,6 +67,15 @@ if (requireNamespace("terra", quietly = TRUE)) {
     tolerance = 1e-10
   )
 
+  # Fallback honors streamed filename output and returns a readable raster.
+  fallback_file <- tempfile(fileext = ".tif")
+  ptrm_fallback_file <- rgeomorphon:::.geomorphon_ptrm_focal_impl(
+    r_pattern, 2, model, force_cpp = FALSE, filename = fallback_file
+  )
+  expect_true(file.exists(fallback_file))
+  expect_equal(terra::values(ptrm_cpp), terra::values(ptrm_fallback_file),
+               tolerance = 1e-6)
+
   # Output metadata: fresh raster named ptrm, no levels, numeric values
   expect_equal(names(ptrm_cpp), "ptrm")
   no_levels <- function(r) {
@@ -82,6 +91,11 @@ if (requireNamespace("terra", quietly = TRUE)) {
   expect_true(no_levels(ptrm_cpp))
   expect_true(is.numeric(terra::values(ptrm_cpp)))
   expect_equal(terra::ncell(ptrm_cpp), 49)
+
+  # The fallback maps classes with terra operations, not full-raster values.
+  expect_false(grepl("terra::values\\(geo_class|terra::as.matrix\\(focal_result",
+                     paste(deparse(body(rgeomorphon:::.geomorphon_ptrm_focal_impl)),
+                           collapse = " ")))
 
   # Reduced form systems produce finite scores
   for (form_system in c("forms4", "forms5", "forms6")) {

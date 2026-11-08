@@ -32,8 +32,9 @@
 #' For small/medium rasters, uses the fast C++ implementation requiring
 #' approximately 4 bytes per input cell plus 8 bytes per output cell (about
 #' 12 bytes per cell) in RAM. For large rasters that exceed half of the
-#' available memory, automatically falls back to `terra::focal()`, which is
-#' slower but memory-efficient.
+#' available memory, automatically falls back to block-processed
+#' `terra::focal()`, which is slower but avoids full-raster R matrices. Without
+#' `filename`, terra-backed temporary storage is used for intermediate results.
 #'
 #' @param x `SpatRaster`. Digital Elevation Model (when `mode = "dem"`) or
 #'   pre-computed geomorphon classification (when `mode = "class"`).
@@ -191,29 +192,20 @@ geomorphon_ptrm_focal <- function(
     geo_class,
     radius,
     model,
-    force_cpp = NULL
+    force_cpp = NULL,
+    filename = filename,
+    overwrite = overwrite
   )
-
-  # Write to file if requested
-  if (!is.null(filename)) {
-    result <- terra::writeRaster(
-      result,
-      filename = filename,
-      overwrite = overwrite,
-      datatype = "FLT4S"
-    )
-  }
 
   return(result)
 }
 
 #' @noRd
 .geomorphon_ptrm_focal_impl <- function(geo_class, radius, model,
-                                        force_cpp = NULL) {
-  # Memory-aware implementation selector.
-  # force_cpp = NULL picks automatically; TRUE/FALSE is used by tests.
-  remapped <- .remap_ptrm_classes(geo_class, model$classes)
-
+                                        force_cpp = NULL, filename = "",
+                                        overwrite = TRUE) {
+  # Memory-aware implementation selector. Avoid whole-raster class remapping
+  # unless the C++ path is selected.
   use_cpp <- if (is.null(force_cpp)) {
     .focal_memory_ok(geo_class, bytes_per_cell = 12)
   } else {
@@ -222,6 +214,7 @@ geomorphon_ptrm_focal <- function(
 
   if (use_cpp) {
     # Fast path: use C++ implementation
+    remapped <- .remap_ptrm_classes(geo_class, model$classes)
     mat <- terra::as.matrix(remapped, wide = TRUE)
 
     ptrm_result <- geomorphon_ptrm_focal_cpp(
@@ -247,6 +240,12 @@ geomorphon_ptrm_focal <- function(
     }
 
     k <- length(model$coefficients)
+    remapped <- terra::subst(
+      geo_class,
+      from = model$classes,
+      to = seq_along(model$classes),
+      others = NA_real_
+    )
 
     # Define PTRM calculation function for moving window
     ptrm_window_fun <- function(v, ...) {
@@ -284,20 +283,28 @@ geomorphon_ptrm_focal <- function(
       w = window_mat,
       fun = ptrm_window_fun,
       na.rm = TRUE,
-      na.policy = "all"
+      na.policy = "all",
+      filename = filename,
+      overwrite = overwrite
     )
 
-    # Match C++ border handling: cells within radius of an edge are NA
-    result <- .new_ptrm_raster(geo_class)
-    out_mat <- terra::as.matrix(focal_result, wide = TRUE)
+    # Match C++ border handling while retaining raster-backed storage.
     if (radius > 0) {
       r <- as.integer(radius)
-      out_mat[seq_len(r), ] <- NA_real_
-      out_mat[nrow(out_mat) - seq_len(r) + 1L, ] <- NA_real_
-      out_mat[, seq_len(r)] <- NA_real_
-      out_mat[, ncol(out_mat) - seq_len(r) + 1L] <- NA_real_
+      border <- terra::init(geo_class, NA_real_)
+      result <- terra::cover(border, focal_result, filename = filename,
+                             overwrite = overwrite)
+      cell <- terra::init(result, "cell")
+      row_index <- floor((cell - 1) / terra::ncol(result)) + 1
+      col_index <- ((cell - 1) %% terra::ncol(result)) + 1
+      result <- terra::ifel(
+        row_index <= r | row_index > terra::nrow(result) - r |
+          col_index <= r | col_index > terra::ncol(result) - r,
+        NA, result, filename = filename, overwrite = overwrite
+      )
+    } else {
+      result <- focal_result
     }
-    terra::values(result) <- as.vector(t(out_mat))
   }
 
   names(result) <- "ptrm"
@@ -329,8 +336,10 @@ geomorphon_ptrm_focal <- function(
 .remap_ptrm_classes <- function(geo_class, classes) {
   # Map system-specific codes (e.g. forms4: 1, 3, 6, 9) to contiguous 1..k.
   # Values outside the requested system become NA and are ignored downstream.
-  remapped <- match(terra::values(geo_class, mat = FALSE), classes)
-  result <- .new_ptrm_raster(geo_class)
-  terra::values(result) <- remapped
-  result
+  terra::subst(
+    geo_class,
+    from = classes,
+    to = seq_along(classes),
+    others = NA_real_
+  )
 }

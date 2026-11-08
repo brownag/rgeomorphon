@@ -132,8 +132,9 @@ neighborhoods are incomplete. This prevents edge artifacts in the output.
 For small/medium rasters, uses the fast C++ implementation requiring
 approximately 4 bytes per input cell plus 8 bytes per output cell (about
 12 bytes per cell) in RAM. For large rasters that exceed half of the
-available memory, automatically falls back to \code{terra::focal()}, which is
-slower but memory-efficient.
+available memory, automatically falls back to block-processed
+\code{terra::focal()}, which is slower but avoids full-raster R matrices. Without
+\code{filename}, terra-backed temporary storage is used for intermediate results.
 }
 
 \examples{
