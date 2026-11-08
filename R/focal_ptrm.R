@@ -308,9 +308,10 @@ geomorphon_ptrm_focal <- function(
 .focal_memory_ok <- function(x, bytes_per_cell) {
   # Shared memory gate for focal C++ paths.
   # Returns TRUE when the estimated working set fits in half of available RAM.
-  required_gb <- terra::ncell(x) * bytes_per_cell / 1e9
-  available_gb <- terra::mem_info(x, print = FALSE)["available"]
-  required_gb < available_gb / 2
+  # terra::mem_info() reports available memory in GiB (2^30 bytes).
+  required_gib <- terra::ncell(x) * bytes_per_cell / (1024^3)
+  available_gib <- unname(terra::mem_info(x, print = FALSE)["available"])
+  isTRUE(required_gib < available_gib / 2)
 }
 
 #' @noRd

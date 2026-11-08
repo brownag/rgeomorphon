@@ -127,6 +127,11 @@ if (requireNamespace("terra", quietly = TRUE)) {
     )
   )
 
-  # Shared memory gate helper is callable with a bytes-per-cell argument
-  expect_true(is.logical(rgeomorphon:::.focal_memory_ok(r3, 12)))
+  # Shared memory gate compares estimated bytes and available GiB consistently.
+  memory_ok <- rgeomorphon:::.focal_memory_ok
+  expect_true(memory_ok(r3, 12))
+  avail_gib <- unname(terra::mem_info(r3, print = FALSE)["available"])
+  boundary_bytes_per_cell <- avail_gib / 2 * 1024^3 / terra::ncell(r3)
+  expect_true(memory_ok(r3, boundary_bytes_per_cell * (1 - 1e-8)))
+  expect_false(memory_ok(r3, boundary_bytes_per_cell * (1 + 1e-8)))
 }
