@@ -48,7 +48,7 @@ struct EdgeDetectionWorker : public RcppParallel::Worker {
         double center = input_mat(r, c);
 
         // Skip if center is NA
-        if (R_IsNA(center)) {
+        if (ISNAN(center)) {
           output_mat(r, c) = na_value;
           continue;
         }
@@ -64,7 +64,7 @@ struct EdgeDetectionWorker : public RcppParallel::Worker {
             double neighbor = input_mat(r + dr, c + dc);
 
             // If neighbor is not NA and different from center, it's an edge
-            if (!R_IsNA(neighbor) && neighbor != center) {
+            if (!ISNAN(neighbor) && neighbor != center) {
               is_edge = true;
             }
           }

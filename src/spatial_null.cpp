@@ -108,15 +108,17 @@ List spatial_null_cpp(NumericVector geo, NumericVector cat, int nr, int nc,
   int evaluated = 0, nmi_eligible = 0, edge_eligible = 0;
   double nmi_sum = 0, edge_sum = 0;
   const int shifts = static_cast<int>(std::min<R_xlen_t>(128, n - 1));
+  std::vector<double> shifted(static_cast<std::size_t>(n));
+  std::vector<unsigned char> valid(static_cast<std::size_t>(n));
   for (int i = 0; i < shifts; ++i) {
     const R_xlen_t candidates = n - 1;
-    const R_xlen_t rank = static_cast<R_xlen_t>(i) * (candidates / shifts) +
-      ((2 * i + 1) * (candidates % shifts)) / (2 * shifts);
+    const R_xlen_t base = candidates / shifts;
+    const R_xlen_t remainder = candidates % shifts;
+    const R_xlen_t rank = static_cast<R_xlen_t>(i) * base + base / 2 +
+      ((base % 2) * shifts + (2 * i + 1) * remainder) / (2 * shifts);
     const R_xlen_t q = rank + 1;
     const int dr = static_cast<int>(q / nc), dc = static_cast<int>(q % nc);
     ++evaluated;
-    std::vector<double> shifted(static_cast<std::size_t>(n));
-    std::vector<unsigned char> valid(static_cast<std::size_t>(n));
     for (int r = 0; r < nr; ++r) for (int col = 0; col < nc; ++col) {
       R_xlen_t dst = static_cast<R_xlen_t>(r) * nc + col;
       int sr = (r - dr + nr) % nr, sc = (col - dc + nc) % nc;
