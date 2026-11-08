@@ -15,3 +15,5 @@
 ^CRAN-SUBMISSION$
 ^doc$
 ^Meta$
+^planning$
+^TODO\.md$
