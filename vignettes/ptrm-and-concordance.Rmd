@@ -360,6 +360,9 @@ comparison_df <- do.call(
             nmi = round(res$nmi, 4),
             edge_offset_m = round(res$edge_offset, 2),
             edge_concordance = round(res$edge_concordance, 4),
+            edge_f1 = round(res$edge_f1, 4),
+            edge_mhd_m = round(res$edge_mhd, 2),
+            edge_chamfer_m = round(res$edge_chamfer, 2),
             n_edges_geo = res$n_edges_geo,
             n_edges_cat = res$n_edges_cat,
             stringsAsFactors = FALSE
@@ -383,10 +386,10 @@ par(mfrow = c(1, 1))
 
 Each failure mode produces a distinct signature across `nmi`, the directional `edge_offset`/`edge_concordance`, the symmetric `edge_f1`/`edge_mhd`/`edge_chamfer`, and edge counts:
 
-- **Scenario 1 (Scale-Matched SSURGO Reference):** Strong areal association (`nmi = 0.2107`) and boundary alignment (`edge_concordance = 0.6007`, `edge_offset = 55.33 m`) with balanced boundary counts (`n_edges_geo = 15,646` vs. `n_edges_cat = 9,932`).
-- **Scenario 2 (Misregistered / Flipped Soil Map):** Even though the soil polygons have the exact same size distribution and boundary count (`9,932`), displacing them from the terrain causes **`nmi` to collapse by 18×** (from `0.2107` to `0.0116`), increases mean boundary offset from `55.33 m` to `80.59 m`, and cuts `edge_concordance` nearly in half (`0.3473`).
-- **Scenario 3 (Arbitrary Grid Blocks):** Rectilinear blocks that cut across ridges and valleys yield near-zero areal concordance (`nmi = 0.0235`) and poor boundary alignment (`edge_concordance = 0.3693`, `edge_offset = 65.58 m`).
-- **Scenario 4 (Over-Flattened Geomorphons, `flat = 15°`):** Setting `flat_angle_deg = 15°` erases the boundaries of gentle and moderate hillslopes (`n_edges_geo` plunges to `2,748`). Because only the steepest remnant scarps retain landform boundaries, SSURGO boundaries in the surrounding plains and undulating hills are left hundreds of meters from the nearest geomorphon edge (`edge_offset` spikes to `384.76 m`, `edge_concordance` drops to `0.1646`, and `nmi` drops by two-thirds to `0.0691`).
+- **Scenario 1 (Scale-Matched SSURGO Reference):** Strong areal association (`nmi = 0.2107`) and boundary alignment (`edge_concordance = 0.6007`, `edge_offset = 55.33 m`) with symmetric scores `edge_f1 = 0.5964`, `edge_mhd = 55.33 m`, and `edge_chamfer = 42.78 m`; balanced boundary counts (`n_edges_geo = 15,646` vs. `n_edges_cat = 9,932`).
+- **Scenario 2 (Misregistered / Flipped Soil Map):** Even though the soil polygons have the exact same size distribution and boundary count (`9,932`), displacing them from the terrain causes **`nmi` to collapse by 18×** (from `0.2107` to `0.0116`), increases mean boundary offset from `55.33 m` to `80.59 m`, cuts `edge_concordance` nearly in half (`0.3473`), and yields symmetric scores `edge_f1 = 0.3324`, `edge_mhd = 80.51 m`, and `edge_chamfer = 75.39 m`.
+- **Scenario 3 (Arbitrary Grid Blocks):** Rectilinear blocks that cut across ridges and valleys yield near-zero areal concordance (`nmi = 0.0575`), poor boundary alignment (`edge_concordance = 0.1930`, `edge_offset = 107.01 m`), and symmetric scores `edge_f1 = 0.0793`, `edge_mhd = 252.66 m`, and `edge_chamfer = 179.83 m`.
+- **Scenario 4 (Over-Flattened Geomorphons, `flat = 15°`):** Setting `flat_angle_deg = 15°` erases the boundaries of gentle and moderate hillslopes (`n_edges_geo` plunges to `2,748`). Because only the steepest remnant scarps retain landform boundaries, SSURGO boundaries in the surrounding plains and undulating hills are left hundreds of meters from the nearest geomorphon edge (`edge_offset` spikes to `384.76 m`, `edge_concordance` drops to `0.1646`, and `nmi` drops by two-thirds to `0.0691`); symmetric scores are `edge_f1 = 0.2694`, `edge_mhd = 384.79 m`, and `edge_chamfer = 199.49 m`.
 
 In practice, interpret metrics together: `nmi` describes areal association; `edge_concordance` and `edge_offset` describe the legacy categorical-to-geomorphon direction; `edge_f1` captures threshold agreement in both directions; and `edge_mhd`/`edge_chamfer` summarize bidirectional distance. Edge counts and their ratio help reveal fragmentation or density imbalance. No single score establishes thematic validity, and the metrics do not guarantee immunity to saturation for all patterns.
 
