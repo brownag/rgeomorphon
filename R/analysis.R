@@ -446,7 +446,7 @@ geomorphon_ptrm <- function(x,
 
   # Calculate proportions from frequency table
   freq_table <- table(vals)
-  observed <- as.integer(names(freq_table))
+  observed <- as.numeric(names(freq_table))
 
   # Codes must belong to the requested form system
   invalid <- setdiff(observed, model$classes)
@@ -553,6 +553,9 @@ geomorphon_ptrm <- function(x,
 #'   non-negative whole number when `method` includes boundary metrics.
 #'   Geographic (longitude/latitude) CRS data trigger a warning because
 #'   boundary distances are calculated in CRS map units. Default: `2`.
+#' @param spatial_null Logical. Whether to calculate the spatial-null ensemble.
+#'   If `FALSE`, skip it and return `NA_real_` null means/deltas and zero shift
+#'   counts. Default: `TRUE`.
 #'
 #' @return A list with the following components (depending on `method`):
 #'   \describe{
@@ -658,6 +661,8 @@ geomorphon_ptrm <- function(x,
 #' evidence of statistical significance. NMI-null fields are returned only for
 #' `method = "nmi"` or `"both"`; edge-F1-null fields only for `method =
 #' "boundary"` or `"both"`. `null_shifts_evaluated` is always returned.
+#' When `spatial_null = FALSE`, the ensemble is skipped, null means and deltas
+#' are `NA_real_`, and shift counts are `0L`.
 #'
 #' @note
 #' **Memory Requirements:** This function performs edge detection on both input
@@ -701,7 +706,8 @@ geomorphon_ptrm <- function(x,
 geomorphon_concordance <- function(geo_rast,
                                   cat_rast,
                                   method = c("both", "nmi", "boundary"),
-                                  threshold_cells = 2) {
+                                  threshold_cells = 2,
+                                  spatial_null = TRUE) {
 
   # Validate terra package availability
   if (!requireNamespace("terra", quietly = TRUE)) {
@@ -719,6 +725,11 @@ geomorphon_concordance <- function(geo_rast,
 
   # Validate method parameter
   method <- match.arg(method)
+
+  if (!is.logical(spatial_null) || length(spatial_null) != 1L ||
+      is.na(spatial_null)) {
+    stop("'spatial_null' must be TRUE or FALSE", call. = FALSE)
+  }
 
   # Validate threshold only when boundary distances are requested.
   if (method %in% c("boundary", "both")) {
@@ -896,24 +907,38 @@ geomorphon_concordance <- function(geo_rast,
 
   # Additive toroidal spatial-null summaries. The C++ helper processes shifts
   # serially and leaves all legacy observed scores untouched.
-  null <- spatial_null_cpp(
-    terra::values(geo_rast, mat = FALSE),
-    terra::values(cat_rast, mat = FALSE),
-    terra::nrow(geo_rast), terra::ncol(geo_rast),
-    as.numeric(threshold_cells), method %in% c("nmi", "both"),
-    method %in% c("boundary", "both")
-  )
-  if (method %in% c("nmi", "both")) {
-    result$mean_null_nmi <- null$nmi_mean
-    result$delta_nmi <- result$nmi - null$nmi_mean
-    result$nmi_null_shifts <- null$nmi_eligible
+  if (spatial_null) {
+    null <- spatial_null_cpp(
+      terra::values(geo_rast, mat = FALSE),
+      terra::values(cat_rast, mat = FALSE),
+      terra::nrow(geo_rast), terra::ncol(geo_rast),
+      as.numeric(threshold_cells), method %in% c("nmi", "both"),
+      method %in% c("boundary", "both")
+    )
+    if (method %in% c("nmi", "both")) {
+      result$mean_null_nmi <- null$nmi_mean
+      result$delta_nmi <- result$nmi - null$nmi_mean
+      result$nmi_null_shifts <- null$nmi_eligible
+    }
+    if (method %in% c("boundary", "both")) {
+      result$mean_null_edge_f1 <- null$edge_mean
+      result$delta_edge_f1 <- result$edge_f1 - null$edge_mean
+      result$edge_f1_null_shifts <- null$edge_eligible
+    }
+    result$null_shifts_evaluated <- null$evaluated
+  } else {
+    if (method %in% c("nmi", "both")) {
+      result$mean_null_nmi <- NA_real_
+      result$delta_nmi <- NA_real_
+      result$nmi_null_shifts <- 0L
+    }
+    if (method %in% c("boundary", "both")) {
+      result$mean_null_edge_f1 <- NA_real_
+      result$delta_edge_f1 <- NA_real_
+      result$edge_f1_null_shifts <- 0L
+    }
+    result$null_shifts_evaluated <- 0L
   }
-  if (method %in% c("boundary", "both")) {
-    result$mean_null_edge_f1 <- null$edge_mean
-    result$delta_edge_f1 <- result$edge_f1 - null$edge_mean
-    result$edge_f1_null_shifts <- null$edge_eligible
-  }
-  result$null_shifts_evaluated <- null$evaluated
 
   return(result)
 }

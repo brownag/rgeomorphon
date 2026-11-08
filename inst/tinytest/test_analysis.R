@@ -46,6 +46,11 @@ if (requireNamespace("terra", quietly = TRUE)) {
                tolerance = 1e-10,
                info = "Proportions should be identical for both modes")
 
+  frac_geo <- geo
+  terra::values(frac_geo)[1:2] <- c(1.5, 6.2)
+  expect_error(geomorphon_ptrm(frac_geo, mode = "class"),
+               pattern = "Invalid geomorphon codes")
+
   # Test 6: PTRM with different search radius
   ptrm_search5 <- geomorphon_ptrm(dem, mode = "dem", search = 5)
 
@@ -261,6 +266,30 @@ if (requireNamespace("terra", quietly = TRUE)) {
   expect_false(any(c("homogeneity", "completeness") %in%
                    names(conc_boundary)),
                info = "Boundary-only output should omit NMI components")
+
+  # Spatial-null opt-out preserves observed scores and zeroes null summaries.
+  for (null_method in c("both", "nmi", "boundary")) {
+    enabled <- geomorphon_concordance(geo, cat_map, method = null_method)
+    disabled <- geomorphon_concordance(geo, cat_map, method = null_method,
+                                       spatial_null = FALSE)
+    observed_fields <- intersect(c("nmi", "homogeneity", "completeness",
+                                   "edge_offset", "edge_concordance", "edge_f1",
+                                   "edge_mhd", "edge_chamfer"), names(enabled))
+    expect_equal(disabled[observed_fields], enabled[observed_fields])
+    null_fields <- intersect(c("mean_null_nmi", "delta_nmi",
+                               "mean_null_edge_f1", "delta_edge_f1"),
+                             names(disabled))
+    expect_true(all(vapply(disabled[null_fields], is.na, logical(1))))
+    count_fields <- intersect(c("nmi_null_shifts", "edge_f1_null_shifts"),
+                              names(disabled))
+    expect_true(all(vapply(disabled[count_fields], identical, logical(1), 0L)))
+    expect_identical(disabled$null_shifts_evaluated, 0L)
+  }
+  for (invalid_spatial_null in list(NA, "yes", c(TRUE, FALSE))) {
+    expect_error(geomorphon_concordance(geo, cat_map,
+                                        spatial_null = invalid_spatial_null),
+                 pattern = "'spatial_null' must be TRUE or FALSE")
+  }
 
   # Test 17: Different threshold_cells values
   conc_thresh1 <- geomorphon_concordance(geo, cat_map, method = "boundary",
@@ -499,6 +528,19 @@ if (requireNamespace("terra", quietly = TRUE)) {
     info = "Fallback and C++ edge masks should be identical"
   )
 
+  nan_edge_mat <- matrix(1, 5, 5)
+  nan_edge_mat[3, 3] <- NaN
+  nan_edge_rast <- make_concordance_raster(nan_edge_mat)
+  nan_cpp <- rgeomorphon:::focal_edge_cpp(nan_edge_mat)
+  na_edge_mat <- nan_edge_mat
+  na_edge_mat[3, 3] <- NA_real_
+  na_cpp <- rgeomorphon:::focal_edge_cpp(na_edge_mat)
+  expect_identical(nan_cpp[3, 3], NA_real_)
+  expect_equal(nan_cpp[2:4, 2:4], na_cpp[2:4, 2:4])
+  nan_detected <- rgeomorphon:::.detect_edges(nan_edge_rast)
+  detected_values <- terra::as.matrix(nan_detected, wide = TRUE)
+  expect_equal(unname(detected_values), unname(na_cpp))
+
   # NA is not a class: (4,2) has an NA neighbor and only class-1 valid neighbors.
   same_class_neighborhood <- edge_mat[3:5, 1:3]
   expect_true(anyNA(same_class_neighborhood))
@@ -679,11 +721,13 @@ if (requireNamespace("terra", quietly = TRUE)) {
   large_nr <- 13L
   large_nc <- 13L
   large_n <- large_nr * large_nc
-  large_geo <- matrix(rep(c(1, 2, 3), length.out = large_n), large_nr, large_nc)
-  large_cat <- matrix(rep(c(1, 1, 2, 3), length.out = large_n), large_nr, large_nc)
+  # Sparse perpendicular boundaries keep threshold-one scores below saturation.
+  large_geo <- large_cat <- matrix(1, large_nr, large_nc)
+  large_geo[, 7:13] <- 2
+  large_cat[7:13, ] <- 2
   large_null <- rgeomorphon:::spatial_null_cpp(
     as.vector(t(large_geo)), as.vector(t(large_cat)), large_nr, large_nc,
-    20, FALSE, TRUE
+    1, FALSE, TRUE
   )
   expect_equal(large_null$evaluated, 128L)
   direct_shift_f1 <- function(dr, dc, threshold) {
@@ -714,9 +758,10 @@ if (requireNamespace("terra", quietly = TRUE)) {
   direct_scores <- vapply(0:127, function(i) {
     rank <- floor((i + 0.5) * (large_n - 1) / 128)
     q <- rank + 1
-    direct_shift_f1(q %/% large_nc, q %% large_nc, 20)
+    direct_shift_f1(q %/% large_nc, q %% large_nc, 1)
   }, numeric(1))
   expect_equal(large_null$edge_mean, mean(direct_scores), tolerance = 1e-12)
+  expect_true(large_null$edge_mean < 1)
 
   # Independently verify the capped NMI null schedule on a rectangular raster
   # with distinct geo/category missing-value masks.

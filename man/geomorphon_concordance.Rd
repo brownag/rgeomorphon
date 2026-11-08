@@ -8,7 +8,8 @@ geomorphon_concordance(
   geo_rast,
   cat_rast,
   method = c("both", "nmi", "boundary"),
-  threshold_cells = 2
+  threshold_cells = 2,
+  spatial_null = TRUE
 )
 }
 \arguments{
@@ -29,6 +30,10 @@ geomorphon boundary cell are counted as concordant. Must be a finite,
 non-negative whole number when \code{method} includes boundary metrics.
 Geographic (longitude/latitude) CRS data trigger a warning because
 boundary distances are calculated in CRS map units. Default: \code{2}.}
+
+\item{spatial_null}{Logical. Whether to calculate the spatial-null ensemble.
+If \code{FALSE}, skip it and return \code{NA_real_} null means/deltas and zero shift
+counts. Default: \code{TRUE}.}
 }
 \value{
 A list with the following components (depending on \code{method}):
@@ -198,6 +203,8 @@ count is zero. These are descriptive contrasts against this translation
 ensemble, not adjusted mutual information, calibrated scores, p-values, or
 evidence of statistical significance. NMI-null fields are returned only for
 \code{method = "nmi"} or \code{"both"}; edge-F1-null fields only for \code{method = "boundary"} or \code{"both"}. \code{null_shifts_evaluated} is always returned.
+When \code{spatial_null = FALSE}, the ensemble is skipped, null means and deltas
+are \code{NA_real_}, and shift counts are \code{0L}.
 }
 
 \examples{
