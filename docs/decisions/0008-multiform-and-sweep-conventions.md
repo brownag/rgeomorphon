@@ -57,10 +57,14 @@ When multiple form taxonomies are requested, populate each requested output arra
 counts within the same parallel cell iteration by referencing the constant 9x9
 lookup tables (`forms_table10`, `forms_table6`, `forms_table5`, `forms_table4`).
 
-Evaluating 4 taxonomies in a single pass incurs negligible additional C++
-overhead ($< 1.4\times$ of a single-form call), achieving a $\sim 75\%$ compute
-reduction compared to 4 separate ray-tracing runs while ensuring verified
-pixel-for-pixel identity to individual evaluations.
+Evaluating 4 taxonomies in a single C++ ray-tracing pass incurs little additional
+kernel overhead ($< 1.4\times$ of a single-form kernel call, enforced by the
+gated benchmark in `test_sweep.R`). End to end, a 4-form `geomorphons()` pass
+measured about 45% less time than 4 separate single-form passes on `salton`
+(search 30 and 40; multi-form pass about $0.55\times$ the separate-pass time).
+This is well short of the ~75% estimate in the original goal; the earlier figure
+is retired. Pixel-for-pixel identity to individual evaluations is tested for
+`forms10` and `forms6`; `forms5` and `forms4` tests are pending (D4).
 
 ### Vector `forms` API contract and backward compatibility
 
