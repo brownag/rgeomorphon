@@ -129,6 +129,13 @@ if (requireNamespace("terra", quietly = TRUE)) {
     expect_equal(as.vector(terra::values(res_multi_all[["forms5"]])), as.vector(terra::values(res_5)))
     expect_equal(as.vector(terra::values(res_multi_all[["forms4"]])), as.vector(terra::values(res_4)))
 
+    # Tiled execution (nchunk = 2) with multiple forms matches the untiled multi-form run
+    res_tiled <- geomorphons(dem, search = SEARCH, skip = SKIP,
+                             forms = c("forms10", "forms6"), nchunk = 2)
+    expect_equal(names(res_tiled), c("forms10", "forms6"))
+    expect_equal(as.vector(terra::values(res_tiled[["forms10"]])), as.vector(terra::values(res_multi[["forms10"]])))
+    expect_equal(as.vector(terra::values(res_tiled[["forms6"]])), as.vector(terra::values(res_multi[["forms6"]])))
+
     # Single-form backward compatibility: returns 1-layer SpatRaster named "form"
     res_s_true <- geomorphons(dem, search = SEARCH, skip = SKIP, forms = TRUE)
     res_s_10 <- geomorphons(dem, search = SEARCH, skip = SKIP, forms = "forms10")
