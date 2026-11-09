@@ -755,10 +755,13 @@ if (requireNamespace("terra", quietly = TRUE)) {
   large_nr <- 13L
   large_nc <- 13L
   large_n <- large_nr * large_nc
-  # Sparse perpendicular boundaries keep threshold-one scores below saturation.
+  # Irregular boundaries keep threshold-one scores below saturation, making
+  # the capped schedule's rank choices observable in the aggregate.
   large_geo <- large_cat <- matrix(1, large_nr, large_nc)
   large_geo[, 7:13] <- 2
+  large_geo[3:5, 3:4] <- 2
   large_cat[7:13, ] <- 2
+  large_cat[2:4, 9:11] <- 2
   large_null <- rgeomorphon:::spatial_null_cpp(
     as.vector(t(large_geo)), as.vector(t(large_cat)), large_nr, large_nc,
     1, FALSE, TRUE
