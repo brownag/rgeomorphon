@@ -1057,16 +1057,16 @@ if (requireNamespace("terra", quietly = TRUE)) {
   expect_equal(brute_nearest(anisotropic_a, anisotropic_b), 3)
   expect_true(brute_nearest(anisotropic_a, anisotropic_b) > 2)
 
-  # Geographic CRS warning is limited to methods that request boundary metrics.
+  # Geographic CRS is rejected for boundary metrics and accepted for NMI.
   geo_ll <- make_concordance_raster(geo_a)
   terra::crs(geo_ll) <- "EPSG:4326"
   cat_ll <- geo_ll
   terra::values(cat_ll) <- as.vector(t(cat_a))
-  expect_warning(
+  expect_error(
     geomorphon_concordance(geo_ll, cat_ll, method = "boundary"),
     pattern = "Geographic CRS"
   )
-  expect_warning(
+  expect_error(
     geomorphon_concordance(geo_ll, cat_ll, method = "both"),
     pattern = "Geographic CRS"
   )

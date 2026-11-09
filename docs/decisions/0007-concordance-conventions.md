@@ -33,9 +33,9 @@ implementations. This ADR defines those conventions.
 Require `geo_rast` and `cat_rast` to have compatible coordinate reference
 systems (either both undefined or matching via `terra::same.crs()`), identical
 extents, and matching resolutions within tolerance. Validate `threshold_cells`
-as a finite, non-negative whole number and warn on geographic (lon/lat) CRS
-inputs only when boundary metrics are requested (`method = "boundary"` or
-`"both"`).
+as a finite, non-negative whole number and reject geographic (lon/lat) CRS
+inputs with an error when boundary metrics are requested (`method = "boundary"`
+or `"both"`).
 
 ### Information-theoretic concordance (`method = "nmi"` or `"both"`)
 
@@ -60,8 +60,8 @@ are set to `NA`) using the parallel C++ kernel `focal_edge_cpp()` when the
 working set fits in half of available RAM, or `terra::boundaries()` with border
 masking as a fallback.
 
-Report two groups of boundary metrics in map units of the input CRS (using
-`threshold_mapunits = threshold_cells * terra::res(geo_rast)[1]`):
+Report two groups of boundary metrics in planar map units of the projected
+input CRS (using `threshold_mapunits = threshold_cells * terra::res(geo_rast)[1]`):
 
 1. **Directional (per-input valid masks):**
    - `n_edges_geo` and `n_edges_cat`: total edge cells detected on each input's

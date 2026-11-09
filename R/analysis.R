@@ -551,8 +551,9 @@ geomorphon_ptrm <- function(x,
 #'   Categorical boundary cells within this distance of the nearest
 #'   geomorphon boundary cell are counted as concordant. Must be a finite,
 #'   non-negative whole number when `method` includes boundary metrics.
-#'   Geographic (longitude/latitude) CRS data trigger a warning because
-#'   boundary distances are calculated in CRS map units. Default: `2`.
+#'   Geographic (longitude/latitude) CRS inputs are rejected with an error
+#'   when `method` includes boundary metrics because boundary distances
+#'   require a planar Cartesian CRS. Default: `2`.
 #' @param spatial_null Logical. Whether to calculate the spatial-null ensemble.
 #'   If `FALSE`, skip it and return `NA_real_` null means/deltas and zero shift
 #'   counts. Default: `TRUE`.
@@ -741,9 +742,9 @@ geomorphon_concordance <- function(geo_rast,
     }
 
     if (terra::is.lonlat(geo_rast)) {
-      warning(
-        "Geographic CRS detected; boundary distances are in CRS map units. ",
-        "Use a projected CRS for meaningful geomorphon distance calculations.",
+      stop(
+        "Geographic CRS (longitude/latitude) is not supported for boundary metrics. ",
+        "Project rasters to a planar Cartesian CRS.",
         call. = FALSE
       )
     }

@@ -28,8 +28,9 @@ concordance calculation, converted to map units with the cell size.
 Categorical boundary cells within this distance of the nearest
 geomorphon boundary cell are counted as concordant. Must be a finite,
 non-negative whole number when \code{method} includes boundary metrics.
-Geographic (longitude/latitude) CRS data trigger a warning because
-boundary distances are calculated in CRS map units. Default: \code{2}.}
+Geographic (longitude/latitude) CRS inputs are rejected with an error
+when \code{method} includes boundary metrics because boundary distances
+require a planar Cartesian CRS. Default: \code{2}.}
 
 \item{spatial_null}{Logical. Whether to calculate the spatial-null ensemble.
 If \code{FALSE}, skip it and return \code{NA_real_} null means/deltas and zero shift
