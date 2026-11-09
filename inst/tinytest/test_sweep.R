@@ -97,6 +97,11 @@ expect_equal(names(ens_p6_mat), c("Flat", "Ridge", "Shoulder", "Slope", "Footslo
 ens_p6_auto <- geomorphon_ensemble(list(list(forms6 = m1), list(forms6 = m2), list(forms6 = m3)),
                                    method = "proportions")
 expect_equal(names(ens_p6_auto), c("Flat", "Ridge", "Shoulder", "Slope", "Footslope", "Valley"))
+# Single-form matrix sweep (results exposed as the "forms" alias), form omitted: six classes
+sw_m6 <- geomorphon_sweep(volcano, param_grid = list(search = 3, skip = 0, flat_angle_deg = 1),
+                          xres = 10, forms = "forms6")
+ens_m6_sweep <- geomorphon_ensemble(sw_m6, method = "proportions")
+expect_equal(names(ens_m6_sweep), c("Flat", "Ridge", "Shoulder", "Slope", "Footslope", "Valley"))
 
 # ==============================================================================
 # 4. SpatRaster tests: geomorphon_sweep, geomorphon_ensemble, and benchmarks

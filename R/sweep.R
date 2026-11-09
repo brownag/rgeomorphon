@@ -424,7 +424,14 @@ geomorphon_ensemble <- function(sweep_obj,
         } else {
             cats <- geomorphon_categories()
             if (is.null(classes)) {
-                classes_to_calc <- .reachable_classes(if (is.null(form)) form_key_mat else form)
+                # A single-form matrix sweep exposes its result as the "forms" alias; the
+                # real taxonomy is recorded in provenance.
+                class_form <- if (is.null(form)) form_key_mat else form
+                if (identical(class_form, "forms") && inherits(sweep_obj, "geomorphon_sweep") &&
+                    length(sweep_obj$provenance$forms) == 1L) {
+                    class_form <- sweep_obj$provenance$forms
+                }
+                classes_to_calc <- .reachable_classes(class_form)
             } else if (is.numeric(classes)) {
                 classes_to_calc <- as.integer(classes)
             } else if (is.character(classes)) {
