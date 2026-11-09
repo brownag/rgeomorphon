@@ -133,6 +133,7 @@ forms_matrix_apply <- function(x,
             out_m <- forms_matrix_apply_cpp(pos_m, neg_m, std_num_forms)
             cls <- terra::rast(p)
             terra::values(cls) <- out_m
+            cls <- geomorphon_theme(cls, forms = paste0("forms", std_num_forms))
             names(cls) <- "form"
             return(cls)
         }

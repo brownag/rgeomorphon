@@ -161,3 +161,16 @@ expect_equal(
     rgeomorphon:::forms_matrix_apply_cpp(matrix(c(Inf, 1e20, 9, -1e20), 2), matrix(0, 2, 2), 10L),
     matrix(1, 2, 2)
 )
+
+# Fast reclassification returns themed output: named "form", factor levels, color table
+if (requireNamespace("terra", quietly = TRUE)) {
+    p_fast <- terra::rast(nrows = 3, ncols = 3, vals = c(0, 1, 2, 0, 3, 1, 0, 0, 2))
+    n_fast <- terra::rast(nrows = 3, ncols = 3, vals = c(0, 0, 0, 1, 2, 1, 4, 0, 1))
+    x_fast <- c(p_fast, n_fast)
+    names(x_fast) <- c("positive", "negative")
+    out_fast <- forms_matrix_apply(x_fast)
+    expect_equal(names(out_fast), "form")
+    expect_true(terra::is.factor(out_fast))
+    expect_equal(nrow(terra::levels(out_fast)[[1]]), 10L)
+    expect_equal(nrow(terra::coltab(out_fast)[[1]]), 10L)
+}
