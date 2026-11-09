@@ -466,6 +466,8 @@ geomorphons <- function(elevation,
                 forms_rast <- tmp
                 terra::values(forms_rast) <- forms_matrix_res[["forms"]]
                 forms_rast <- geomorphon_theme(forms_rast, forms = paste0("forms", req_forms_int[1]))
+                # Single-form output is always named "form", even if theming restores an input name
+                names(forms_rast) <- "form"
                 res_list[["forms"]] <- forms_rast
             }
         }

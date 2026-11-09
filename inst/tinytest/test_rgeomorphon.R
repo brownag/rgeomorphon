@@ -200,3 +200,14 @@ res_arr_row <- forms_matrix_apply(arr_row)
 res_list_row <- forms_matrix_apply(list(positive = pos_row, negative = neg_row))
 expect_equal(dim(res_arr_row), c(1L, 5L))
 expect_equal(as.vector(res_arr_row), as.vector(res_list_row))
+
+# Single-form output is named "form" even when the input layer is named like a form
+if (requireNamespace("terra", quietly = TRUE)) {
+    data("salton", package = "rgeomorphon")
+    dem_named <- terra::rast(salton)
+    terra::crs(dem_named) <- attr(salton, "crs")
+    terra::ext(dem_named) <- attr(salton, "extent")
+    names(dem_named) <- "forms10"
+    res_named <- geomorphons(dem_named, search = 10, skip = 0, forms = "forms10", nchunk = 1)
+    expect_equal(names(res_named), "form")
+}
