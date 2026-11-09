@@ -101,6 +101,9 @@ Refactor `forms_matrix_apply()` in `R/forms_matrix.R`:
 - Inspect the reclassification matrix `rcl`. When `rcl` matches any of the
   standard 9x9 forms matrices (`10`, `6`, `5`, `4`), bypass `terra::subst` and
   dispatch directly to the parallel C++ kernel `forms_matrix_apply_cpp()`.
+  The kernel stays internal (not exported): users reach it through
+  `forms_matrix_apply()`. Export it only if a user needs standalone
+  `(positive, negative)` reclassification.
 - Handle missing values (`NA` / `NaN`) by propagating `NA` cleanly without
   generating warnings.
 - Support both `SpatRaster` inputs (converting to matrix buffers, calling C++,
