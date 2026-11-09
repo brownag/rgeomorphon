@@ -14,3 +14,4 @@ Statuses are `Proposed`, `Accepted`, `Deprecated`, or `Superseded`.
 | [0006](0006-ptrm-conventions.md) | PTRM conventions | Accepted | 2026-10-31 | - | - | 0.4.0 PTRM milestone |
 | [0007](0007-concordance-conventions.md) | Structural concordance conventions | Accepted | 2026-11-01 | - | - | 0.4.0 concordance milestone |
 | [0008](0008-multiform-and-sweep-conventions.md) | Multi-form count reuse, fast reclassification, and parameter sweep conventions | Accepted | 2026-11-08 | - | - | 0.5.0 multi-form and ensemble milestone |
+| [0009](0009-target-aggregation-jsd-and-pareto-calibration.md) | Target aggregation, Jensen-Shannon divergence, and multi-objective Pareto calibration | Accepted | 2026-11-09 | - | - | 0.5.0 calibration and target milestone |
