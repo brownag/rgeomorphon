@@ -311,7 +311,8 @@ geomorphon_profile_dist <- function(x,
 #' @param unit Logarithm unit. Default is `"log2"`.
 #'
 #' @return A list containing:
-#'   \item{raster}{A single-layer `SpatRaster` (or numeric matrix) named `"divergence"`.}
+#'   \item{raster}{A single-layer `SpatRaster` named `"divergence"`, returned for raster input.}
+#'   \item{matrix}{The cell-vector divergence as a numeric matrix, returned for matrix or list input.}
 #'   \item{mean_divergence}{Arithmetic mean divergence across valid cells.}
 #'   \item{median_divergence}{Median divergence across valid cells.}
 #'   \item{q90_divergence}{90th percentile divergence across valid cells.}

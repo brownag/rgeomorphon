@@ -18,7 +18,8 @@ aligned with \code{p}.}
 }
 \value{
 A list containing:
-\item{raster}{A single-layer \code{SpatRaster} (or numeric matrix) named \code{"divergence"}.}
+\item{raster}{A single-layer \code{SpatRaster} named \code{"divergence"}, returned for raster input.}
+\item{matrix}{The cell-vector divergence as a numeric matrix, returned for matrix or list input.}
 \item{mean_divergence}{Arithmetic mean divergence across valid cells.}
 \item{median_divergence}{Median divergence across valid cells.}
 \item{q90_divergence}{90th percentile divergence across valid cells.}
