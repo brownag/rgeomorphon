@@ -164,8 +164,9 @@ forms_matrix_apply <- function(x,
                 stop("Matrix 'x' must have columns matching 'positive' and 'negative', or exactly 2 columns.", call. = FALSE)
             }
         } else if (is.array(x) && length(dim(x)) == 3) {
-            p <- x[, , positive]
-            n <- x[, , negative]
+            # Rebuild as matrices: `[` drops a length-1 row or column dimension
+            p <- matrix(x[, , positive], nrow = dim(x)[1], ncol = dim(x)[2])
+            n <- matrix(x[, , negative], nrow = dim(x)[1], ncol = dim(x)[2])
         } else {
             stop("Object 'x' should be a SpatRaster, matrix, or list containing positive and negative overlooks.", call. = FALSE)
         }

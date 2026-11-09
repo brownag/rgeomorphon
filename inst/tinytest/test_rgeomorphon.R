@@ -190,3 +190,13 @@ if (requireNamespace("terra", quietly = TRUE)) {
     expect_equal(nrow(terra::levels(out_fast)[[1]]), 10L)
     expect_equal(nrow(terra::coltab(out_fast)[[1]]), 10L)
 }
+
+# One-row 3-d array input keeps its 1 x 5 shape and matches the equivalent matrix call
+pos_row <- matrix(c(0, 1, 2, 0, 3), nrow = 1)
+neg_row <- matrix(c(0, 0, 0, 1, 2), nrow = 1)
+arr_row <- array(c(pos_row, neg_row), dim = c(1, 5, 2),
+                 dimnames = list(NULL, NULL, c("positive", "negative")))
+res_arr_row <- forms_matrix_apply(arr_row)
+res_list_row <- forms_matrix_apply(list(positive = pos_row, negative = neg_row))
+expect_equal(dim(res_arr_row), c(1L, 5L))
+expect_equal(as.vector(res_arr_row), as.vector(res_list_row))
