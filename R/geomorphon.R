@@ -316,7 +316,7 @@ geomorphons <- function(elevation,
                 } else if (is.character(f)) {
                     val <- as.integer(gsub("^forms", "", tolower(trimws(f))))
                     if (is.na(val)) {
-                        message("Valid values for 'forms' include: `TRUE` ('forms10'; default), 'forms6', 'forms5', 'forms4'", call. = FALSE)
+                        message("Valid values for 'forms' include: `TRUE` ('forms10'; default), 'forms6', 'forms5', 'forms4'")
                         val <- 10L
                     }
                     parsed <- c(parsed, val)
@@ -324,7 +324,7 @@ geomorphons <- function(elevation,
             }
             valid_mask <- parsed %in% c(10L, 6L, 5L, 4L)
             if (any(!valid_mask)) {
-                message("Valid values for 'forms' include: `TRUE` ('forms10'; default), 'forms6', 'forms5', 'forms4'", call. = FALSE)
+                message("Valid values for 'forms' include: `TRUE` ('forms10'; default), 'forms6', 'forms5', 'forms4'")
                 parsed <- parsed[valid_mask]
             }
             if (length(parsed) == 0) {
