@@ -120,6 +120,15 @@ if (requireNamespace("terra", quietly = TRUE)) {
     expect_equal(terra::cats(res_multi[["forms10"]])[[1]]$form, geomorphon_categories()$form)
     expect_equal(terra::cats(res_multi[["forms6"]])[[1]]$form, geomorphon_categories()$form)
 
+    # Pixel-for-pixel identity for forms5 and forms4 against individual calls
+    res_multi_all <- geomorphons(dem, search = SEARCH, skip = SKIP,
+                                 forms = c("forms10", "forms6", "forms5", "forms4"))
+    res_5 <- geomorphons(dem, search = SEARCH, skip = SKIP, forms = "forms5")
+    res_4 <- geomorphons(dem, search = SEARCH, skip = SKIP, forms = "forms4")
+    expect_equal(names(res_multi_all), c("forms10", "forms6", "forms5", "forms4"))
+    expect_equal(as.vector(terra::values(res_multi_all[["forms5"]])), as.vector(terra::values(res_5)))
+    expect_equal(as.vector(terra::values(res_multi_all[["forms4"]])), as.vector(terra::values(res_4)))
+
     # Single-form backward compatibility: returns 1-layer SpatRaster named "form"
     res_s_true <- geomorphons(dem, search = SEARCH, skip = SKIP, forms = TRUE)
     res_s_10 <- geomorphons(dem, search = SEARCH, skip = SKIP, forms = "forms10")
