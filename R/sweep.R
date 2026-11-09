@@ -317,7 +317,7 @@ geomorphon_ensemble <- function(sweep_obj,
         taxonomy_names <- c("forms10", "forms6", "forms5", "forms4", "form")
         # Duplicate layer names (e.g. c() of several single-form runs) also mean runs.
         direct_runs <- inherits(sweep_obj, "SpatRaster") &&
-            (anyDuplicated(names(sweep_obj)) > 0 || !any(names(sweep_obj) %in% taxonomy_names))
+            (anyDuplicated(names(sweep_obj)) > 0 || !all(names(sweep_obj) %in% taxonomy_names))
         if (direct_runs) {
             stack_runs <- sweep_obj
             form_name <- if (!is.null(form)) as.character(form) else "forms10"
@@ -388,9 +388,11 @@ geomorphon_ensemble <- function(sweep_obj,
             }
         }
         first_r <- runs_list[[1]]
+        form_key_mat <- NULL  # element name chosen for list runs; used when `form` is NULL
         if (is.list(first_r) && !is.data.frame(first_r)) {
             avail <- names(first_r)
             form_key <- .resolve_form_key(avail, form, c("forms10", "forms"))
+            form_key_mat <- form_key
 
             mats <- lapply(runs_list, function(r) {
                 val <- if (form_key %in% names(r)) r[[form_key]] else r[[1]]
@@ -422,7 +424,7 @@ geomorphon_ensemble <- function(sweep_obj,
         } else {
             cats <- geomorphon_categories()
             if (is.null(classes)) {
-                classes_to_calc <- .reachable_classes(form)
+                classes_to_calc <- .reachable_classes(if (is.null(form)) form_key_mat else form)
             } else if (is.numeric(classes)) {
                 classes_to_calc <- as.integer(classes)
             } else if (is.character(classes)) {

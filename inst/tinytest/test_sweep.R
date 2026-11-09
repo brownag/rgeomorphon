@@ -93,6 +93,10 @@ expect_true(is.na(ens_p_mat[["Flat"]][2, 2]))
 # Proportions default to the reachable classes of the selected form (forms6 = 6 classes)
 ens_p6_mat <- geomorphon_ensemble(list(m1, m2, m3), method = "proportions", form = "forms6")
 expect_equal(names(ens_p6_mat), c("Flat", "Ridge", "Shoulder", "Slope", "Footslope", "Valley"))
+# form omitted: proportions follow the element chosen for list runs (forms6 -> 6 classes)
+ens_p6_auto <- geomorphon_ensemble(list(list(forms6 = m1), list(forms6 = m2), list(forms6 = m3)),
+                                   method = "proportions")
+expect_equal(names(ens_p6_auto), c("Flat", "Ridge", "Shoulder", "Slope", "Footslope", "Valley"))
 
 # ==============================================================================
 # 4. SpatRaster tests: geomorphon_sweep, geomorphon_ensemble, and benchmarks
@@ -222,6 +226,19 @@ if (requireNamespace("terra", quietly = TRUE)) {
     ens_stk <- geomorphon_ensemble(stk_runs, method = "modal", ties = "lowest")
     ens_lst <- geomorphon_ensemble(list(sw_fn$rasters[[1]], sw_fn$rasters[[2]]), method = "modal", ties = "lowest")
     expect_equal(as.vector(terra::values(ens_stk)), as.vector(terra::values(ens_lst)))
+
+    # Mixed-name stacks are runs, not taxonomies: partial matches and non-taxonomy names
+    run_a <- geomorphons(dem, search = 3, skip = 0, flat_angle_deg = 1, forms = "forms10")
+    run_b <- run_a
+    names(run_b) <- "run2"
+    run_c <- run_a
+    names(run_c) <- "forms10.1"
+    run_a_named <- run_a
+    names(run_a_named) <- "forms10"
+    expect_equal(as.vector(terra::values(geomorphon_ensemble(c(run_a, run_b), method = "modal", ties = "lowest"))),
+                 as.vector(terra::values(geomorphon_ensemble(list(run_a, run_b), method = "modal", ties = "lowest"))))
+    expect_equal(as.vector(terra::values(geomorphon_ensemble(c(run_a_named, run_c), method = "modal", ties = "lowest"))),
+                 as.vector(terra::values(geomorphon_ensemble(list(run_a_named, run_c), method = "modal", ties = "lowest"))))
 
     # Direct multi-taxonomy raster: `form` selects that layer, not a mix of all taxonomies
     m_tax <- geomorphons(dem, search = 3, skip = 0, flat_angle_deg = 1, forms = c("forms10", "forms6"))
