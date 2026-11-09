@@ -155,3 +155,9 @@ if (requireNamespace("terra", quietly = TRUE)) {
     mat_cpp <- forms_matrix_apply(list(positive = pos_mat, negative = neg_mat), rcl = rcl6)
     expect_equal(as.vector(t(mat_cpp)), as.vector(terra::values(out_legacy)))
 }
+
+# Out-of-range and infinite counts classify as Flat without an unsafe int cast
+expect_equal(
+    rgeomorphon:::forms_matrix_apply_cpp(matrix(c(Inf, 1e20, 9, -1e20), 2), matrix(0, 2, 2), 10L),
+    matrix(1, 2, 2)
+)

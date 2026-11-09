@@ -89,6 +89,12 @@ const FORMS_GRASS forms_table4[9][9] = {
     /* 8 */ {G_RI, G_NONE, G_NONE, G_NONE, G_NONE, G_NONE, G_NONE, G_NONE, G_NONE}
 };
 
+// A double count is safe to truncate to int only if it lies in (-1, 9): that range
+// truncates to an int in [0, 8], the bounds form_from_counts accepts. Excludes Inf.
+static inline bool count_in_range(double v) {
+    return v > -1.0 && v < 9.0;
+}
+
 FORMS_GRASS form_from_counts(int num_neg, int num_pos, int num_forms, FORMS_GRASS none_val) {
     if (num_neg < 0 || num_neg > 8 || num_pos < 0 || num_pos > 8) {
         return G_FL;
@@ -165,6 +171,9 @@ struct FormsMatrixApplyWorker : public RcppParallel::Worker {
                 double n_val = neg_m(r, c);
                 if (std::isnan(p_val) || std::isnan(n_val)) {
                     out_m(r, c) = R_NaReal;
+                } else if (!count_in_range(p_val) || !count_in_range(n_val)) {
+                    // Out-of-range or infinite counts: never cast them to int
+                    out_m(r, c) = static_cast<double>(G_FL);
                 } else {
                     int np = static_cast<int>(p_val);
                     int nn = static_cast<int>(n_val);
