@@ -235,6 +235,10 @@ if (requireNamespace("terra", quietly = TRUE)) {
     names(run_c) <- "forms10.1"
     run_a_named <- run_a
     names(run_a_named) <- "forms10"
+    run_rasters <- run_a
+    names(run_rasters) <- "rasters"
+    expect_equal(as.vector(terra::values(geomorphon_ensemble(c(run_rasters, run_a_named), method = "modal", ties = "lowest"))),
+                 as.vector(terra::values(geomorphon_ensemble(list(run_rasters, run_a_named), method = "modal", ties = "lowest"))))
     expect_equal(as.vector(terra::values(geomorphon_ensemble(c(run_a, run_b), method = "modal", ties = "lowest"))),
                  as.vector(terra::values(geomorphon_ensemble(list(run_a, run_b), method = "modal", ties = "lowest"))))
     expect_equal(as.vector(terra::values(geomorphon_ensemble(c(run_a_named, run_c), method = "modal", ties = "lowest"))),
