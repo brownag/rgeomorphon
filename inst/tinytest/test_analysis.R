@@ -454,6 +454,41 @@ if (requireNamespace("terra", quietly = TRUE)) {
   expect_equal(asymmetric_result$nmi, asymmetric_swapped$nmi,
                tolerance = 1e-10)
 
+  # Per-class V-measure diagnostics on asymmetric fixture
+  # Contingency table ct:
+  #            Category
+  # Geomorphon  1  2
+  #          1  4  2   (sum = 6)
+  #          2  0  2   (sum = 2)
+  #  (col sum)  4  4   (total = 8)
+  # Marginal H(cat) = 1 (equal halves).
+  # H(cat | geo = 1): p=(4/6, 2/6) = (2/3, 1/3) => -(2/3*log2(2/3) + 1/3*log2(1/3))
+  # class_homogeneity["1"] = 1 - H(cat | geo = 1) / H(cat)
+  # H(cat | geo = 2): p=(0, 2/2) = (0, 1) => 0
+  # class_homogeneity["2"] = 1 - 0 / 1 = 1
+  h_cat_given_geo1 <- -( (2/3) * log2(2/3) + (1/3) * log2(1/3) )
+  expected_class_homog <- c("1" = 1 - h_cat_given_geo1 / 1, "2" = 1)
+  expect_equal(asymmetric_result$class_homogeneity, expected_class_homog,
+               tolerance = 1e-10)
+
+  # Completeness: Marginal H(geo) = asymmetric_geo_entropy
+  # H(geo | cat = 1): p=(4/4, 0/4) = (1, 0) => 0
+  # class_completeness["1"] = 1 - 0 / H(geo) = 1
+  # H(geo | cat = 2): p=(2/4, 2/4) = (0.5, 0.5) => 1
+  # class_completeness["2"] = 1 - 1 / H(geo)
+  expected_class_comp <- c("1" = 1, "2" = 1 - 1 / asymmetric_geo_entropy)
+  expect_equal(asymmetric_result$class_completeness, expected_class_comp,
+               tolerance = 1e-10)
+
+  # Check exact weighted sum identities:
+  # sum(rowSums(ct) / sum(ct) * class_homogeneity) == homogeneity
+  # sum(colSums(ct) / sum(ct) * class_completeness) == completeness
+  ct_asym <- asymmetric_result$contingency_table
+  weighted_homog <- sum(rowSums(ct_asym) / sum(ct_asym) * asymmetric_result$class_homogeneity)
+  weighted_comp <- sum(colSums(ct_asym) / sum(ct_asym) * asymmetric_result$class_completeness)
+  expect_equal(weighted_homog, asymmetric_result$homogeneity, tolerance = 1e-12)
+  expect_equal(weighted_comp, asymmetric_result$completeness, tolerance = 1e-12)
+
   # Constant reference/target maps exercise zero-entropy conventions and
   # paired-NA filtering without changing existing NMI behavior.
   constant_map <- matrix(1, nrow = 1, ncol = 8)
@@ -465,6 +500,10 @@ if (requireNamespace("terra", quietly = TRUE)) {
   expect_identical(constant_cat$homogeneity, NA_real_)
   expect_identical(constant_cat$completeness, 0)
   expect_identical(constant_cat$nmi, 0)
+  expect_true(all(is.na(constant_cat$class_homogeneity)))
+  expect_true(is.numeric(constant_cat$class_completeness))
+  expect_equal(constant_cat$class_completeness, c("1" = 0))
+
   constant_geo <- geomorphon_concordance(
     make_concordance_raster(constant_map), make_concordance_raster(varying_map),
     method = "nmi"
@@ -472,6 +511,10 @@ if (requireNamespace("terra", quietly = TRUE)) {
   expect_identical(constant_geo$homogeneity, 0)
   expect_identical(constant_geo$completeness, NA_real_)
   expect_identical(constant_geo$nmi, 0)
+  expect_true(all(is.na(constant_geo$class_completeness)))
+  expect_true(is.numeric(constant_geo$class_homogeneity))
+  expect_equal(constant_geo$class_homogeneity, c("1" = 0))
+
   both_constant <- geomorphon_concordance(
     make_concordance_raster(constant_map), make_concordance_raster(constant_map),
     method = "nmi"
@@ -479,6 +522,8 @@ if (requireNamespace("terra", quietly = TRUE)) {
   expect_identical(both_constant$homogeneity, NA_real_)
   expect_identical(both_constant$completeness, NA_real_)
   expect_identical(both_constant$nmi, 0)
+  expect_true(all(is.na(both_constant$class_homogeneity)))
+  expect_true(all(is.na(both_constant$class_completeness)))
 
   na_geo <- asymmetric_geo
   na_cat <- asymmetric_cat
