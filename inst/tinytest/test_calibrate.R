@@ -240,6 +240,20 @@ cal <- geomorphon_calibrate(
 )
 
 expect_true(is.data.frame(cal))
+
+# A run holding only a forms6 layer must not be scored as forms10
+fake_run <- geomorphons(sub_dem, search = 5, skip = 0, flat_angle_deg = 1, forms = "forms6")
+names(fake_run) <- "forms6"  # one layer that names a taxonomy
+fake_sweep <- structure(
+  list(summary = swp$summary[1, , drop = FALSE], rasters = list(run_1 = fake_run),
+       provenance = swp$provenance),
+  class = "geomorphon_sweep"
+)
+cal_fake <- geomorphon_calibrate(fake_sweep, targets_sub, forms = c("forms10", "forms6"),
+                                 spatial_null = FALSE)
+expect_true(all(cal_fake$forms == "forms6"))
+expect_equal(nrow(cal_fake), 2L)  # 1 run * 1 layer * 2 targets
+
 # 2 runs * 2 forms * 2 targets = 8 rows
 expect_equal(nrow(cal), 8L)
 

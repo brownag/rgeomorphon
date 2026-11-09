@@ -768,9 +768,10 @@ geomorphon_calibrate <- function(sweep_obj,
         g_lyr <- run_r[[form_clean]]
       } else if (f %in% run_names) {
         g_lyr <- run_r[[f]]
-      } else if (length(run_names) == 1L && run_names %in% c("form", "forms", "geomorphon")) {
-        g_lyr <- run_r[[1]]
-      } else if (length(run_names) == 1L) {
+      } else if (length(run_names) == 1L &&
+                 !run_names %in% c("forms10", "forms6", "forms5", "forms4")) {
+        # A lone unnamed/generic layer is this form's layer; a lone layer that names a
+        # different taxonomy is skipped so it is never scored under this form's label.
         g_lyr <- run_r[[1]]
       } else {
         next
