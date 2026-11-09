@@ -312,10 +312,19 @@ geomorphon_ensemble <- function(sweep_obj,
     is_raster <- inherits(runs_list[[1]], "SpatRaster") || inherits(sweep_obj, "SpatRaster")
 
     if (is_raster) {
-        if (inherits(sweep_obj, "SpatRaster") && length(runs_list) == 1) {
+        # A direct SpatRaster whose layers are taxonomies (forms10, forms6, ...) selects
+        # one layer via `form`; any other direct raster is a stack of runs (one layer per run).
+        taxonomy_names <- c("forms10", "forms6", "forms5", "forms4", "form")
+        # Duplicate layer names (e.g. c() of several single-form runs) also mean runs.
+        direct_runs <- inherits(sweep_obj, "SpatRaster") &&
+            (anyDuplicated(names(sweep_obj)) > 0 || !any(names(sweep_obj) %in% taxonomy_names))
+        if (direct_runs) {
             stack_runs <- sweep_obj
             form_name <- if (!is.null(form)) as.character(form) else "forms10"
         } else {
+            if (inherits(sweep_obj, "SpatRaster") && is.null(form) && "forms10" %in% names(sweep_obj)) {
+                message("Multi-taxonomy raster: aggregating the 'forms10' layer. Set 'form' to choose another.")
+            }
             first_r <- runs_list[[1]]
             avail <- names(first_r)
             form_key <- .resolve_form_key(avail, form, c("forms10", "form"), c("form", "geomorphon"))

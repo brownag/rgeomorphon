@@ -223,6 +223,16 @@ if (requireNamespace("terra", quietly = TRUE)) {
     ens_lst <- geomorphon_ensemble(list(sw_fn$rasters[[1]], sw_fn$rasters[[2]]), method = "modal", ties = "lowest")
     expect_equal(as.vector(terra::values(ens_stk)), as.vector(terra::values(ens_lst)))
 
+    # Direct multi-taxonomy raster: `form` selects that layer, not a mix of all taxonomies
+    m_tax <- geomorphons(dem, search = 3, skip = 0, flat_angle_deg = 1, forms = c("forms10", "forms6"))
+    ens_tax6 <- geomorphon_ensemble(m_tax, form = "forms6", method = "proportions")
+    ens_tax6_layer <- geomorphon_ensemble(m_tax[["forms6"]], form = "forms6", method = "proportions")
+    expect_equal(as.vector(terra::values(ens_tax6)), as.vector(terra::values(ens_tax6_layer)))
+    expect_equal(names(ens_tax6), c("Flat", "Ridge", "Shoulder", "Slope", "Footslope", "Valley"))
+    ens_tax6_modal <- geomorphon_ensemble(m_tax, form = "forms6", method = "modal")
+    ens_tax6_modal_layer <- geomorphon_ensemble(m_tax[["forms6"]], form = "forms6", method = "modal")
+    expect_equal(as.vector(terra::values(ens_tax6_modal)), as.vector(terra::values(ens_tax6_modal_layer)))
+
     # Invalid ensemble inputs
     expect_error(geomorphon_ensemble(list()))
     expect_error(geomorphon_ensemble("invalid_input"))
