@@ -205,6 +205,14 @@ if (requireNamespace("terra", quietly = TRUE)) {
     expect_equal(as.vector(terra::values(sw_fn$rasters[[1]])), as.vector(terra::values(ref_s3)))
     expect_equal(as.vector(terra::values(sw_fn$rasters[[2]])), as.vector(terra::values(ref_s5)))
 
+    # Direct SpatRaster input: a single run and a multi-layer stack of runs
+    ens_one <- geomorphon_ensemble(sw_fn$rasters[[1]], method = "modal", ties = "lowest")
+    expect_true(inherits(ens_one, "SpatRaster"))
+    stk_runs <- c(sw_fn$rasters[[1]], sw_fn$rasters[[2]])
+    ens_stk <- geomorphon_ensemble(stk_runs, method = "modal", ties = "lowest")
+    ens_lst <- geomorphon_ensemble(list(sw_fn$rasters[[1]], sw_fn$rasters[[2]]), method = "modal", ties = "lowest")
+    expect_equal(as.vector(terra::values(ens_stk)), as.vector(terra::values(ens_lst)))
+
     # Invalid ensemble inputs
     expect_error(geomorphon_ensemble(list()))
     expect_error(geomorphon_ensemble("invalid_input"))

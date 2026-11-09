@@ -304,7 +304,7 @@ geomorphon_ensemble <- function(sweep_obj,
     is_raster <- inherits(runs_list[[1]], "SpatRaster") || inherits(sweep_obj, "SpatRaster")
 
     if (is_raster) {
-        if (inherits(sweep_obj, "SpatRaster") && length(runs_list) == 1 && is.null(sweep_obj$rasters)) {
+        if (inherits(sweep_obj, "SpatRaster") && length(runs_list) == 1) {
             stack_runs <- sweep_obj
             form_name <- if (!is.null(form)) as.character(form) else "forms10"
         } else {
