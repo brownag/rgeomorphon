@@ -160,8 +160,9 @@ Implement `geomorphon_ensemble()` in `R/sweep.R` (resolving Issue #6):
 
 ## Consequences
 
-- Multi-scale and multi-taxonomy terrain analysis runs at $\sim 75\%$ lower
-  compute cost when evaluating all 4 taxonomies.
+- Multi-taxonomy terrain analysis is faster when evaluating all 4 taxonomies in
+  one pass: about 45% less end-to-end time than four separate passes on `salton`
+  (measured; see Decision above).
 - Legacy workflows and tests continue to work without modification; single-form
   calls return identical 1-layer rasters named `"form"`.
 - Reclassification of `(positive, negative)` overlook rasters is 10–50x faster
