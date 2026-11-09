@@ -162,6 +162,14 @@ geomorphon_sweep <- function(elevation,
         if (length(extra_args) > 0) {
             call_args <- c(call_args, extra_args)
         }
+        if (!is.null(call_args$filename)) {
+            # Give each run its own file so later runs do not overwrite earlier ones
+            fn <- as.character(call_args$filename)
+            m <- regexpr("\\.[^./]+$", fn)
+            base <- if (m > 0) substr(fn, 1L, m - 1L) else fn
+            ext <- if (m > 0) substr(fn, m, nchar(fn)) else ""
+            call_args$filename <- sprintf("%s_run_%d%s", base, i, ext)
+        }
 
         t0 <- proc.time()[["elapsed"]]
         res_i <- do.call(geomorphons, call_args)

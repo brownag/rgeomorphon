@@ -194,6 +194,17 @@ if (requireNamespace("terra", quietly = TRUE)) {
     expect_equal(terra::nlyr(ens_prop6), 6L)
     expect_equal(names(ens_prop6), c("Flat", "Ridge", "Shoulder", "Slope", "Footslope", "Valley"))
 
+    # Per-run filenames: each run writes its own file, so no run overwrites another
+    fn_out <- file.path(tempdir(), "sweep_fn.tif")
+    sw_fn <- geomorphon_sweep(dem, param_grid = list(search = c(3, 5), skip = 0, flat_angle_deg = 1),
+        forms = "forms10", filename = fn_out)
+    expect_true(file.exists(file.path(tempdir(), "sweep_fn_run_1.tif")))
+    expect_true(file.exists(file.path(tempdir(), "sweep_fn_run_2.tif")))
+    ref_s3 <- geomorphons(dem, search = 3, skip = 0, flat_angle_deg = 1, forms = "forms10")
+    ref_s5 <- geomorphons(dem, search = 5, skip = 0, flat_angle_deg = 1, forms = "forms10")
+    expect_equal(as.vector(terra::values(sw_fn$rasters[[1]])), as.vector(terra::values(ref_s3)))
+    expect_equal(as.vector(terra::values(sw_fn$rasters[[2]])), as.vector(terra::values(ref_s5)))
+
     # Invalid ensemble inputs
     expect_error(geomorphon_ensemble(list()))
     expect_error(geomorphon_ensemble("invalid_input"))
