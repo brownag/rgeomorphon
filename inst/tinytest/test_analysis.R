@@ -789,8 +789,14 @@ if (requireNamespace("terra", quietly = TRUE)) {
     if (is.na(p) || is.na(r)) return(NA_real_)
     if (p + r == 0) 0 else 2 * p * r / (p + r)
   }
+  direct_rank <- function(i, candidates, shifts) {
+    base <- candidates %/% shifts
+    remainder <- candidates %% shifts
+    i * base + base %/% 2 +
+      ((base %% 2) * shifts + (2 * i + 1) * remainder) %/% (2 * shifts)
+  }
   direct_scores <- vapply(0:127, function(i) {
-    rank <- floor((i + 0.5) * (large_n - 1) / 128)
+    rank <- direct_rank(i, large_n - 1, 128)
     q <- rank + 1
     direct_shift_f1(q %/% large_nc, q %% large_nc, 1)
   }, numeric(1))
@@ -816,7 +822,7 @@ if (requireNamespace("terra", quietly = TRUE)) {
   }
   null_shifts <- min(128L, null_n - 1L)
   direct_nmi <- vapply(seq_len(null_shifts) - 1L, function(i) {
-    rank <- floor((i + 0.5) * (null_n - 1) / null_shifts)
+    rank <- direct_rank(i, null_n - 1, null_shifts)
     q <- rank + 1L
     dr <- q %/% null_nc
     dc <- q %% null_nc
@@ -924,7 +930,7 @@ if (requireNamespace("terra", quietly = TRUE)) {
     -sum(p * log2(p))
   }
   direct_nonfinite <- vapply(0:6, function(i) {
-    rank <- floor((i + 0.5) * 7 / 7)
+    rank <- direct_rank(i, 7, 7)
     q <- rank + 1L
     dr <- q %/% 4L
     dc <- q %% 4L

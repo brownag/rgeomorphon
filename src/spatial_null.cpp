@@ -1,6 +1,7 @@
 #include <Rcpp.h>
 #include <cmath>
-#include <map>
+#include <unordered_map>
+#include <functional>
 #include <vector>
 #include <algorithm>
 #include <cstdint>
@@ -11,11 +12,17 @@ using namespace Rcpp;
 namespace {
 double nmi_score(const std::vector<double>& g, const std::vector<double>& c,
                  const std::vector<unsigned char>& valid, R_xlen_t n) {
-  std::map<double, R_xlen_t> fg, fc;
-  std::map<std::pair<double, double>, R_xlen_t> fj;
+  std::unordered_map<double, R_xlen_t> fg, fc;
+  using Pair = std::pair<double, double>;
+  const auto pair_hash = [](const Pair& x) {
+    const std::size_t h1 = std::hash<double>{}(x.first);
+    const std::size_t h2 = std::hash<double>{}(x.second);
+    return h1 ^ (h2 + 0x9e3779b9 + (h1 << 6) + (h1 >> 2));
+  };
+  std::unordered_map<Pair, R_xlen_t, decltype(pair_hash)> fj(0, pair_hash);
   R_xlen_t count = 0;
   for (R_xlen_t i = 0; i < n; ++i) if (valid[i]) {
-    ++fg[g[i]]; ++fc[c[i]]; ++fj[std::make_pair(g[i], c[i])]; ++count;
+    ++fg[g[i]]; ++fc[c[i]]; ++fj[Pair(g[i], c[i])]; ++count;
   }
   if (!count) return NA_REAL;
   const auto entropy = [count](const auto& f) {
@@ -29,11 +36,10 @@ double nmi_score(const std::vector<double>& g, const std::vector<double>& c,
   return std::min(1.0, std::max(0.0, 2 * mi / (hg + hc)));
 }
 
-std::vector<unsigned char> edges(const std::vector<double>& x,
-                                 const std::vector<unsigned char>& valid,
-                                 int nr, int nc) {
-  const R_xlen_t n = static_cast<R_xlen_t>(nr) * nc;
-  std::vector<unsigned char> out(static_cast<std::size_t>(n), 0);
+void edges(const std::vector<double>& x,
+           const std::vector<unsigned char>& valid,
+           int nr, int nc, std::vector<unsigned char>& out) {
+  std::fill(out.begin(), out.end(), 0);
   for (int r = 1; r < nr - 1; ++r) for (int col = 1; col < nc - 1; ++col) {
     R_xlen_t i = static_cast<R_xlen_t>(r) * nc + col;
     if (!valid[i]) continue;
@@ -43,7 +49,6 @@ std::vector<unsigned char> edges(const std::vector<double>& x,
       if (valid[j] && x[i] != x[j]) { out[i] = 1; break; }
     }
   }
-  return out;
 }
 
 double f1_score(const std::vector<unsigned char>& a,
@@ -110,10 +115,12 @@ List spatial_null_cpp(NumericVector geo, NumericVector cat, int nr, int nc,
   const int shifts = static_cast<int>(std::min<R_xlen_t>(128, n - 1));
   std::vector<double> shifted(static_cast<std::size_t>(n));
   std::vector<unsigned char> valid(static_cast<std::size_t>(n));
+  std::vector<unsigned char> ge(static_cast<std::size_t>(n));
+  std::vector<unsigned char> ce(static_cast<std::size_t>(n));
+  const R_xlen_t candidates = n - 1;
+  const R_xlen_t base = candidates / shifts;
+  const R_xlen_t remainder = candidates % shifts;
   for (int i = 0; i < shifts; ++i) {
-    const R_xlen_t candidates = n - 1;
-    const R_xlen_t base = candidates / shifts;
-    const R_xlen_t remainder = candidates % shifts;
     const R_xlen_t rank = static_cast<R_xlen_t>(i) * base + base / 2 +
       ((base % 2) * shifts + (2 * i + 1) * remainder) / (2 * shifts);
     const R_xlen_t q = rank + 1;
@@ -127,7 +134,8 @@ List spatial_null_cpp(NumericVector geo, NumericVector cat, int nr, int nc,
     }
     if (do_nmi) { double v = nmi_score(g, shifted, valid, n); if (!NumericVector::is_na(v)) { nmi_sum += v; ++nmi_eligible; } }
     if (do_edge) {
-      auto ge = edges(g, valid, nr, nc), ce = edges(shifted, valid, nr, nc);
+      edges(g, valid, nr, nc, ge);
+      edges(shifted, valid, nr, nc, ce);
       double v = f1_score(ge, ce, nr, nc, threshold);
       if (!NumericVector::is_na(v)) { edge_sum += v; ++edge_eligible; }
     }
