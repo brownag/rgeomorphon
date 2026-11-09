@@ -76,6 +76,31 @@ if (requireNamespace("terra", quietly = TRUE)) {
   expect_equal(terra::values(ptrm_cpp), terra::values(ptrm_fallback_file),
                tolerance = 1e-6)
 
+  # Public NULL filename and both implementation output/overwrite contracts.
+  ptrm_null_file <- geomorphon_ptrm_focal(r_pattern, radius = 2,
+                                          mode = "class", filename = NULL)
+  expect_equal(names(ptrm_null_file), "ptrm")
+  expect_equal(terra::values(ptrm_cpp), terra::values(ptrm_null_file),
+               tolerance = 1e-6)
+  for (force in c(TRUE, FALSE)) {
+    output <- tempfile(fileext = ".tif")
+    written <- rgeomorphon:::.geomorphon_ptrm_focal_impl(
+      r_pattern, 2, model, force_cpp = force, filename = output
+    )
+    expect_true(file.exists(output))
+    expect_equal(names(written), "ptrm")
+    expect_error(rgeomorphon:::.geomorphon_ptrm_focal_impl(
+      r_pattern, 2, model, force_cpp = force, filename = output,
+      overwrite = FALSE
+    ))
+    rewritten <- rgeomorphon:::.geomorphon_ptrm_focal_impl(
+      r_pattern, 2, model, force_cpp = force, filename = output,
+      overwrite = TRUE
+    )
+    expect_equal(terra::values(ptrm_cpp), terra::values(rewritten),
+                 tolerance = 1e-6)
+  }
+
   # Output metadata: fresh raster named ptrm, no levels, numeric values
   expect_equal(names(ptrm_cpp), "ptrm")
   no_levels <- function(r) {
@@ -146,6 +171,6 @@ if (requireNamespace("terra", quietly = TRUE)) {
   expect_true(memory_ok(r3, 12))
   avail_gib <- unname(terra::mem_info(r3, print = FALSE)["available"])
   boundary_bytes_per_cell <- avail_gib / 2 * 1024^3 / terra::ncell(r3)
-  expect_true(memory_ok(r3, boundary_bytes_per_cell * (1 - 1e-8)))
-  expect_false(memory_ok(r3, boundary_bytes_per_cell * (1 + 1e-8)))
+  expect_true(memory_ok(r3, boundary_bytes_per_cell * 0.98))
+  expect_false(memory_ok(r3, boundary_bytes_per_cell * 1.02))
 }

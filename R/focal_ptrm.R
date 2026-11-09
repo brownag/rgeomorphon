@@ -193,7 +193,7 @@ geomorphon_ptrm_focal <- function(
     radius,
     model,
     force_cpp = NULL,
-    filename = filename,
+    filename = if (is.null(filename)) "" else filename,
     overwrite = overwrite
   )
 
@@ -228,6 +228,10 @@ geomorphon_ptrm_focal <- function(
 
     result <- .new_ptrm_raster(geo_class)
     terra::values(result) <- as.vector(t(ptrm_result))
+    if (nzchar(filename)) {
+      result <- terra::writeRaster(result, filename = filename,
+                                   overwrite = overwrite)
+    }
   } else {
     # Fallback path: use terra::focal() for memory efficiency
     if (is.null(force_cpp)) {
@@ -278,13 +282,14 @@ geomorphon_ptrm_focal <- function(
     window_mat[cbind(offsets$dr + radius + 1L, offsets$dc + radius + 1L)] <-
       as.integer(in_window)
 
+    output_filename <- if (nzchar(filename)) filename else ""
     focal_result <- terra::focal(
       remapped,
       w = window_mat,
       fun = ptrm_window_fun,
       na.rm = TRUE,
       na.policy = "all",
-      filename = filename,
+      filename = if (radius > 0 && nzchar(output_filename)) "" else output_filename,
       overwrite = overwrite
     )
 
@@ -292,7 +297,7 @@ geomorphon_ptrm_focal <- function(
     if (radius > 0) {
       r <- as.integer(radius)
       border <- terra::init(geo_class, NA_real_)
-      result <- terra::cover(border, focal_result, filename = filename,
+      result <- terra::cover(border, focal_result, filename = output_filename,
                              overwrite = overwrite)
       cell <- terra::init(result, "cell")
       row_index <- floor((cell - 1) / terra::ncol(result)) + 1
@@ -300,7 +305,7 @@ geomorphon_ptrm_focal <- function(
       result <- terra::ifel(
         row_index <= r | row_index > terra::nrow(result) - r |
           col_index <= r | col_index > terra::ncol(result) - r,
-        NA, result, filename = filename, overwrite = overwrite
+        NA, result, filename = output_filename, overwrite = overwrite
       )
     } else {
       result <- focal_result
@@ -316,9 +321,9 @@ geomorphon_ptrm_focal <- function(
   # Shared memory gate for focal C++ paths.
   # Returns TRUE when the estimated working set fits in half of available RAM.
   # terra::mem_info() reports available memory in GiB (2^30 bytes).
-  required_gib <- terra::ncell(x) * bytes_per_cell / (1024^3)
-  available_gib <- unname(terra::mem_info(x, print = FALSE)["available"])
-  isTRUE(required_gib < available_gib / 2)
+  required_bytes <- terra::ncell(x) * bytes_per_cell
+  available_bytes <- unname(terra::mem_info(x, print = FALSE)["available"]) * 1024^3
+  isTRUE(required_bytes < available_bytes / 2)
 }
 
 #' @noRd
