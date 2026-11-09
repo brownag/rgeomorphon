@@ -321,6 +321,13 @@ if (requireNamespace("terra", quietly = TRUE)) {
   expect_true(is.list(geomorphon_concordance(
     geo, cat_map, method = "nmi", threshold_cells = -1
   )), info = "NMI-only method does not validate boundary threshold")
+  nmi_nonconvertible_threshold <- geomorphon_concordance(
+    geo, cat_map, method = "nmi", threshold_cells = "not a boundary threshold"
+  )
+  expect_true(is.finite(nmi_nonconvertible_threshold$nmi),
+              info = "NMI-only observed score ignores boundary threshold")
+  expect_true(is.finite(nmi_nonconvertible_threshold$mean_null_nmi),
+              info = "NMI-only spatial null ignores boundary threshold")
 
   # Test 18: Error handling - non-SpatRaster inputs
   expect_error(geomorphon_concordance(volcano, cat_map),

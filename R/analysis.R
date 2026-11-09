@@ -920,7 +920,8 @@ geomorphon_concordance <- function(geo_rast,
       terra::values(geo_rast, mat = FALSE),
       terra::values(cat_rast, mat = FALSE),
       terra::nrow(geo_rast), terra::ncol(geo_rast),
-      as.numeric(threshold_cells), method %in% c("nmi", "both"),
+      if (method == "nmi") 0 else as.numeric(threshold_cells),
+      method %in% c("nmi", "both"),
       method %in% c("boundary", "both")
     )
     if (method %in% c("nmi", "both")) {
