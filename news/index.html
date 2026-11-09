@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">rgeomorphon</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -19,6 +19,7 @@
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/geomorphons-tiled.html">Parallel and Distributed Processing with 'rgeomorphon'</a></li>
+    <li><a class="dropdown-item" href="../articles/ptrm-and-concordance.html">Terrain Realism (PTRM) and Structural Concordance with 'rgeomorphon'</a></li>
   </ul></li>
 <li class="active nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -36,6 +37,19 @@
       <small>Source: <a href="https://github.com/brownag/rgeomorphon/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.4.0" id="rgeomorphon-040">rgeomorphon 0.4.0<a class="anchor" aria-label="anchor" href="#rgeomorphon-040"></a></h2>
+<ul><li>
+<p>Added <code><a href="../reference/geomorphon_ptrm.html">geomorphon_ptrm()</a></code> and <code><a href="../reference/geomorphon_ptrm_focal.html">geomorphon_ptrm_focal()</a></code> to measure perceived terrain realism from a DEM or geomorphon map</p>
+<ul><li>Supports global and circular focal-window calculations, <code>forms4</code>/<code>forms5</code>/<code>forms6</code>/<code>forms10</code> classifications, and tunable model parameters (<code>coefficients</code>, <code>intercept</code>, <code>normalizer</code>).</li>
+</ul></li>
+<li>
+<p>Added <code><a href="../reference/geomorphon_concordance.html">geomorphon_concordance()</a></code> to compare map structure between geomorphon and categorical rasters</p>
+<ul><li>Includes Normalized Mutual Information (<code>nmi</code>) with directional <code>homogeneity</code> and <code>completeness</code>, directional boundary-alignment summaries (<code>edge_offset</code>, <code>edge_concordance</code>), symmetric shared-domain boundary metrics (<code>edge_f1</code>, <code>edge_mhd</code>, <code>edge_chamfer</code>), and an optional deterministic 128-shift toroidal <code>spatial_null</code> ensemble.</li>
+</ul></li>
+<li><p>Added the <code>scorpion</code> sample dataset (10 m USGS 3DEP DEM and co-registered SSURGO <code>mukey</code> raster and map unit attributes) and the vignette <em>Terrain Realism (PTRM) and Structural Concordance with ‘rgeomorphon’</em>.</p></li>
+<li><p>Fixed simplified <code>geomorphons(..., simplify = TRUE)</code> output when given a <code>SpatRaster</code> input and added internal information-theory helpers and tests; no new package dependencies.</p></li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.3.0" id="rgeomorphon-030">rgeomorphon 0.3.0<a class="anchor" aria-label="anchor" href="#rgeomorphon-030"></a></h2><p class="text-muted">CRAN release: 2025-09-16</p>
 <ul><li><p>Added support for tiled processing for rasters too large to fit in memory</p></li>

@@ -1,5 +1,37 @@
 # Changelog
 
+## rgeomorphon 0.4.0
+
+- Added
+  [`geomorphon_ptrm()`](http://humus.rocks/rgeomorphon/reference/geomorphon_ptrm.md)
+  and
+  [`geomorphon_ptrm_focal()`](http://humus.rocks/rgeomorphon/reference/geomorphon_ptrm_focal.md)
+  to measure perceived terrain realism from a DEM or geomorphon map
+
+  - Supports global and circular focal-window calculations,
+    `forms4`/`forms5`/`forms6`/`forms10` classifications, and tunable
+    model parameters (`coefficients`, `intercept`, `normalizer`).
+
+- Added
+  [`geomorphon_concordance()`](http://humus.rocks/rgeomorphon/reference/geomorphon_concordance.md)
+  to compare map structure between geomorphon and categorical rasters
+
+  - Includes Normalized Mutual Information (`nmi`) with directional
+    `homogeneity` and `completeness`, directional boundary-alignment
+    summaries (`edge_offset`, `edge_concordance`), symmetric
+    shared-domain boundary metrics (`edge_f1`, `edge_mhd`,
+    `edge_chamfer`), and an optional deterministic 128-shift toroidal
+    `spatial_null` ensemble.
+
+- Added the `scorpion` sample dataset (10 m USGS 3DEP DEM and
+  co-registered SSURGO `mukey` raster and map unit attributes) and the
+  vignette *Terrain Realism (PTRM) and Structural Concordance with
+  ‘rgeomorphon’*.
+
+- Fixed simplified `geomorphons(..., simplify = TRUE)` output when given
+  a `SpatRaster` input and added internal information-theory helpers and
+  tests; no new package dependencies.
+
 ## rgeomorphon 0.3.0
 
 CRAN release: 2025-09-16

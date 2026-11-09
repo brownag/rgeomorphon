@@ -20,6 +20,16 @@
 - [`geomorphon_chunks_needed()`](http://humus.rocks/rgeomorphon/reference/geomorphon_chunks_needed.md)
   : Estimate Tile Processing Needs
 
+- [`geomorphon_concordance()`](http://humus.rocks/rgeomorphon/reference/geomorphon_concordance.md)
+  : Calculate Structural Concordance Between Geomorphon and Categorical
+  Maps
+
+- [`geomorphon_ptrm()`](http://humus.rocks/rgeomorphon/reference/geomorphon_ptrm.md)
+  : Calculate Perceived Terrain Realism Metric (PTRM)
+
+- [`geomorphon_ptrm_focal()`](http://humus.rocks/rgeomorphon/reference/geomorphon_ptrm_focal.md)
+  : Calculate Focal (Moving Window) PTRM
+
 - [`geomorphon_categories()`](http://humus.rocks/rgeomorphon/reference/geomorphon_theme.md)
   [`geomorphon_colors()`](http://humus.rocks/rgeomorphon/reference/geomorphon_theme.md)
   [`geomorphon_theme()`](http://humus.rocks/rgeomorphon/reference/geomorphon_theme.md)
@@ -33,3 +43,7 @@
 
 - [`salton`](http://humus.rocks/rgeomorphon/reference/salton.md) :
   Bathymetric Information on California's Salton Sea
+
+- [`scorpion`](http://humus.rocks/rgeomorphon/reference/scorpion.md) :
+  Elevation and SSURGO Soil Map Units for an Erosional Remnant in
+  Calaveras County, California
