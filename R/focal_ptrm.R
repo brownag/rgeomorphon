@@ -203,7 +203,7 @@ geomorphon_ptrm_focal <- function(
 #' @noRd
 .geomorphon_ptrm_focal_impl <- function(geo_class, radius, model,
                                         force_cpp = NULL, filename = "",
-                                        overwrite = TRUE) {
+                                        overwrite = FALSE) {
   # Memory-aware implementation selector. Avoid whole-raster class remapping
   # unless the C++ path is selected.
   use_cpp <- if (is.null(force_cpp)) {
@@ -297,8 +297,7 @@ geomorphon_ptrm_focal <- function(
     if (radius > 0) {
       r <- as.integer(radius)
       border <- terra::init(geo_class, NA_real_)
-      result <- terra::cover(border, focal_result, filename = output_filename,
-                             overwrite = overwrite)
+      result <- terra::cover(border, focal_result)
       cell <- terra::init(result, "cell")
       row_index <- floor((cell - 1) / terra::ncol(result)) + 1
       col_index <- ((cell - 1) %% terra::ncol(result)) + 1

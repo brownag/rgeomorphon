@@ -84,10 +84,37 @@ Keep `geomorphon_concordance()` as an experimental companion to the PTRM
 functions. It measures structural agreement with normalized mutual information
 and boundary alignment. It does not produce a PTRM score.
 
+When NMI is requested, also report directional `homogeneity`
+(`I(geo; cat) / H(cat)`) and `completeness` (`I(geo; cat) / H(geo)`) with
+`cat_rast` as the reference classification. Their harmonic mean equals NMI when
+both marginal entropies are positive; a component with a zero entropy
+denominator is `NA_real_`, while existing `nmi` remains `0` if both maps are
+constant.
+
 Report boundary distances in map units of the input CRS. `edge_offset` is the
 mean distance from each categorical boundary cell to the nearest geomorphon
 boundary cell. `edge_concordance` is the proportion of categorical boundary
-cells within the requested threshold of a geomorphon boundary.
+cells within the requested threshold of a geomorphon boundary. These legacy
+directional summaries retain their per-input valid masks.
+
+In addition, report symmetric boundary metrics (`edge_f1`, `edge_mhd`, and
+`edge_chamfer`) computed from 8-neighbor edges detected on the shared non-`NA`
+domain (excluding raster borders). `edge_f1` is the harmonic mean of
+thresholded precision and recall, `edge_mhd` is the maximum of the two directed
+mean nearest-boundary distances, and `edge_chamfer` is their arithmetic mean.
+Each symmetric boundary metric is `NA_real_` if either shared-domain edge set
+is empty.
+
+When `spatial_null = TRUE`, evaluate a deterministic sample of up to 128
+non-identity circular translations of `cat_rast` (moving category values and
+their `NA` mask together) using candidate ranks `k_i = floor((i + 0.5) * M / S)`
+for `M = nr * nc - 1` and `S = min(128, M)`. Report arithmetic null means
+(`mean_null_nmi`, `mean_null_edge_f1`), observed-minus-null deltas
+(`delta_nmi`, `delta_edge_f1`), and eligible/evaluated shift counts
+(`nmi_null_shifts`, `edge_f1_null_shifts`, `null_shifts_evaluated`). Null edge
+F1 uses toroidal Euclidean distances in cell coordinates with `threshold_cells`.
+When `spatial_null = FALSE`, skip the ensemble and return `NA_real_` null
+means/deltas and `0L` shift counts.
 
 ## Consequences
 

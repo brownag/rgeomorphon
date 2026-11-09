@@ -1,12 +1,16 @@
 # rgeomorphon 0.4.0
 
- - Added `geomorphon_ptrm()` to measure perceived terrain realism (0–1) from a DEM or geomorphon map
+ - Added `geomorphon_ptrm()` and `geomorphon_ptrm_focal()` to measure perceived terrain realism from a DEM or geomorphon map
 
-   - Including focal-window calculations, `forms4`/`forms5`/`forms6` support, and tunable model parameters.
+   - Supports global and circular focal-window calculations, `forms4`/`forms5`/`forms6`/`forms10` classifications, and tunable model parameters (`coefficients`, `intercept`, `normalizer`).
 
- - Added `geomorphon_concordance()` to compare map structure using NMI and boundary-alignment metrics.
+ - Added `geomorphon_concordance()` to compare map structure between geomorphon and categorical rasters
 
- - Added internal information-theory helpers and tests; no new dependencies.
+   - Includes Normalized Mutual Information (`nmi`) with directional `homogeneity` and `completeness`, directional boundary-alignment summaries (`edge_offset`, `edge_concordance`), symmetric shared-domain boundary metrics (`edge_f1`, `edge_mhd`, `edge_chamfer`), and an optional deterministic 128-shift toroidal `spatial_null` ensemble.
+
+ - Added the `scorpion` sample dataset (10 m USGS 3DEP DEM and co-registered SSURGO `mukey` raster and map unit attributes) and the vignette *Terrain Realism (PTRM) and Structural Concordance with 'rgeomorphon'*.
+
+ - Fixed simplified `geomorphons(..., simplify = TRUE)` output when given a `SpatRaster` input and added internal information-theory helpers and tests; no new package dependencies.
 
 # rgeomorphon 0.3.0
 

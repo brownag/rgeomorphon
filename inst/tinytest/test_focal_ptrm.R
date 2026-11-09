@@ -85,10 +85,13 @@ if (requireNamespace("terra", quietly = TRUE)) {
   for (force in c(TRUE, FALSE)) {
     output <- tempfile(fileext = ".tif")
     written <- rgeomorphon:::.geomorphon_ptrm_focal_impl(
-      r_pattern, 2, model, force_cpp = force, filename = output
+      r_pattern, 2, model, force_cpp = force, filename = output,
+      overwrite = FALSE
     )
     expect_true(file.exists(output))
     expect_equal(names(written), "ptrm")
+    expect_equal(terra::values(ptrm_cpp), terra::values(written),
+                 tolerance = 1e-6)
     expect_error(rgeomorphon:::.geomorphon_ptrm_focal_impl(
       r_pattern, 2, model, force_cpp = force, filename = output,
       overwrite = FALSE
