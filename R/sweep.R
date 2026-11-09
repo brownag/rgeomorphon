@@ -362,16 +362,7 @@ geomorphon_ensemble <- function(sweep_obj,
             # method == "proportions"
             cats <- geomorphon_categories()
             if (is.null(classes)) {
-                f_clean <- gsub("^forms", "", tolower(trimws(form_name)))
-                if (f_clean == "6") {
-                    classes_to_calc <- c(1L, 3L, 4L, 6L, 8L, 9L)
-                } else if (f_clean == "5") {
-                    classes_to_calc <- c(1L, 2L, 3L, 6L, 9L)
-                } else if (f_clean == "4") {
-                    classes_to_calc <- c(1L, 3L, 6L, 9L)
-                } else {
-                    classes_to_calc <- 1:10
-                }
+                classes_to_calc <- .reachable_classes(form_name)
             } else if (is.numeric(classes)) {
                 classes_to_calc <- as.integer(classes)
             } else if (is.character(classes)) {
@@ -474,7 +465,7 @@ geomorphon_ensemble <- function(sweep_obj,
         } else {
             cats <- geomorphon_categories()
             if (is.null(classes)) {
-                classes_to_calc <- 1:10
+                classes_to_calc <- .reachable_classes(form)
             } else if (is.numeric(classes)) {
                 classes_to_calc <- as.integer(classes)
             } else if (is.character(classes)) {
@@ -495,4 +486,15 @@ geomorphon_ensemble <- function(sweep_obj,
             return(res_prop_list)
         }
     }
+}
+
+# Reachable class codes for a form ("forms6", 6, etc.); 1:10 for forms10 or anything else.
+.reachable_classes <- function(form) {
+    f_clean <- if (is.null(form)) "" else gsub("^forms", "", tolower(trimws(as.character(form))))
+    switch(f_clean,
+        "6" = c(1L, 3L, 4L, 6L, 8L, 9L),
+        "5" = c(1L, 2L, 3L, 6L, 9L),
+        "4" = c(1L, 3L, 6L, 9L),
+        1:10
+    )
 }

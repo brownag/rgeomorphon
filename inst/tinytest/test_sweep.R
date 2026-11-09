@@ -83,6 +83,9 @@ expect_true(is.list(ens_p_mat))
 expect_equal(ens_p_mat[["Flat"]][1, 1], 2 / 3)
 expect_equal(ens_p_mat[["Ridge"]][1, 1], 1 / 3)
 expect_true(is.na(ens_p_mat[["Flat"]][2, 2]))
+# Proportions default to the reachable classes of the selected form (forms6 = 6 classes)
+ens_p6_mat <- geomorphon_ensemble(list(m1, m2, m3), method = "proportions", form = "forms6")
+expect_equal(names(ens_p6_mat), c("Flat", "Ridge", "Shoulder", "Slope", "Footslope", "Valley"))
 
 # ==============================================================================
 # 4. SpatRaster tests: geomorphon_sweep, geomorphon_ensemble, and benchmarks
