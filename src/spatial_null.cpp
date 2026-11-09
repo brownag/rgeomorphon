@@ -113,6 +113,13 @@ List spatial_null_cpp(NumericVector geo, NumericVector cat, int nr, int nc,
   int evaluated = 0, nmi_eligible = 0, edge_eligible = 0;
   double nmi_sum = 0, edge_sum = 0;
   const int shifts = static_cast<int>(std::min<R_xlen_t>(128, n - 1));
+  if (shifts <= 0) {
+    return List::create(_["evaluated"] = 0,
+      _["nmi_mean"] = NA_REAL,
+      _["nmi_eligible"] = 0,
+      _["edge_mean"] = NA_REAL,
+      _["edge_eligible"] = 0);
+  }
   std::vector<double> shifted(static_cast<std::size_t>(n));
   std::vector<unsigned char> valid(static_cast<std::size_t>(n));
   std::vector<unsigned char> ge(static_cast<std::size_t>(n));

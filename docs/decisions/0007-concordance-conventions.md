@@ -94,6 +94,9 @@ deterministic sample of at most 128 non-identity circular translations of
   quotient/remainder arithmetic, map `q = k_i + 1` to
   `(dr, dc) = (q %/% nc, q %% nc)`, and translate `cat_rast` values and their
   `NA` mask together on the cell-index torus while keeping `geo_rast` fixed.
+- When `M` and `S` are zero (such as for a one-cell raster), return zero shift
+  counts and `NA_real_` null means without calculating candidate ranks or
+  dividing by `S`.
 - Recompute the paired-valid domain for each shift. Exclude shifts with zero
   paired-valid cells from `mean_null_nmi`, and shifts with an empty shared-domain
   edge set from `mean_null_edge_f1`.

@@ -919,6 +919,28 @@ if (requireNamespace("terra", quietly = TRUE)) {
     1, 1, .Machine$integer.max, .Machine$integer.max, 0, TRUE, FALSE
   ), pattern = "value vectors must match")
 
+  # One-cell rasters have M = 0 and S = 0 candidates/shifts; verify zero shift
+  # counts and NA null means without division by zero.
+  one_cell_null <- rgeomorphon:::spatial_null_cpp(1, 1, 1L, 1L, 0, TRUE, TRUE)
+  expect_equal(one_cell_null$evaluated, 0L)
+  expect_equal(one_cell_null$nmi_eligible, 0L)
+  expect_equal(one_cell_null$edge_eligible, 0L)
+  expect_true(is.na(one_cell_null$nmi_mean))
+  expect_true(is.na(one_cell_null$edge_mean))
+
+  one_cell_geo <- terra::rast(matrix(1), crs = "EPSG:32618")
+  one_cell_cat <- terra::rast(matrix(2), crs = "EPSG:32618")
+  one_cell_conc <- geomorphon_concordance(
+    one_cell_geo, one_cell_cat, method = "both", spatial_null = TRUE
+  )
+  expect_equal(one_cell_conc$null_shifts_evaluated, 0L)
+  expect_equal(one_cell_conc$nmi_null_shifts, 0L)
+  expect_equal(one_cell_conc$edge_f1_null_shifts, 0L)
+  expect_true(is.na(one_cell_conc$mean_null_nmi))
+  expect_true(is.na(one_cell_conc$delta_nmi))
+  expect_true(is.na(one_cell_conc$mean_null_edge_f1))
+  expect_true(is.na(one_cell_conc$delta_edge_f1))
+
   # Match R's is.na semantics: exclude NA and NaN, retain infinities as classes.
   nonfinite_geo <- matrix(c(1, 1, NaN, Inf, 2, 2, -Inf, NA_real_), 2, 4,
                           byrow = TRUE)
