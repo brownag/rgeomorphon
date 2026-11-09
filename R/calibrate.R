@@ -570,7 +570,13 @@ geomorphon_pareto <- function(cal_df,
   ratio_ok <- rep(TRUE, nrow(cal_df))
   if (has_edge_ratio) {
     er <- cal_df$edge_ratio
-    ratio_ok <- !is.na(er) & (er >= min_edge_ratio) & (er <= max_edge_ratio)
+    # With no bounds requested, NA edge ratios (no boundaries, e.g. method = "nmi") stay eligible
+    ratio_bounded <- min_edge_ratio > 0 || is.finite(max_edge_ratio)
+    if (ratio_bounded) {
+      ratio_ok <- !is.na(er) & (er >= min_edge_ratio) & (er <= max_edge_ratio)
+    } else {
+      ratio_ok <- rep(TRUE, nrow(cal_df))
+    }
   }
   
   objs_finite <- rep(TRUE, nrow(cal_df))

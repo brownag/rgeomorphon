@@ -282,5 +282,15 @@ expect_true(par_res$pareto_score[3] < par_res$pareto_score[1])
 par_filtered <- geomorphon_pareto(syn_cal, max_edge_ratio = 1.8)
 expect_equal(par_filtered$is_pareto, c(TRUE, FALSE, FALSE, FALSE))
 
+# NA edge ratios (no boundaries, e.g. NMI-only): with no bounds set they stay eligible
+syn_na <- syn_cal
+syn_na$edge_ratio <- NA_real_
+par_na <- geomorphon_pareto(syn_na)
+expect_equal(par_na$is_pareto, c(FALSE, TRUE, FALSE, FALSE))
+expect_true(all(!is.na(par_na$pareto_score)))
+# With bounds requested, NA edge ratios are not eligible
+par_na_bounded <- geomorphon_pareto(syn_na, max_edge_ratio = 1.8)
+expect_equal(par_na_bounded$is_pareto, c(FALSE, FALSE, FALSE, FALSE))
+
 }
 
