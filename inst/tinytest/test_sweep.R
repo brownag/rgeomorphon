@@ -31,6 +31,13 @@ expect_equal(length(sw_mat$rasters), 4L)
 expect_equal(names(sw_mat$rasters), paste0("run_", 1:4))
 expect_true(all(c("forms10", "forms6") %in% names(sw_mat$rasters[[1]])))
 
+# Provenance records what produced the sweep
+expect_true(all(c("package_version", "created", "forms", "grid_columns", "extra_args", "n_runs")
+                %in% names(sw_mat$provenance)))
+expect_equal(sw_mat$provenance$forms, c("forms10", "forms6"))
+expect_equal(sw_mat$provenance$n_runs, 4L)
+expect_equal(sw_mat$provenance$package_version, as.character(packageVersion("rgeomorphon")))
+
 # S3 methods for geomorphon_sweep
 out_p <- capture.output(print(sw_mat))
 expect_true(any(grepl("<geomorphon_sweep>", out_p)))

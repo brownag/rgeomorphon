@@ -196,7 +196,15 @@ geomorphon_sweep <- function(elevation,
     structure(
         list(
             summary = summary_df,
-            rasters = rasters
+            rasters = rasters,
+            provenance = list(
+                package_version = as.character(getNamespaceVersion("rgeomorphon")),
+                created = Sys.time(),
+                forms = forms,
+                grid_columns = names(grid_df),
+                extra_args = names(dots),
+                n_runs = n_runs
+            )
         ),
         class = "geomorphon_sweep"
     )
