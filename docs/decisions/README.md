@@ -13,3 +13,4 @@ Statuses are `Proposed`, `Accepted`, `Deprecated`, or `Superseded`.
 | [0005](0005-grass-class-codes-theme.md) | Use GRASS-compatible integer class codes with a shared display theme | Accepted | 2025-06-03 | - | - | Initial public commit; class taxonomy |
 | [0006](0006-ptrm-conventions.md) | PTRM conventions | Accepted | 2026-10-31 | - | - | 0.4.0 PTRM milestone |
 | [0007](0007-concordance-conventions.md) | Structural concordance conventions | Accepted | 2026-11-01 | - | - | 0.4.0 concordance milestone |
+| [0008](0008-multiform-and-sweep-conventions.md) | Multi-form count reuse, fast reclassification, and parameter sweep conventions | Accepted | 2026-11-08 | - | - | 0.5.0 multi-form and ensemble milestone |
