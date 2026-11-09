@@ -1,0 +1,408 @@
+---
+title: "Terrain Realism (PTRM) and Structural Concordance with 'rgeomorphon'"
+knit: litedown:::knit
+vignette: >
+  %\VignetteIndexEntry{Terrain Realism (PTRM) and Structural Concordance with 'rgeomorphon'}
+  %\VignetteEngine{litedown::vignette}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+# Sys.setenv(R_RGEOMORPHON_RUN_LONG_EXAMPLES = TRUE)
+litedown::reactor(
+    eval = (
+        isTRUE(as.logical(
+            Sys.getenv("R_RGEOMORPHON_RUN_LONG_EXAMPLES", unset = "FALSE")
+        )) &&
+            requireNamespace("terra", quietly = TRUE)
+    )
+)
+```
+
+```{r setup}
+library(rgeomorphon)
+library(terra)
+```
+
+Beyond classifying landforms, `rgeomorphon` provides tools to summarize terrain complexity and compare landform patterns against independent thematic maps such as soil surveys or ecological classifications:
+
+1. **Perceived Terrain Realism Metric (PTRM):** `geomorphon_ptrm()` and `geomorphon_ptrm_focal()` implement the perceptual terrain realism model of Rajasekaran et al. (2022), which weights the relative proportions of geomorphon forms to produce a continuous realism/complexity score—either globally for an entire raster or locally within a circular moving window.
+2. **Structural Concordance:** `geomorphon_concordance()` quantifies how closely a geomorphon classification aligns with another categorical raster using information-theoretic association (`nmi`, `homogeneity`, `completeness`), legacy directional boundary proximity (`edge_offset`, `edge_concordance`), additive symmetric boundary summaries (`edge_f1`, `edge_mhd`, `edge_chamfer`), and an optional 128-shift toroidal spatial-null ensemble (`mean_null_nmi`, `delta_nmi`, `mean_null_edge_f1`, `delta_edge_f1`).
+
+This vignette demonstrates both workflows using the `scorpion` dataset included with `rgeomorphon`.
+
+---
+
+## 1. The `scorpion` Dataset
+
+The `scorpion` dataset contains a 10 m Digital Elevation Model (aggregated from USGS 3DEP 1 m LiDAR) and co-registered Soil Survey Geographic Database (SSURGO) soil map unit keys (`mukey`) for an old erosional remnant landform that resembles a scorpion in Calaveras County, California (`EPSG:5070`).
+
+For reference, the dataset was prepared using `soilDB` and `rgeedim` (see `data-raw/scorpion.R`):
+
+```r
+library(soilDB)
+library(terra)
+library(rgeedim)
+
+b <- terra::vect("POLYGON((
+  -120.9613 38.1600,
+  -120.9259 38.1600,
+  -120.9259 38.1743,
+  -120.9613 38.1743,
+  -120.9613 38.1600))",
+  crs = "OGC:CRS84"
+) |>
+  terra::project("EPSG:5070") |>
+  terra::as.polygons(ext = TRUE)
+
+x <- soilDB::SDA_spatialQuery(
+  b,
+  what = "mupolygon",
+  geomIntersection = TRUE
+) |>
+  terra::project("EPSG:5070")
+
+gd_initialize(project = Sys.getenv("GOOGLE_CLOUD_QUOTA_PROJECT", "rgeedim-demo"))
+r <- gd_region(x)
+
+y <- "USGS/3DEP/1m" |>
+  gd_collection_from_name() |>
+  gd_search(region = r) |>
+  gd_composite(resampling = "bilinear") |>
+  gd_download(region = r, bands = list("elevation"), crs = "EPSG:5070", scale = 1) |>
+  rast()
+
+y10 <- terra::aggregate(y, 10)
+soil <- terra::rasterize(x, y10, "mukey")
+```
+
+Let's load the packaged `scorpion` dataset and reconstruct the `SpatRaster` layers. Assigning `levels(soil) <- scorpion$mapunit` attaches the full SSURGO `mapunit` and `muaggatt` attribute table (keyed by integer `mukey` in the first column, with `musym` as the default active category label):
+
+```{r load-data}
+data("scorpion", package = "rgeomorphon")
+
+# Reconstruct 10 m DEM (meters, EPSG:5070)
+dem <- terra::rast(scorpion$dem)
+terra::crs(dem) <- attr(scorpion, "crs")
+terra::ext(dem) <- attr(scorpion, "extent")
+names(dem) <- "Elevation (m)"
+
+# Reconstruct co-registered SSURGO soil map unit raster
+soil <- terra::rast(scorpion$mukey)
+terra::crs(soil) <- attr(scorpion, "crs")
+terra::ext(soil) <- attr(scorpion, "extent")
+levels(soil) <- scorpion$mapunit
+
+scorpion$mapunit
+```
+
+Next, we calculate a baseline 10-form geomorphon classification using a 7-cell (70 m) search radius and a 2-degree flatness threshold:
+
+```{r baseline-geomorphons, fig.width = 9, fig.height = 4}
+g <- geomorphons(dem, search = 7, skip = 0, flat_angle_deg = 2)
+
+par(mfrow = c(1, 2))
+terra::plot(dem, main = "10 m Elevation (m)")
+terra::plot(g, main = "Geomorphons (search = 7, skip = 0, flat = 2°)")
+par(mfrow = c(1, 1))
+```
+
+---
+
+## 2. Global Perceived Terrain Realism (`geomorphon_ptrm`)
+
+`geomorphon_ptrm()` computes the global Perceived Terrain Realism Metric for an entire study area:
+
+$$\text{PTRM} = \frac{c_0 + \sum_{i=1}^{k} c_i p_i}{D}$$
+
+where $c_0 = -38.02$ is the intercept, $D = 69.96$ is the normalizer, $p_i$ is the proportion of valid cells belonging to landform class $i$, and $c_i$ are the empirical weights from Rajasekaran et al. (2022).
+
+You can compute PTRM either directly from a DEM (`mode = "dem"`) or from a pre-computed geomorphon classification (`mode = "class"`):
+
+```{r ptrm-global}
+# From pre-computed geomorphon classification
+ptrm_class <- geomorphon_ptrm(g, mode = "class")
+ptrm_class$ptrm_score
+
+# Directly from the DEM with the same geomorphon parameters
+ptrm_dem <- geomorphon_ptrm(
+    dem,
+    mode = "dem",
+    search = 7,
+    skip = 0,
+    flat_angle_deg = 2
+)
+
+all.equal(ptrm_class$ptrm_score, ptrm_dem$ptrm_score)
+```
+
+The returned list includes the normalized `ptrm_score`, unnormalized `raw_score`, total `n_cells`, and the observed landform `proportions`:
+
+```{r ptrm-proportions}
+round(ptrm_class$proportions, 3)
+```
+
+### Comparing Form Systems
+
+`geomorphon_ptrm()` also supports the simplified geomorphon taxonomies (`"forms6"`, `"forms5"`, and `"forms4"`), automatically reducing the 10-form paper weights over the reachable lookup table cells for each system:
+
+```{r ptrm-form-systems}
+form_systems <- c("forms10", "forms6", "forms5", "forms4")
+
+ptrm_by_system <- vapply(
+    form_systems,
+    function(f) {
+        geomorphon_ptrm(
+            dem,
+            mode = "dem",
+            search = 7,
+            skip = 0,
+            flat_angle_deg = 2,
+            forms = f
+        )$ptrm_score
+    },
+    numeric(1)
+)
+
+round(ptrm_by_system, 4)
+```
+
+---
+
+## 3. Mapping Local Terrain Realism (`geomorphon_ptrm_focal`)
+
+While `geomorphon_ptrm()` summarizes an entire raster into a single scalar, `geomorphon_ptrm_focal()` evaluates the PTRM equation inside a circular Euclidean moving window of `radius` cells around each pixel. This produces a continuous surface highlighting local transitions between flat basins, uniform slopes, and dissected ridge-valley networks.
+
+When you already have a geomorphon classification raster `g`, pass `mode = "class"` to compute the focal window directly on the classes:
+
+```{r ptrm-focal, fig.width = 9, fig.height = 4}
+p_r5 <- geomorphon_ptrm_focal(g, radius = 5, mode = "class")
+p_r10 <- geomorphon_ptrm_focal(g, radius = 10, mode = "class")
+
+par(mfrow = c(1, 2))
+terra::plot(p_r5, main = "Focal PTRM (radius = 5 cells / 50 m)")
+terra::plot(p_r10, main = "Focal PTRM (radius = 10 cells / 100 m)")
+par(mfrow = c(1, 1))
+```
+
+Smaller window radii capture fine-scale landform boundaries (such as narrow gullies and ridge crests), whereas larger radii (`radius = 10`, or 100 m) smooth over individual hillslope facets to highlight the prominent scorpion-shaped erosional remnant and surrounding dissected hillslopes.
+
+---
+
+## 4. Structural Concordance with SSURGO Soil Map Units (`geomorphon_concordance`)
+
+Soil survey map units are delineated using soil-landscape models where polygon boundaries often follow topographic breaks (such as footslopes, shoulders, and floodplains). `geomorphon_concordance()` measures how strongly a geomorphon classification corresponds to a categorical map (`soil`) using three complementary perspectives:
+
+1. **Information-Theoretic Concordance (`method = "nmi"`):** Normalized Mutual Information (`nmi`, bounded in $[0, 1]$) measures statistical dependence between landform classes and soil map units based on their joint contingency table, independent of class labels. With `cat_rast` (`soil`) as the reference classification, `homogeneity = I(geo; cat) / H(cat)` measures how well the geomorphon classes determine the soil map units, and `completeness = I(geo; cat) / H(geo)` measures how completely the soil map units capture geomorphon information; their harmonic mean equals `nmi` when both entropies are positive.
+2. **Boundary Alignment (`method = "boundary"`):** Detects 8-neighbor edge pixels in both rasters and computes:
+   - `edge_offset`: Mean distance (in CRS map units, here meters) from each categorical (soil) boundary cell to the nearest geomorphon boundary cell.
+   - `edge_concordance`: Proportion ($0\text{--}1$) of categorical boundary cells that fall within `threshold_cells` of a geomorphon boundary cell.
+   - `edge_f1`: Symmetric, threshold-based precision/recall F1 score ($0\text{--}1$). It penalizes unmatched boundaries in either map, unlike the legacy one-way summaries. It is not a kernel score or a one-to-one boundary matching score.
+   - `edge_mhd`: Maximum of the two directed mean nearest-boundary distances. Despite the name, this is not the classical maximum Hausdorff distance.
+   - `edge_chamfer`: Mean of the two directed mean nearest-boundary distances.
+3. **Toroidal Spatial-Null Contrasts (`spatial_null = TRUE`):** Evaluates a deterministic sample of up to 128 non-identity circular translations of `cat_rast` (moving category values and their `NA` mask together) to report arithmetic null means (`mean_null_nmi`, `mean_null_edge_f1`) and observed-minus-null deltas (`delta_nmi`, `delta_edge_f1`). Set `spatial_null = FALSE` to skip the shift ensemble when only observed scores are needed.
+
+The three symmetric summaries detect edges only inside the intersection of cells that are non-`NA` in both maps. They use eight-neighbor connectivity, exclude raster borders, treat mask holes as neither edges nor distance barriers, and return `NA_real_` if either shared-domain boundary set is empty. Distances use the raster CRS map units (projected CRS is required). For rectangular cells, distances use both cell dimensions, while the threshold distance is `threshold_cells * res(geo)[1]`. `threshold_cells` must be a finite, non-negative whole number when boundary metrics are requested. Geographic CRS inputs produce an error when boundary metrics are requested because boundary distances require a planar Cartesian CRS.
+
+The legacy edge counts, `edge_offset`, and `edge_concordance` retain their original per-input masks and directional definitions. With different NA masks they need not describe the edge sets used by the new symmetric scores. All three symmetric fields are included for `method = "boundary"` and `"both"`, not for `"nmi"` alone.
+
+```{r concordance-both}
+conc <- geomorphon_concordance(g, soil, method = "both", threshold_cells = 2)
+
+data.frame(
+    nmi = round(conc$nmi, 4),
+    homogeneity = round(conc$homogeneity, 4),
+    completeness = round(conc$completeness, 4),
+    delta_nmi = round(conc$delta_nmi, 4),
+    edge_offset_m = round(conc$edge_offset, 2),
+    edge_concordance = round(conc$edge_concordance, 4),
+    edge_f1 = round(conc$edge_f1, 4),
+    delta_edge_f1 = round(conc$delta_edge_f1, 4),
+    edge_mhd_m = round(conc$edge_mhd, 2),
+    edge_chamfer_m = round(conc$edge_chamfer, 2),
+    n_edges_geo = conc$n_edges_geo,
+    n_edges_soil = conc$n_edges_cat,
+    edge_ratio = round(conc$n_edges_geo / conc$n_edges_cat, 2)
+)
+```
+
+### Interpreting the Contingency Table
+
+`conc$contingency_table` cross-tabulates the underlying integer geomorphon codes (`1`–`10`) against the rasterized integer `mukey` values. Using `geomorphon_categories()` and `scorpion$mapunit`, we can label the rows with landform names and columns with map unit symbols (`musym`) for easier reading:
+
+```{r concordance-table}
+ct <- conc$contingency_table
+geo_cats <- geomorphon_categories()
+rownames(ct) <- geo_cats$form[match(as.integer(rownames(ct)), geo_cats$value)]
+colnames(ct) <- scorpion$mapunit$musym[match(as.integer(colnames(ct)), scorpion$mapunit$mukey)]
+ct
+```
+
+Comparing the contingency table against `scorpion$mapunit` reveals clear pedogeomorphic partitioning:
+- **Water (`musym = "W"`, `mukey = 2462630`)** and **low-gradient alluvial plains (`musym = "301"`, `mukey = 2924908`, `slopegraddcp = 1%`)** concentrate in `flat`, `footslope`, and `valley`/`depression` positions.
+- **Undulating hillslope complexes (`musym = "5012"`, `"5015"`, `"5201"`, `slopegraddcp = 2–7%`)** occupy `flat`, `slope`, `footslope`, and `spur` positions.
+- **Steep erosional remnant side slopes and summits (`musym = "5013"` and `"207"`, `slopegraddcp = 33–40%`)** dominate `slope`, `spur`, `shoulder`, and `ridge` landforms, with almost no `flat` cells.
+
+```{r plot-concordance, fig.width = 9, fig.height = 4}
+par(mfrow = c(1, 2))
+terra::plot(g, main = "Geomorphons (10-form, search = 7, flat = 2°)")
+terra::plot(soil, main = "SSURGO Map Unit Symbol (musym)")
+par(mfrow = c(1, 1))
+```
+
+### Interpreting Directional Saturation and Symmetric Boundary Scores
+
+At first glance, `edge_concordance = 0.9491` and `edge_offset = 3.49 m` in the baseline 10-form run look nearly perfect. However, look at `n_edges_geo` (`58,312`) versus `n_edges_soil` (`9,932`): out of `78,521` interior cells in the raster, **74% are geomorphon boundary pixels** (`edge_ratio = 5.87`).
+
+Because a pixel-level 10-form classification with a low flatness threshold (`flat_angle_deg = 2`) transitions between micro-landforms (`ridge` $\to$ `shoulder` $\to$ `spur` $\to$ `slope` $\to$ `footslope` $\to$ `hollow`) every few pixels, geomorphon edges saturate the landscape. The high one-way `edge_concordance` can therefore look favorable even when many geomorphon boundaries have no nearby soil boundary. `edge_f1` adds the reverse direction, while `edge_mhd` and `edge_chamfer` summarize distance in both directions. These are useful diagnostics, not universal corrections for every threshold, landscape, or fragmentation pattern. When `n_edges_geo >> n_edges_cat`:
+
+- **Boundary proximity saturates:** Almost *any* line drawn across the raster will fall within 2 cells (20 m) of a geomorphon transition simply by chance. Even symmetric `edge_f1 = 0.4750` barely exceeds its toroidal translation baseline (`mean_null_edge_f1 = 0.4611`, `delta_edge_f1 = +0.0139`).
+- **Areal concordance (`nmi`) is diluted:** Broad SSURGO map units—which were mapped at 1:24,000 scale around generalized slope classes (0–2%, 2–15%, 15–50%)—are split across 10 fine-grained micro-landforms (`homogeneity = 0.0930`, `completeness = 0.0656`), keeping `nmi` modest (`0.0769`, `delta_nmi = +0.0704`).
+
+We can see this directly by varying the `search` radius, `skip` distance, `flat_angle_deg`, and `forms` simplification to match the cartographic scale of the soil survey:
+
+```{r scale-comparison}
+param_grid <- data.frame(
+    label = c(
+        "Fine 10-form (search=3, flat=2°)",
+        "Baseline 10-form (search=7, flat=2°)",
+        "Broad 10-form (search=15, flat=2°)",
+        "Scale-matched 6-form (search=15, skip=2, flat=5°)",
+        "Generalized 6-form (search=15, skip=2, flat=8°)"
+    ),
+    search = c(3, 7, 15, 15, 15),
+    skip = c(0, 0, 0, 2, 2),
+    flat = c(2, 2, 2, 5, 8),
+    forms = c("forms10", "forms10", "forms10", "forms6", "forms6"),
+    stringsAsFactors = FALSE
+)
+
+scale_results <- do.call(
+    rbind,
+    lapply(seq_len(nrow(param_grid)), function(i) {
+        p <- param_grid[i, ]
+        g_i <- geomorphons(
+            dem,
+            search = p$search,
+            skip = p$skip,
+            flat_angle_deg = p$flat,
+            forms = p$forms
+        )
+        cc <- geomorphon_concordance(g_i, soil, threshold_cells = 2)
+        data.frame(
+            Configuration = p$label,
+            nmi = round(cc$nmi, 4),
+            edge_offset_m = round(cc$edge_offset, 2),
+    edge_concordance = round(cc$edge_concordance, 4),
+            edge_f1 = round(cc$edge_f1, 4),
+            edge_mhd_m = round(cc$edge_mhd, 2),
+            edge_chamfer_m = round(cc$edge_chamfer, 2),
+            n_edges_geo = cc$n_edges_geo,
+            edge_ratio = round(cc$n_edges_geo / cc$n_edges_cat, 2),
+            stringsAsFactors = FALSE
+        )
+    })
+)
+
+scale_results
+```
+
+Notice the progression across rows:
+- Across the three `flat = 2°` 10-form runs, `edge_ratio` stays near `5.6–6.0`, so `edge_concordance` is pinned at `~0.95` while `nmi` only inches from `0.0795` to `0.0874`.
+- When we generalize to the 6-form taxonomy with `search = 15, skip = 2, flat_angle_deg = 5°`, minor hillslope inflections merge into coherent landform units: `n_edges_geo` drops by **73%** (to `15,646`, `edge_ratio = 1.58`) and **`nmi` nearly triples to `0.2107`**, while `60.1%` of SSURGO polygon boundaries still fall within 2 cells (`20 m`) of a geomorphon boundary.
+
+---
+
+## 5. When Concordance Breaks Down: Negative Controls and Poor Parameterization
+
+To understand what `geomorphon_concordance()` looks like when agreement is poor or nonexistent, we can compare our scale-matched classification (`search = 15, skip = 2, flat_angle_deg = 5, forms = "forms6"`) against three distinct failure modes on the exact same grid:
+
+1. **Spatial Misregistration (`soil_flipped`):** Rotating the SSURGO raster 180° (`terra::flip(terra::flip(soil, "horizontal"), "vertical")`) preserves the exact polygon geometry, class proportions, and soil boundary count (`n_edges_cat = 9,932`), but displaces the polygons from the underlying scorpion landform.
+2. **Topographically Independent Partitioning (`grid_blocks`):** Dividing the landscape into arbitrary rectilinear management blocks that ignore terrain completely.
+3. **Over-Flattened Geomorphon Parameterization (`flat_angle_deg = 15°`):** Setting an unrealistically high flatness threshold (`15°`) collapses all gentle and moderate hillslopes (`2–15%` slopes) into the `flat` class, leaving only the steepest erosional remnant scarps.
+
+```{r negative-controls}
+# Scale-matched 6-form geomorphon classification
+g_matched <- geomorphons(
+    dem,
+    search = 15,
+    skip = 2,
+    flat_angle_deg = 5,
+    forms = "forms6"
+)
+
+# 1. Spatially misregistered soil map (180-degree rotation)
+soil_flipped <- terra::flip(terra::flip(soil, "horizontal"), "vertical")
+
+# 2. Topographically independent rectilinear grid blocks
+grid_blocks <- soil
+rc <- terra::rowFromCell(grid_blocks, seq_len(terra::ncell(grid_blocks)))
+cc <- terra::colFromCell(grid_blocks, seq_len(terra::ncell(grid_blocks)))
+terra::values(grid_blocks) <- (rc %/% 80L) * 3L + (cc %/% 120L) + 1L
+
+# 3. Over-flattened geomorphon classification (flat_angle_deg = 15)
+g_overflat <- geomorphons(
+    dem,
+    search = 15,
+    skip = 2,
+    flat_angle_deg = 15,
+    forms = "forms6"
+)
+
+scenarios <- list(
+    "1. Scale-Matched SSURGO (Reference)" = geomorphon_concordance(g_matched, soil),
+    "2. Misregistered SSURGO (180° Flipped)" = geomorphon_concordance(g_matched, soil_flipped),
+    "3. Arbitrary Rectilinear Grid Blocks" = geomorphon_concordance(g_matched, grid_blocks),
+    "4. Over-Flattened Geomorphons (flat = 15°)" = geomorphon_concordance(g_overflat, soil)
+)
+
+comparison_df <- do.call(
+    rbind,
+    lapply(names(scenarios), function(nm) {
+        res <- scenarios[[nm]]
+        data.frame(
+            Scenario = nm,
+            nmi = round(res$nmi, 4),
+            homogeneity = round(res$homogeneity, 4),
+            completeness = round(res$completeness, 4),
+            delta_nmi = round(res$delta_nmi, 4),
+            edge_offset_m = round(res$edge_offset, 2),
+            edge_concordance = round(res$edge_concordance, 4),
+            edge_f1 = round(res$edge_f1, 4),
+            delta_edge_f1 = round(res$delta_edge_f1, 4),
+            edge_mhd_m = round(res$edge_mhd, 2),
+            edge_chamfer_m = round(res$edge_chamfer, 2),
+            n_edges_geo = res$n_edges_geo,
+            n_edges_cat = res$n_edges_cat,
+            stringsAsFactors = FALSE
+        )
+    })
+)
+
+comparison_df
+```
+
+```{r plot-negative-controls, fig.width = 9, fig.height = 7}
+par(mfrow = c(2, 2))
+terra::plot(g_matched, main = "1. Scale-Matched Geomorphons (flat = 5°)")
+terra::plot(soil_flipped, main = "2. Misregistered SSURGO (180° Flipped)")
+terra::plot(grid_blocks, main = "3. Arbitrary Rectilinear Grid Blocks")
+terra::plot(g_overflat, main = "4. Over-Flattened Geomorphons (flat = 15°)")
+par(mfrow = c(1, 1))
+```
+
+### Diagnosing Each Failure Mode
+
+Each failure mode produces a distinct signature across `nmi` (`homogeneity` and `completeness`), the directional `edge_offset`/`edge_concordance`, the symmetric `edge_f1`/`edge_mhd`/`edge_chamfer`, the spatial-null contrasts (`delta_nmi`, `delta_edge_f1`), and edge counts:
+
+- **Scenario 1 (Scale-Matched SSURGO Reference):** Strong areal association (`nmi = 0.2107`, `homogeneity = 0.1682`, `completeness = 0.2817`, `delta_nmi = +0.1960`) and boundary alignment (`edge_concordance = 0.6007`, `edge_offset = 55.33 m`) with symmetric scores `edge_f1 = 0.5964` (`delta_edge_f1 = +0.2840` over the translation null mean `0.3124`), `edge_mhd = 55.33 m`, and `edge_chamfer = 42.78 m`; balanced boundary counts (`n_edges_geo = 15,646` vs. `n_edges_cat = 9,932`).
+- **Scenario 2 (Misregistered / Flipped Soil Map):** Even though the soil polygons have the exact same size distribution and boundary count (`9,932`), displacing them from the terrain causes **`nmi` to collapse by 18×** (from `0.2107` to `0.0116`, `delta_nmi = -0.0034`), increases mean boundary offset from `55.33 m` to `80.59 m`, cuts `edge_concordance` nearly in half (`0.3473`), and yields symmetric scores `edge_f1 = 0.3324` (`delta_edge_f1 = +0.0191`, nearly indistinguishable from random translation `0.3133`), `edge_mhd = 80.51 m`, and `edge_chamfer = 75.39 m`.
+- **Scenario 3 (Arbitrary Grid Blocks):** Rectilinear blocks that cut across ridges and valleys yield near-zero areal concordance (`nmi = 0.0575`, `delta_nmi = +0.0297`), poor boundary alignment (`edge_concordance = 0.1930`, `edge_offset = 107.01 m`), and symmetric scores `edge_f1 = 0.0793` (`delta_edge_f1 = -0.1004`, worse than translated blocks), `edge_mhd = 252.66 m`, and `edge_chamfer = 179.83 m`.
+- **Scenario 4 (Over-Flattened Geomorphons, `flat = 15°`):** Setting `flat_angle_deg = 15°` erases the boundaries of gentle and moderate hillslopes (`n_edges_geo` plunges to `2,748`). Because almost the entire landscape is collapsed into `flat`, `completeness` looks artificially high (`0.3628`) while `homogeneity` collapses (`0.0382`), pulling `nmi` down by two-thirds to `0.0691` (`delta_nmi = +0.0609`). Meanwhile, SSURGO boundaries in the surrounding plains and undulating hills are left hundreds of meters from the nearest geomorphon edge (`edge_offset` spikes to `384.76 m`, `edge_concordance` drops to `0.1646`); symmetric scores are `edge_f1 = 0.2694` (`delta_edge_f1 = +0.1731`), `edge_mhd = 384.79 m`, and `edge_chamfer = 199.49 m`.
+
+In practice, interpret metrics together: `nmi` and its directional components (`homogeneity`, `completeness`) describe areal association and class-granularity asymmetry; `edge_concordance` and `edge_offset` describe the legacy categorical-to-geomorphon direction; `edge_f1` captures threshold agreement in both directions; `edge_mhd`/`edge_chamfer` summarize bidirectional distance; and `delta_nmi`/`delta_edge_f1` quantify how much observed structure exceeds circular translation of the categorical map. Edge counts and their ratio help reveal fragmentation or density imbalance. No single score establishes thematic validity, and the metrics do not guarantee immunity to saturation for all patterns.
+
+## References
+
+- Jasiewicz, J., & Stepinski, T. (2013). Geomorphons — a pattern recognition approach to classification and mapping of landforms. *Geomorphology*, 182, 147–156. https://doi.org/10.1016/j.geomorph.2012.11.005
+- Rajasekaran, S. D., Kang, H., Čadík, M., Galin, E., Guérin, E., Peytavie, A., Slavík, P., & Mech, R. (2022). PTRM: Perceived Terrain Realism Metric. *ACM Transactions on Applied Perception*, 19(2), Article 5. https://doi.org/10.1145/3514244

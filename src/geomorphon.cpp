@@ -1,6 +1,7 @@
 // [[Rcpp::depends(RcppParallel)]]
 #include <vector>
 #include <string>
+#include <mutex>
 
 #include <Rcpp.h>
 #include <RcppParallel.h>

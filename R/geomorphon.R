@@ -443,7 +443,9 @@ geomorphons <- function(elevation,
     }
 
     if (inherits(elevation, 'SpatRaster')) {
-        res <- terra::rast(res)
+        if (!inherits(res, 'SpatRaster')) {
+            res <- terra::rast(res)
+        }
         if (!is.null(filename)) {
             res <- terra::writeRaster(
                 res,
