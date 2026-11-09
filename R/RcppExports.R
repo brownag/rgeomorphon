@@ -39,6 +39,10 @@ get_forms_matrix_cpp <- function(num_forms) {
     .Call('_rgeomorphon_get_forms_matrix_cpp', PACKAGE = 'rgeomorphon', num_forms)
 }
 
+forms_matrix_apply_cpp <- function(positive, negative, num_forms) {
+    .Call('_rgeomorphon_forms_matrix_apply_cpp', PACKAGE = 'rgeomorphon', positive, negative, num_forms)
+}
+
 geomorphons_cpp_worker <- function(elevation, search, skip, flat_angle_deg, dist, comparison_mode, tdist, use_meters, x_res_dem, y_res_dem, forms, ternary, positive, negative, nodata) {
     .Call('_rgeomorphon_geomorphons_cpp_worker', PACKAGE = 'rgeomorphon', elevation, search, skip, flat_angle_deg, dist, comparison_mode, tdist, use_meters, x_res_dem, y_res_dem, forms, ternary, positive, negative, nodata)
 }
