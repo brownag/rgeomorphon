@@ -14,9 +14,10 @@ Depends: R (>= 4.1.0)
 Imports: Rcpp, RcppParallel
 LinkingTo: Rcpp, RcppParallel
 Suggests: 
-    terra,
     future.apply,
     litedown,
+    philentropy,
+    terra,
     tinytest
 Enhances:
     future,

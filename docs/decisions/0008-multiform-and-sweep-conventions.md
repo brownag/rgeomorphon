@@ -63,8 +63,9 @@ gated benchmark in `test_sweep.R`). End to end, a 4-form `geomorphons()` pass
 measured about 45% less time than 4 separate single-form passes on `salton`
 (search 30 and 40; multi-form pass about $0.55\times$ the separate-pass time).
 This is well short of the ~75% estimate in the original goal; the earlier figure
-is retired. Pixel-for-pixel identity to individual evaluations is tested for
-`forms10` and `forms6`; `forms5` and `forms4` tests are pending (D4).
+is retired. Pixel-for-pixel identity across all four taxonomies (`forms10`, `forms6`,
+`forms5`, `forms4`) to individual single-form evaluations is verified across both
+`SpatRaster` and `matrix` inputs (closing D4).
 
 ### Vector `forms` API contract and backward compatibility
 
