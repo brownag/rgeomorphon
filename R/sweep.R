@@ -318,30 +318,7 @@ geomorphon_ensemble <- function(sweep_obj,
         } else {
             first_r <- runs_list[[1]]
             avail <- names(first_r)
-            if (is.null(form)) {
-                if ("forms10" %in% avail) {
-                    form_key <- "forms10"
-                } else if ("form" %in% avail) {
-                    form_key <- "form"
-                } else {
-                    form_key <- avail[1]
-                }
-            } else {
-                if (is.numeric(form)) {
-                    form_str <- paste0("forms", form)
-                } else {
-                    form_str <- as.character(form)
-                }
-                if (form_str %in% avail) {
-                    form_key <- form_str
-                } else if (as.character(form) %in% avail) {
-                    form_key <- as.character(form)
-                } else if (length(avail) == 1 && ("form" %in% avail || "geomorphon" %in% avail)) {
-                    form_key <- avail[1]
-                } else {
-                    form_key <- form_str
-                }
-            }
+            form_key <- .resolve_form_key(avail, form, c("forms10", "form"), c("form", "geomorphon"))
             form_name <- form_key
 
             stack_runs <- terra::rast(lapply(runs_list, function(r) {
@@ -392,62 +369,25 @@ geomorphon_ensemble <- function(sweep_obj,
     } else {
         # Matrix workflow
         cats <- geomorphon_categories()
+        to_code_matrix <- function(val) {
+            nr <- nrow(val)
+            nc <- ncol(val)
+            if (is.character(val)) {
+                matrix(match(val, cats$form), nrow = nr, ncol = nc)
+            } else {
+                matrix(as.integer(val), nrow = nr, ncol = nc)
+            }
+        }
         first_r <- runs_list[[1]]
         if (is.list(first_r) && !is.data.frame(first_r)) {
             avail <- names(first_r)
-            if (is.null(form)) {
-                if ("forms10" %in% avail) {
-                    form_key <- "forms10"
-                } else if ("forms" %in% avail) {
-                    form_key <- "forms"
-                } else {
-                    form_key <- avail[1]
-                }
-            } else {
-                if (is.numeric(form)) {
-                    form_str <- paste0("forms", form)
-                } else {
-                    form_str <- as.character(form)
-                }
-                if (form_str %in% avail) {
-                    form_key <- form_str
-                } else if (as.character(form) %in% avail) {
-                    form_key <- as.character(form)
-                } else if (length(avail) == 1) {
-                    form_key <- avail[1]
-                } else {
-                    form_key <- form_str
-                }
-            }
-            to_code_matrix <- function(val) {
-                nr <- nrow(val)
-                nc <- ncol(val)
-                if (is.character(val)) {
-                    matrix(match(val, cats$form), nrow = nr, ncol = nc)
-                } else if (is.factor(val)) {
-                    matrix(as.integer(val), nrow = nr, ncol = nc)
-                } else {
-                    matrix(as.integer(val), nrow = nr, ncol = nc)
-                }
-            }
+            form_key <- .resolve_form_key(avail, form, c("forms10", "forms"))
 
             mats <- lapply(runs_list, function(r) {
                 val <- if (form_key %in% names(r)) r[[form_key]] else r[[1]]
                 to_code_matrix(val)
             })
         } else if (is.matrix(first_r)) {
-            to_code_matrix <- function(val) {
-                nr <- nrow(val)
-                nc <- ncol(val)
-                if (is.character(val)) {
-                    matrix(match(val, cats$form), nrow = nr, ncol = nc)
-                } else if (is.factor(val)) {
-                    matrix(as.integer(val), nrow = nr, ncol = nc)
-                } else {
-                    matrix(as.integer(val), nrow = nr, ncol = nc)
-                }
-            }
-
             mats <- lapply(runs_list, function(r) {
                 to_code_matrix(r)
             })
@@ -505,4 +445,20 @@ geomorphon_ensemble <- function(sweep_obj,
         "4" = c(1L, 3L, 6L, 9L),
         1:10
     )
+}
+
+# Pick the layer/element name for one form. `null_order` is tried in order when
+# `form` is NULL; `single_names` (NULL = any) lists names that a lone layer may carry.
+.resolve_form_key <- function(avail, form, null_order, single_names = NULL) {
+    if (is.null(form)) {
+        hit <- null_order[null_order %in% avail]
+        return(if (length(hit) > 0) hit[1] else avail[1])
+    }
+    form_str <- if (is.numeric(form)) paste0("forms", form) else as.character(form)
+    if (form_str %in% avail) return(form_str)
+    if (as.character(form) %in% avail) return(as.character(form))
+    if (length(avail) == 1 && (is.null(single_names) || any(avail %in% single_names))) {
+        return(avail[1])
+    }
+    form_str
 }
