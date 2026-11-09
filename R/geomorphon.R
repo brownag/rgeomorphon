@@ -297,22 +297,48 @@ geomorphons <- function(elevation,
                          filename,
                          overwrite,
                          simplify) {
-    forms_int <- -1
+    is_multi_form <- FALSE
+    forms_int <- -1L
+    has_forms <- FALSE
+    req_forms_int <- integer(0)
 
-    if (!is.null(forms) && !isFALSE(forms)) {
-        if (isTRUE(forms) || forms == "forms") {
-            forms_int <- 10
+    if (!is.null(forms) && !isFALSE(forms) && length(forms) > 0) {
+        if (identical(forms, TRUE) || identical(forms, "forms")) {
+            req_forms_int <- 10L
+            is_multi_form <- FALSE
         } else {
-            fi <- as.integer(gsub("forms", "", forms))
-            if (is.na(fi)) {
-                if (!forms %in% c("forms10", "forms6", "forms5", "forms4")) {
-                    message("Valid values for 'forms' include: `TRUE` ('forms10'; default), 'forms6', 'forms5', 'forms4'", call. = FALSE)
+            parsed <- integer(0)
+            for (f in forms) {
+                if (isTRUE(f) || identical(f, "forms")) {
+                    parsed <- c(parsed, 10L)
+                } else if (is.numeric(f)) {
+                    parsed <- c(parsed, as.integer(f))
+                } else if (is.character(f)) {
+                    val <- as.integer(gsub("^forms", "", tolower(trimws(f))))
+                    if (is.na(val)) {
+                        message("Valid values for 'forms' include: `TRUE` ('forms10'; default), 'forms6', 'forms5', 'forms4'", call. = FALSE)
+                        val <- 10L
+                    }
+                    parsed <- c(parsed, val)
                 }
-                fi <- 10
             }
-            forms_int <- fi
+            valid_mask <- parsed %in% c(10L, 6L, 5L, 4L)
+            if (any(!valid_mask)) {
+                message("Valid values for 'forms' include: `TRUE` ('forms10'; default), 'forms6', 'forms5', 'forms4'", call. = FALSE)
+                parsed <- parsed[valid_mask]
+            }
+            if (length(parsed) == 0) {
+                parsed <- 10L
+            }
+            req_forms_int <- unique(parsed)
+            if (length(forms) > 1 || length(req_forms_int) > 1) {
+                is_multi_form <- TRUE
+            } else {
+                is_multi_form <- FALSE
+            }
         }
-        forms <- "forms"
+        forms_int <- req_forms_int
+        has_forms <- TRUE
     }
 
     if (is.null(ternary)) {
@@ -328,11 +354,16 @@ geomorphons <- function(elevation,
     }
 
     outputs <- character(0)
-
-    outputs <- c(forms = forms,
-                 ternary = if (isTRUE(ternary)) "ternary" else character(0),
-                 positive = if (isTRUE(positive)) "positive" else character(0),
-                 negative = if (isTRUE(negative)) "negative" else character(0))
+    if (has_forms) {
+        if (is_multi_form) {
+            outputs <- c(outputs, paste0("forms", req_forms_int))
+        } else {
+            outputs <- c(outputs, "forms")
+        }
+    }
+    if (isTRUE(ternary)) outputs <- c(outputs, "ternary")
+    if (isTRUE(positive)) outputs <- c(outputs, "positive")
+    if (isTRUE(negative)) outputs <- c(outputs, "negative")
 
     comparison_mode <- tolower(comparison_mode)
 
@@ -415,34 +446,55 @@ geomorphons <- function(elevation,
 
     if (inherits(elevation, 'SpatRaster')) {
         tmp <- terra::rast(elevation)
-        forms_rast <- tmp
-        terra::values(forms_rast) <- forms_matrix_res[["forms"]]
-        forms_rast <- geomorphon_theme(forms_rast, forms = forms)
-        ternary_rast <- tmp
-        terra::values(ternary_rast) <- forms_matrix_res[["ternary"]]
-        positive_rast <- tmp
-        terra::values(positive_rast) <- forms_matrix_res[["positive"]]
-        negative_rast <- tmp
-        terra::values(negative_rast) <- forms_matrix_res[["negative"]]
-    } else {
-        forms_rast <- forms_matrix_res[["forms"]]
-        ternary_rast <- forms_matrix_res[["ternary"]]
-        positive_rast <- forms_matrix_res[["positive"]]
-        negative_rast <- forms_matrix_res[["negative"]]
-    }
+        res_list <- list()
 
-    res <- list(
-        forms = forms_rast,
-        ternary = ternary_rast,
-        positive = positive_rast,
-        negative = negative_rast
-    )[outputs]
+        if (has_forms) {
+            if (is_multi_form) {
+                for (fi in req_forms_int) {
+                    cur_name <- paste0("forms", fi)
+                    r_fi <- tmp
+                    mat_val <- forms_matrix_res[[cur_name]]
+                    if (is.null(mat_val) && fi == req_forms_int[1]) {
+                        mat_val <- forms_matrix_res[["forms"]]
+                    }
+                    terra::values(r_fi) <- mat_val
+                    r_fi <- geomorphon_theme(r_fi, forms = cur_name)
+                    names(r_fi) <- cur_name
+                    res_list[[cur_name]] <- r_fi
+                }
+            } else {
+                forms_rast <- tmp
+                terra::values(forms_rast) <- forms_matrix_res[["forms"]]
+                forms_rast <- geomorphon_theme(forms_rast, forms = paste0("forms", req_forms_int[1]))
+                res_list[["forms"]] <- forms_rast
+            }
+        }
 
-    if (isTRUE(simplify) && length(res) == 1) {
-        res <- res[[1]]
-    }
+        if (isTRUE(ternary)) {
+            ternary_rast <- tmp
+            terra::values(ternary_rast) <- forms_matrix_res[["ternary"]]
+            names(ternary_rast) <- "ternary"
+            res_list[["ternary"]] <- ternary_rast
+        }
+        if (isTRUE(positive)) {
+            positive_rast <- tmp
+            terra::values(positive_rast) <- forms_matrix_res[["positive"]]
+            names(positive_rast) <- "positive"
+            res_list[["positive"]] <- positive_rast
+        }
+        if (isTRUE(negative)) {
+            negative_rast <- tmp
+            terra::values(negative_rast) <- forms_matrix_res[["negative"]]
+            names(negative_rast) <- "negative"
+            res_list[["negative"]] <- negative_rast
+        }
 
-    if (inherits(elevation, 'SpatRaster')) {
+        res <- res_list[outputs]
+
+        if (isTRUE(simplify) && length(res) == 1) {
+            res <- res[[1]]
+        }
+
         if (!inherits(res, 'SpatRaster')) {
             res <- terra::rast(res)
         }
@@ -453,6 +505,43 @@ geomorphons <- function(elevation,
                 overwrite = TRUE,
                 datatype = ifelse("ternary" %in% outputs, "INT2U", "INT1U")
             )
+        }
+    } else {
+        res_list <- list()
+
+        if (has_forms) {
+            if (is_multi_form) {
+                for (fi in req_forms_int) {
+                    cur_name <- paste0("forms", fi)
+                    mat_val <- forms_matrix_res[[cur_name]]
+                    if (is.null(mat_val) && fi == req_forms_int[1]) {
+                        mat_val <- forms_matrix_res[["forms"]]
+                    }
+                    res_list[[cur_name]] <- geomorphon_theme(mat_val, forms = cur_name)
+                }
+                res_list[["forms"]] <- res_list[[paste0("forms", req_forms_int[1])]]
+            } else {
+                res_list[["forms"]] <- geomorphon_theme(forms_matrix_res[["forms"]], forms = paste0("forms", req_forms_int[1]))
+            }
+        }
+
+        if (isTRUE(ternary)) {
+            res_list[["ternary"]] <- forms_matrix_res[["ternary"]]
+        }
+        if (isTRUE(positive)) {
+            res_list[["positive"]] <- forms_matrix_res[["positive"]]
+        }
+        if (isTRUE(negative)) {
+            res_list[["negative"]] <- forms_matrix_res[["negative"]]
+        }
+
+        res <- res_list[outputs]
+        if (is_multi_form && has_forms) {
+            res[["forms"]] <- res[[paste0("forms", req_forms_int[1])]]
+        }
+
+        if (isTRUE(simplify) && length(res) == 1) {
+            res <- res[[1]]
         }
     }
     res
@@ -525,9 +614,24 @@ geomorphon_colors <- function() {
 #'
 geomorphon_theme <- function(x, forms = "forms10") {
     if (inherits(x, 'SpatRaster')) {
-        names(x) <- "geomorphon"
-        levels(x) <- geomorphon_categories()
-        terra::coltab(x) <- geomorphon_colors()
+        orig_names <- names(x)
+        if (terra::nlyr(x) == 1) {
+            names(x) <- "geomorphon"
+            levels(x) <- geomorphon_categories()
+            terra::coltab(x) <- geomorphon_colors()
+            if (!is.null(orig_names) && grepl("^forms[0-9]+$", orig_names)) {
+                names(x) <- orig_names
+            }
+        } else {
+            layers <- lapply(seq_len(terra::nlyr(x)), function(i) {
+                lyr <- x[[i]]
+                levels(lyr) <- geomorphon_categories()
+                terra::coltab(lyr) <- geomorphon_colors()
+                names(lyr) <- orig_names[i]
+                lyr
+            })
+            x <- terra::rast(layers)
+        }
     } else {
         cls <- geomorphon_categories()
         x[] <- as.character(factor(x, levels = cls$value, labels = cls$form))
@@ -640,6 +744,7 @@ geomorphon_theme <- function(x, forms = "forms10") {
         skip <- args[["skip"]]
     }
 
+    ternary <- FALSE
     if (!is.null(args[["ternary"]])) {
         ternary <- args[["ternary"]]
     }
@@ -953,6 +1058,11 @@ geomorphon_theme <- function(x, forms = "forms10") {
         y <- terra::ext(x)
     }
 
+    sample_tile <- terra::rast(terra::sources(x)[1])
+    orig_layer_names <- names(sample_tile)
+    orig_cats <- terra::cats(sample_tile)
+    orig_coltab <- terra::coltab(sample_tile)
+
     res <- terra::merge(
         terra::crop(x, y),
         datatype = datatype,
@@ -962,5 +1072,18 @@ geomorphon_theme <- function(x, forms = "forms10") {
     )
 
     terra::varnames(res) <- ""
+    if (length(orig_layer_names) == terra::nlyr(res)) {
+        names(res) <- orig_layer_names
+    }
+    if (length(orig_cats) == terra::nlyr(res) && any(!sapply(orig_cats, is.null))) {
+        for (i in seq_len(terra::nlyr(res))) {
+            if (!is.null(orig_cats[[i]])) {
+                terra::set.cats(res, layer = i, value = orig_cats[[i]])
+            }
+            if (!is.null(orig_coltab) && !is.null(orig_coltab[[i]])) {
+                terra::coltab(res, layer = i) <- orig_coltab[[i]]
+            }
+        }
+    }
     res
 }
