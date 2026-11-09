@@ -306,5 +306,14 @@ expect_true(all(!is.na(par_na$pareto_score)))
 par_na_bounded <- geomorphon_pareto(syn_na, max_edge_ratio = 1.8)
 expect_equal(par_na_bounded$is_pareto, c(FALSE, FALSE, FALSE, FALSE))
 
+# Empty profile (all NA) with euclidean distance: complete rows still get distances
+if (requireNamespace("philentropy", quietly = TRUE)) {
+    m_empty <- matrix(c(0.5, 0.5, NA, NA, 0.2, 0.8), nrow = 3, byrow = TRUE,
+                      dimnames = list(c("a", "b", "c"), NULL))
+    d_empty <- rgeomorphon:::.dist_matrix(m_empty, method = "euclidean", unit = "log2")
+    expect_true(is.finite(d_empty["a", "c"]))
+    expect_true(all(is.na(d_empty["b", ])))
+}
+
 }
 

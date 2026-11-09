@@ -76,7 +76,16 @@
     stop(sprintf("Package 'philentropy' is required for method = '%s' / unit = '%s'.", method, unit), call. = FALSE)
   }
   
-  dmat <- philentropy::dist_many_many(mat, mat, method = method, unit = unit)
+  # philentropy errors on NA input (e.g. 0.8.0), so compute distances among complete
+  # rows only; rows with any NA (empty profiles) keep NA distances.
+  complete <- rowSums(is.na(mat)) == 0L
+  dmat <- matrix(NA_real_, nrow = nr, ncol = nr)
+  if (sum(complete) == 1L) {
+    dmat[complete, complete] <- 0
+  } else if (sum(complete) > 1L) {
+    sub <- mat[complete, , drop = FALSE]
+    dmat[complete, complete] <- as.matrix(philentropy::dist_many_many(sub, sub, method = method, unit = unit))
+  }
   rownames(dmat) <- rnames
   colnames(dmat) <- rnames
   dmat
