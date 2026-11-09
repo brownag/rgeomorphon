@@ -10,7 +10,7 @@ Description: A lightweight implementation of the geomorphon terrain
   'GRASS GIS' 'r.geomorphon' module. This implementation employs 
   a novel algorithm written in C++ and 'RcppParallel'.
 License: GPL (>= 3)
-Depends: R (>= 4.3.0)
+Depends: R (>= 4.1.0)
 Imports: Rcpp, RcppParallel
 LinkingTo: Rcpp, RcppParallel
 Suggests: 
