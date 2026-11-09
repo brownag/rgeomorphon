@@ -200,63 +200,65 @@ if (requireNamespace("terra", quietly = TRUE)) {
 
     # --------------------------------------------------------------------------
     # Runtime benchmark assertions
+    # Wall-clock timing is machine-dependent: run only when RGEOMORPHON_BENCH is set.
     # --------------------------------------------------------------------------
-    # 1. C++ ray tracing count reuse benchmark
-    # Warmup
-    invisible(rgeomorphon:::geomorphons_cpp_worker(
-        salton, search = 40, skip = 0, flat_angle_deg = 1, dist = 0,
-        comparison_mode = "anglev1", tdist = 0, use_meters = FALSE,
-        x_res_dem = 30, y_res_dem = 30, forms = 10L, ternary = 0L,
-        positive = 0L, negative = 0L, nodata = NA_integer_
-    ))
-
-    t0 <- proc.time()[["elapsed"]]
-    for (i in 1:5) {
+    if (nzchar(Sys.getenv("RGEOMORPHON_BENCH"))) {
+        # Warmup
         invisible(rgeomorphon:::geomorphons_cpp_worker(
             salton, search = 40, skip = 0, flat_angle_deg = 1, dist = 0,
             comparison_mode = "anglev1", tdist = 0, use_meters = FALSE,
             x_res_dem = 30, y_res_dem = 30, forms = 10L, ternary = 0L,
             positive = 0L, negative = 0L, nodata = NA_integer_
         ))
-    }
-    t_cpp_1 <- (proc.time()[["elapsed"]] - t0) / 5
 
-    t0 <- proc.time()[["elapsed"]]
-    for (i in 1:5) {
-        invisible(rgeomorphon:::geomorphons_cpp_worker(
-            salton, search = 40, skip = 0, flat_angle_deg = 1, dist = 0,
-            comparison_mode = "anglev1", tdist = 0, use_meters = FALSE,
-            x_res_dem = 30, y_res_dem = 30, forms = c(10L, 6L, 5L, 4L), ternary = 0L,
-            positive = 0L, negative = 0L, nodata = NA_integer_
-        ))
-    }
-    t_cpp_4 <- (proc.time()[["elapsed"]] - t0) / 5
+        t0 <- proc.time()[["elapsed"]]
+        for (i in 1:5) {
+            invisible(rgeomorphon:::geomorphons_cpp_worker(
+                salton, search = 40, skip = 0, flat_angle_deg = 1, dist = 0,
+                comparison_mode = "anglev1", tdist = 0, use_meters = FALSE,
+                x_res_dem = 30, y_res_dem = 30, forms = 10L, ternary = 0L,
+                positive = 0L, negative = 0L, nodata = NA_integer_
+            ))
+        }
+        t_cpp_1 <- (proc.time()[["elapsed"]] - t0) / 5
 
-    ratio_cpp <- t_cpp_4 / max(t_cpp_1, 0.001)
-    # C++ multi-form ray-tracing count reuse: 4 forms evaluates in < 1.4x of 1 form
-    expect_true(ratio_cpp < 1.4)
+        t0 <- proc.time()[["elapsed"]]
+        for (i in 1:5) {
+            invisible(rgeomorphon:::geomorphons_cpp_worker(
+                salton, search = 40, skip = 0, flat_angle_deg = 1, dist = 0,
+                comparison_mode = "anglev1", tdist = 0, use_meters = FALSE,
+                x_res_dem = 30, y_res_dem = 30, forms = c(10L, 6L, 5L, 4L), ternary = 0L,
+                positive = 0L, negative = 0L, nodata = NA_integer_
+            ))
+        }
+        t_cpp_4 <- (proc.time()[["elapsed"]] - t0) / 5
 
-    # 2. End-to-end evaluation benchmark
-    # Single multi-form pass vs 4 individual calls
-    invisible(geomorphons(dem, search = 30, forms = "forms10"))
-    invisible(geomorphons(dem, search = 30, forms = c("forms10", "forms6", "forms5", "forms4")))
+        ratio_cpp <- t_cpp_4 / max(t_cpp_1, 0.001)
+        # C++ multi-form ray-tracing count reuse: 4 forms evaluates in < 1.4x of 1 form
+        expect_true(ratio_cpp < 1.4)
 
-    t0 <- proc.time()[["elapsed"]]
-    for (i in 1:3) {
-        invisible(geomorphons(dem, search = 30, forms = c("forms10", "forms6", "forms5", "forms4")))
-    }
-    t_multi_pass <- (proc.time()[["elapsed"]] - t0) / 3
-
-    t0 <- proc.time()[["elapsed"]]
-    for (i in 1:3) {
+        # 2. End-to-end evaluation benchmark
+        # Single multi-form pass vs 4 individual calls
         invisible(geomorphons(dem, search = 30, forms = "forms10"))
-        invisible(geomorphons(dem, search = 30, forms = "forms6"))
-        invisible(geomorphons(dem, search = 30, forms = "forms5"))
-        invisible(geomorphons(dem, search = 30, forms = "forms4"))
-    }
-    t_separate_passes <- (proc.time()[["elapsed"]] - t0) / 3
+        invisible(geomorphons(dem, search = 30, forms = c("forms10", "forms6", "forms5", "forms4")))
 
-    # Multi-form pass takes significantly less than 4 separate passes
-    # (at least 20% faster than 4 separate passes)
-    expect_true(t_multi_pass < 0.80 * t_separate_passes)
+        t0 <- proc.time()[["elapsed"]]
+        for (i in 1:3) {
+            invisible(geomorphons(dem, search = 30, forms = c("forms10", "forms6", "forms5", "forms4")))
+        }
+        t_multi_pass <- (proc.time()[["elapsed"]] - t0) / 3
+
+        t0 <- proc.time()[["elapsed"]]
+        for (i in 1:3) {
+            invisible(geomorphons(dem, search = 30, forms = "forms10"))
+            invisible(geomorphons(dem, search = 30, forms = "forms6"))
+            invisible(geomorphons(dem, search = 30, forms = "forms5"))
+            invisible(geomorphons(dem, search = 30, forms = "forms4"))
+        }
+        t_separate_passes <- (proc.time()[["elapsed"]] - t0) / 3
+
+        # Multi-form pass takes significantly less than 4 separate passes
+        # (at least 20% faster than 4 separate passes)
+        expect_true(t_multi_pass < 0.80 * t_separate_passes)
+    }
 }
