@@ -89,6 +89,12 @@ const FORMS_GRASS forms_table4[9][9] = {
     /* 8 */ {G_RI, G_NONE, G_NONE, G_NONE, G_NONE, G_NONE, G_NONE, G_NONE, G_NONE}
 };
 
+// A double count is safe to truncate to int only if it lies in (-1, 9): that range
+// truncates to an int in [0, 8], the bounds form_from_counts accepts. Excludes Inf.
+static inline bool count_in_range(double v) {
+    return v > -1.0 && v < 9.0;
+}
+
 FORMS_GRASS form_from_counts(int num_neg, int num_pos, int num_forms, FORMS_GRASS none_val) {
     if (num_neg < 0 || num_neg > 8 || num_pos < 0 || num_pos > 8) {
         return G_FL;
@@ -142,6 +148,56 @@ Rcpp::NumericMatrix get_forms_matrix_cpp(int num_forms) {
     }
 
     return result_matrix;
+}
+
+struct FormsMatrixApplyWorker : public RcppParallel::Worker {
+    const RcppParallel::RMatrix<double> pos_m;
+    const RcppParallel::RMatrix<double> neg_m;
+    RcppParallel::RMatrix<double> out_m;
+    int num_forms;
+    int n_cols;
+
+    FormsMatrixApplyWorker(
+        const Rcpp::NumericMatrix& pos,
+        const Rcpp::NumericMatrix& neg,
+        Rcpp::NumericMatrix& out,
+        int n_forms
+    ) : pos_m(pos), neg_m(neg), out_m(out), num_forms(n_forms), n_cols(pos.ncol()) {}
+
+    void operator()(std::size_t begin_row, std::size_t end_row) {
+        for (std::size_t r = begin_row; r < end_row; ++r) {
+            for (int c = 0; c < n_cols; ++c) {
+                double p_val = pos_m(r, c);
+                double n_val = neg_m(r, c);
+                if (std::isnan(p_val) || std::isnan(n_val)) {
+                    out_m(r, c) = R_NaReal;
+                } else if (!count_in_range(p_val) || !count_in_range(n_val)) {
+                    // Out-of-range or infinite counts: never cast them to int
+                    out_m(r, c) = static_cast<double>(G_FL);
+                } else {
+                    int np = static_cast<int>(p_val);
+                    int nn = static_cast<int>(n_val);
+                    out_m(r, c) = static_cast<double>(form_from_counts(nn, np, num_forms, G_FL));
+                }
+            }
+        }
+    }
+};
+
+// [[Rcpp::export]]
+Rcpp::NumericMatrix forms_matrix_apply_cpp(
+    Rcpp::NumericMatrix positive,
+    Rcpp::NumericMatrix negative,
+    int num_forms
+) {
+    if (positive.nrow() != negative.nrow() || positive.ncol() != negative.ncol()) {
+        Rcpp::stop("Dimensions of positive and negative matrices must match");
+    }
+
+    Rcpp::NumericMatrix out(positive.nrow(), positive.ncol());
+    FormsMatrixApplyWorker worker(positive, negative, out, num_forms);
+    RcppParallel::parallelFor(0, positive.nrow(), worker);
+    return out;
 }
 
 enum COMPARISON_MODE {
@@ -233,7 +289,7 @@ unsigned int minimize_ternary_code(const std::vector<int>& pattern) {
 
 struct GeomorphonWorker : public RcppParallel::Worker {
     const RcppParallel::RMatrix<double> dem_access_mat_w;
-    RcppParallel::RMatrix<double> forms_output_mat_w;
+    std::vector<RcppParallel::RMatrix<double>> forms_output_mats_w;
     RcppParallel::RMatrix<double> ternary_output_mat_w;
     RcppParallel::RMatrix<double> positive_output_mat_w;
     RcppParallel::RMatrix<double> negative_output_mat_w;
@@ -248,7 +304,8 @@ struct GeomorphonWorker : public RcppParallel::Worker {
     double flat_thresh_height_w;
     double t_dist_factor_w;
     COMPARISON_MODE comp_mode_w;
-    int forms_w, ternary_w, positive_w, negative_w;
+    std::vector<int> forms_w;
+    int ternary_w, positive_w, negative_w;
     double nodata_w;
 
     const int grass_nextr[8] = {-1, -1, -1,  0,  1,  1,  1,  0};
@@ -256,7 +313,7 @@ struct GeomorphonWorker : public RcppParallel::Worker {
 
     GeomorphonWorker(
         const Rcpp::NumericMatrix& dem_r_in,
-        Rcpp::NumericMatrix& forms_r_out,
+        std::vector<Rcpp::NumericMatrix>& forms_r_outs,
         Rcpp::NumericMatrix& ternary_r_out,
         Rcpp::NumericMatrix& positive_r_out,
         Rcpp::NumericMatrix& negative_r_out,
@@ -270,13 +327,12 @@ struct GeomorphonWorker : public RcppParallel::Worker {
         double flat_thresh_h,
         double t_dist_f,
         COMPARISON_MODE comp_mode,
-        int forms,
+        const std::vector<int>& forms,
         int ternary,
         int positive,
         int negative,
         double nodata_v
     ) : dem_access_mat_w(dem_r_in),
-        forms_output_mat_w(forms_r_out),
         ternary_output_mat_w(ternary_r_out),
         positive_output_mat_w(positive_r_out),
         negative_output_mat_w(negative_r_out),
@@ -297,7 +353,12 @@ struct GeomorphonWorker : public RcppParallel::Worker {
         positive_w(positive),
         negative_w(negative),
         nodata_w(nodata_v)
-    { }
+    {
+        forms_output_mats_w.reserve(forms_r_outs.size());
+        for (std::size_t i = 0; i < forms_r_outs.size(); ++i) {
+            forms_output_mats_w.push_back(RcppParallel::RMatrix<double>(forms_r_outs[i]));
+        }
+    }
 
     inline double get_dem(int r, int c) const {
         if (r < 0 || r >= n_rows_w || c < 0 || c >= n_cols_w) {
@@ -336,8 +397,9 @@ struct GeomorphonWorker : public RcppParallel::Worker {
                      r_center_cell >= n_rows_w - (skip_cells_w + 1) ||
                      c_center_cell <= skip_cells_w ||
                      c_center_cell >= n_cols_w - (skip_cells_w + 1)) {
-                    if (forms_w > 0)
-                      forms_output_mat_w(r_center_cell, c_center_cell) = nodata_w;
+                    for (std::size_t f_idx = 0; f_idx < forms_output_mats_w.size(); ++f_idx) {
+                        forms_output_mats_w[f_idx](r_center_cell, c_center_cell) = nodata_w;
+                    }
                     if (ternary_w > 0)
                       ternary_output_mat_w(r_center_cell, c_center_cell) = nodata_w;
                     if (positive_w > 0)
@@ -542,9 +604,9 @@ struct GeomorphonWorker : public RcppParallel::Worker {
                   negative_output_mat_w(r_center_cell, c_center_cell) = static_cast<double>(nn);
                 }
 
-                if (forms_w > 0) {
-                  FORMS_GRASS final_form_code = form_from_counts(nn, np, forms_w, G_FL);
-                  forms_output_mat_w(r_center_cell, c_center_cell) = static_cast<double>(final_form_code);
+                for (std::size_t f_idx = 0; f_idx < forms_output_mats_w.size(); ++f_idx) {
+                  FORMS_GRASS final_form_code = form_from_counts(nn, np, forms_w[f_idx], G_FL);
+                  forms_output_mats_w[f_idx](r_center_cell, c_center_cell) = static_cast<double>(final_form_code);
                 }
 
             }
@@ -564,7 +626,7 @@ Rcpp::List geomorphons_cpp_worker(
         bool use_meters,
         double x_res_dem,
         double y_res_dem,
-        int forms,
+        Rcpp::IntegerVector forms,
         int ternary,
         int positive,
         int negative,
@@ -643,9 +705,23 @@ Rcpp::List geomorphons_cpp_worker(
         cmode = ANGLEV2_DISTANCE;
     }
 
+    std::vector<int> req_forms;
+    for (int i = 0; i < forms.size(); ++i) {
+        if (!Rcpp::IntegerVector::is_na(forms[i]) && forms[i] > 0) {
+            req_forms.push_back(forms[i]);
+        }
+    }
+
+    std::vector<Rcpp::NumericMatrix> forms_out_mats;
+    forms_out_mats.reserve(req_forms.size());
+    for (std::size_t i = 0; i < req_forms.size(); ++i) {
+        Rcpp::NumericMatrix m(elevation.nrow(), elevation.ncol());
+        std::fill(m.begin(), m.end(), nodata);
+        forms_out_mats.push_back(m);
+    }
+
     Rcpp::NumericMatrix positive_out_mat(elevation.nrow(), elevation.ncol());
     Rcpp::NumericMatrix negative_out_mat(elevation.nrow(), elevation.ncol());
-    Rcpp::NumericMatrix forms_out_mat(elevation.nrow(), elevation.ncol());
     Rcpp::NumericMatrix ternary_out_mat(elevation.nrow(), elevation.ncol());
 
     if (positive > 0) {
@@ -656,17 +732,13 @@ Rcpp::List geomorphons_cpp_worker(
         std::fill(negative_out_mat.begin(), negative_out_mat.end(), nodata);
     }
 
-    if (forms > 0) {
-        std::fill(forms_out_mat.begin(), forms_out_mat.end(), nodata);
-    }
-
     if (ternary > 0) {
         generate_ternary_codes();
         std::fill(ternary_out_mat.begin(), ternary_out_mat.end(), nodata);
     }
 
     GeomorphonWorker geomorphon_worker(elevation,
-                                       forms_out_mat,
+                                       forms_out_mats,
                                        ternary_out_mat,
                                        positive_out_mat,
                                        negative_out_mat,
@@ -680,7 +752,7 @@ Rcpp::List geomorphons_cpp_worker(
                                        flat_thresh_height,
                                        tdist,
                                        cmode,
-                                       forms,
+                                       req_forms,
                                        ternary,
                                        positive,
                                        negative,
@@ -688,10 +760,27 @@ Rcpp::List geomorphons_cpp_worker(
 
     RcppParallel::parallelFor(0, elevation.nrow(), geomorphon_worker);
 
-    return Rcpp::List::create(
-        Rcpp::Named("forms") = forms_out_mat,
-        Rcpp::Named("ternary") = ternary_out_mat,
-        Rcpp::Named("positive") = positive_out_mat,
-        Rcpp::Named("negative") = negative_out_mat
-    );
+    Rcpp::List res;
+
+    if (req_forms.empty()) {
+        Rcpp::NumericMatrix empty_forms(elevation.nrow(), elevation.ncol());
+        std::fill(empty_forms.begin(), empty_forms.end(), nodata);
+        res["forms"] = empty_forms;
+    } else if (req_forms.size() == 1) {
+        res["forms"] = forms_out_mats[0];
+        std::string fname = "forms" + std::to_string(req_forms[0]);
+        res[fname] = forms_out_mats[0];
+    } else {
+        for (std::size_t i = 0; i < req_forms.size(); ++i) {
+            std::string fname = "forms" + std::to_string(req_forms[i]);
+            res[fname] = forms_out_mats[i];
+        }
+        res["forms"] = forms_out_mats[0];
+    }
+
+    res["ternary"] = ternary_out_mat;
+    res["positive"] = positive_out_mat;
+    res["negative"] = negative_out_mat;
+
+    return res;
 }

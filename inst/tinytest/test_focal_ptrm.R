@@ -177,3 +177,10 @@ if (requireNamespace("terra", quietly = TRUE)) {
   expect_true(memory_ok(r3, boundary_bytes_per_cell * 0.98))
   expect_false(memory_ok(r3, boundary_bytes_per_cell * 1.02))
 }
+
+# Remapping a raster with no cells in the requested class system is silent and yields NA
+if (requireNamespace("terra", quietly = TRUE)) {
+    r_none <- terra::rast(nrows = 3, ncols = 3, vals = rep(10, 9))
+    expect_silent(remapped_none <- rgeomorphon:::.remap_ptrm_classes(r_none, c(1, 3, 6, 9)))
+    expect_true(all(is.na(terra::values(remapped_none))))
+}
