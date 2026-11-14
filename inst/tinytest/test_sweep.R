@@ -234,14 +234,19 @@ if (requireNamespace("terra", quietly = TRUE)) {
 
     # Mixed-name stacks are runs, not taxonomies: partial matches and non-taxonomy names
     run_a <- geomorphons(dem, search = 3, skip = 0, flat_angle_deg = 1, forms = "forms10")
-    run_b <- run_a
+    run_diff <- run_a
+    v_a <- as.vector(terra::values(run_a))
+    terra::values(run_diff) <- ifelse(is.na(v_a), NA_real_, ifelse(v_a == 1, 2, 1))
+    run_b <- run_diff
     names(run_b) <- "run2"
-    run_c <- run_a
+    run_c <- run_diff
     names(run_c) <- "forms10.1"
     run_a_named <- run_a
     names(run_a_named) <- "forms10"
-    run_rasters <- run_a
+    run_rasters <- run_diff
     names(run_rasters) <- "rasters"
+    ens_mix_prop <- geomorphon_ensemble(c(run_rasters, run_a_named), method = "proportions")
+    expect_true(any(as.vector(terra::values(ens_mix_prop)) == 0.5, na.rm = TRUE))
     expect_equal(as.vector(terra::values(geomorphon_ensemble(c(run_rasters, run_a_named), method = "modal", ties = "lowest"))),
                  as.vector(terra::values(geomorphon_ensemble(list(run_rasters, run_a_named), method = "modal", ties = "lowest"))))
     expect_equal(as.vector(terra::values(geomorphon_ensemble(c(run_a, run_b), method = "modal", ties = "lowest"))),
