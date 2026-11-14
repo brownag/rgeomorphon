@@ -400,19 +400,13 @@ geomorphon_divergence <- function(p,
     
     res_vec <- numeric(n_cells_total)
     
-    if (identical(tolower(method), "jensen-shannon") && identical(tolower(unit), "log2")) {
-      for (k in seq_len(n_cells_total)) {
-        res_vec[k] <- .jsd_vec(mat_p[k, ], mat_q[k, ])
-      }
-    } else {
-      for (k in seq_len(n_cells_total)) {
-        pk <- mat_p[k, ]
-        qk <- mat_q[k, ]
-        if (anyNA(pk) || anyNA(qk) || sum(pk) <= 0 || sum(qk) <= 0) {
-          res_vec[k] <- NA_real_
-        } else {
-          res_vec[k] <- .dist_pair(pk, qk, method = method, unit = unit)
-        }
+    for (k in seq_len(n_cells_total)) {
+      pk <- mat_p[k, ]
+      qk <- mat_q[k, ]
+      if (anyNA(pk) || anyNA(qk) || sum(pk) <= 0 || sum(qk) <= 0) {
+        res_vec[k] <- NA_real_
+      } else {
+        res_vec[k] <- .dist_pair(pk, qk, method = method, unit = unit)
       }
     }
     
@@ -448,19 +442,13 @@ geomorphon_divergence <- function(p,
   
   n_rows <- nrow(mat_p)
   res_vec <- numeric(n_rows)
-  if (identical(tolower(method), "jensen-shannon") && identical(tolower(unit), "log2")) {
-    for (k in seq_len(n_rows)) {
-      res_vec[k] <- .jsd_vec(mat_p[k, ], mat_q[k, ])
-    }
-  } else {
-    for (k in seq_len(n_rows)) {
-      pk <- mat_p[k, ]
-      qk <- mat_q[k, ]
-      if (anyNA(pk) || anyNA(qk) || sum(pk) <= 0 || sum(qk) <= 0) {
-        res_vec[k] <- NA_real_
-      } else {
-        res_vec[k] <- .dist_pair(pk, qk, method = method, unit = unit)
-      }
+  for (k in seq_len(n_rows)) {
+    pk <- mat_p[k, ]
+    qk <- mat_q[k, ]
+    if (anyNA(pk) || anyNA(qk) || sum(pk) <= 0 || sum(qk) <= 0) {
+      res_vec[k] <- NA_real_
+    } else {
+      res_vec[k] <- .dist_pair(pk, qk, method = method, unit = unit)
     }
   }
   
