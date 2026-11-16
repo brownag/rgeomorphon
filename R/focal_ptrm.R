@@ -244,12 +244,7 @@ geomorphon_ptrm_focal <- function(
     }
 
     k <- length(model$coefficients)
-    remapped <- terra::subst(
-      geo_class,
-      from = model$classes,
-      to = seq_along(model$classes),
-      others = NA_real_
-    )
+    remapped <- .remap_ptrm_classes(geo_class, model$classes)
 
     # Define PTRM calculation function for moving window
     ptrm_window_fun <- function(v, ...) {
@@ -340,10 +335,11 @@ geomorphon_ptrm_focal <- function(
 .remap_ptrm_classes <- function(geo_class, classes) {
   # Map system-specific codes (e.g. forms4: 1, 3, 6, 9) to contiguous 1..k.
   # Values outside the requested system become NA and are ignored downstream.
-  terra::subst(
+  # classify() rather than subst(): subst() warns when no cell matches, which is a
+  # normal result for a raster with no cells in this system.
+  terra::classify(
     geo_class,
-    from = classes,
-    to = seq_along(classes),
+    rcl = cbind(classes, seq_along(classes)),
     others = NA_real_
   )
 }

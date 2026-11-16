@@ -35,10 +35,11 @@
   hx <- .calculate_entropy(x)
   hy <- .calculate_entropy(y)
 
-  # Calculate joint entropy
-  # Create joint categorical variable
-  xy <- paste(x, y, sep = "_")
-  hxy <- .calculate_entropy(xy)
+  # Calculate joint entropy directly from contingency table counts without
+  # allocating intermediate strings via paste()
+  ct <- as.numeric(table(x, y))
+  prob_xy <- ct[ct > 0] / sum(ct)
+  hxy <- -sum(prob_xy * log2(prob_xy))
 
   # Mutual information: I(X;Y) = H(X) + H(Y) - H(X,Y)
   mi <- hx + hy - hxy
@@ -91,6 +92,62 @@
   list(
     homogeneity = if (hx > 0) mi / hx else NA_real_,
     completeness = if (hy > 0) mi / hy else NA_real_
+  )
+}
+
+#' @noRd
+.calculate_class_vmeasure <- function(contingency_table) {
+  # Accepts a 2D contingency table (rows = Geomorphon G, columns = Category C)
+  ct <- as.matrix(contingency_table)
+  n_total <- sum(ct)
+
+  row_sums <- rowSums(ct)
+  col_sums <- colSums(ct)
+
+  # Marginal entropies H(G) and H(C) in base 2
+  p_g <- row_sums[row_sums > 0] / n_total
+  hg <- if (length(p_g) > 0) -sum(p_g * log2(p_g)) else 0
+
+  p_c <- col_sums[col_sums > 0] / n_total
+  hc <- if (length(p_c) > 0) -sum(p_c * log2(p_c)) else 0
+
+  # Per-row class homogeneity: for each row g with n_{g.} > 0:
+  # H(C | G = g) = - sum_{c: n_{gc} > 0} (n_{gc} / n_{g.}) * log2(n_{gc} / n_{g.})
+  # class_homogeneity[g] = if (hc > 0) 1 - h_c_given_g / hc else NA_real_
+  class_homogeneity <- setNames(
+    vapply(seq_len(nrow(ct)), function(g) {
+      n_g <- row_sums[g]
+      if (n_g == 0 || hc == 0) {
+        return(NA_real_)
+      }
+      p_c_given_g <- ct[g, ] / n_g
+      p_c_given_g <- p_c_given_g[p_c_given_g > 0]
+      h_c_given_g <- -sum(p_c_given_g * log2(p_c_given_g))
+      1 - h_c_given_g / hc
+    }, numeric(1)),
+    rownames(contingency_table)
+  )
+
+  # Per-column class completeness: for each column c with n_{.c} > 0:
+  # H(G | C = c) = - sum_{g: n_{gc} > 0} (n_{gc} / n_{.c}) * log2(n_{gc} / n_{.c})
+  # class_completeness[c] = if (hg > 0) 1 - h_g_given_c / hg else NA_real_
+  class_completeness <- setNames(
+    vapply(seq_len(ncol(ct)), function(c) {
+      n_c <- col_sums[c]
+      if (n_c == 0 || hg == 0) {
+        return(NA_real_)
+      }
+      p_g_given_c <- ct[, c] / n_c
+      p_g_given_c <- p_g_given_c[p_g_given_c > 0]
+      h_g_given_c <- -sum(p_g_given_c * log2(p_g_given_c))
+      1 - h_g_given_c / hg
+    }, numeric(1)),
+    colnames(contingency_table)
+  )
+
+  list(
+    class_homogeneity = class_homogeneity,
+    class_completeness = class_completeness
   )
 }
 
@@ -600,6 +657,14 @@ geomorphon_ptrm <- function(x,
 #'       Only included when method includes "boundary".}
 #'     \item{`contingency_table`}{Matrix. Cross-tabulation of geomorphon vs.
 #'       categorical classes. Only included when method includes "nmi".}
+#'     \item{`class_homogeneity`}{Numeric vector. Per-geomorphon-class
+#'       homogeneity scores `1 - H(cat | geo = g) / H(cat)`, named by geomorphon
+#'       class. Row-weighted mean equals `homogeneity`. Included only for methods
+#'       "nmi" and "both".}
+#'     \item{`class_completeness`}{Numeric vector. Per-category-class
+#'       completeness scores `1 - H(geo | cat = c) / H(geo)`, named by category
+#'       class. Column-weighted mean equals `completeness`. Included only for
+#'       methods "nmi" and "both".}
 #'     \item{`mean_null_nmi`}{Numeric. Arithmetic mean NMI across eligible
 #'       deterministic spatial translations. `NA_real_` if no shifts have
 #'       paired-valid cells. Included only for methods "nmi" and "both".}
@@ -808,6 +873,10 @@ geomorphon_concordance <- function(geo_rast,
       Geomorphon = geo_vals_clean,
       Category = cat_vals_clean
     )
+
+    class_vm <- .calculate_class_vmeasure(result$contingency_table)
+    result$class_homogeneity <- class_vm$class_homogeneity
+    result$class_completeness <- class_vm$class_completeness
   }
 
   # Calculate boundary alignment if requested

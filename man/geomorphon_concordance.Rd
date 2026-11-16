@@ -79,6 +79,14 @@ Only included when method includes "boundary".}
 Only included when method includes "boundary".}
 \item{\code{contingency_table}}{Matrix. Cross-tabulation of geomorphon vs.
 categorical classes. Only included when method includes "nmi".}
+\item{\code{class_homogeneity}}{Numeric vector. Per-geomorphon-class
+homogeneity scores \verb{1 - H(cat | geo = g) / H(cat)}, named by geomorphon
+class. Row-weighted mean equals \code{homogeneity}. Included only for methods
+"nmi" and "both".}
+\item{\code{class_completeness}}{Numeric vector. Per-category-class
+completeness scores \verb{1 - H(geo | cat = c) / H(geo)}, named by category
+class. Column-weighted mean equals \code{completeness}. Included only for
+methods "nmi" and "both".}
 \item{\code{mean_null_nmi}}{Numeric. Arithmetic mean NMI across eligible
 deterministic spatial translations. \code{NA_real_} if no shifts have
 paired-valid cells. Included only for methods "nmi" and "both".}

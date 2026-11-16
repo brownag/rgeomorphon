@@ -40,17 +40,25 @@ or `"both"`).
 ### Information-theoretic concordance (`method = "nmi"` or `"both"`)
 
 Compute Shannon entropy in base 2 over cells that are valid (non-`NA`) in both
-rasters:
+rasters using contingency-table counts without string concatenation (`paste()`)
+overhead:
 
 - `nmi = 2 * I(geo; cat) / (H(geo) + H(cat))`, clamped to `[0, 1]` for numerical
   precision, and `0` when `H(geo) + H(cat) == 0`.
-- With `cat_rast` as the reference classification, report directional
-  `homogeneity = I(geo; cat) / H(cat)` and
-  `completeness = I(geo; cat) / H(geo)`.
+- With `cat_rast` ($C$) as the reference classification and `geo_rast` ($G$) as the
+  evaluated map, report directional `homogeneity = I(G; C) / H(C)` and
+  `completeness = I(G; C) / H(G)`.
 - When both marginal entropies are positive, the harmonic mean of `homogeneity`
   and `completeness` equals `nmi`. A component with a zero entropy denominator
   is `NA_real_` (so two constant maps yield `nmi = 0` and `NA_real_` for both
   directional components).
+- Additive per-class decomposition vectors:
+  - `class_homogeneity`: for each geomorphon row $g$, $1 - H(C \mid G = g) / H(C)$.
+    The row-proportion weighted mean $\sum_g \frac{n_{g\cdot}}{N} \text{class\_homogeneity}[g]$
+    reproduces global `homogeneity` exactly.
+  - `class_completeness`: for each category column $c$, $1 - H(G \mid C = c) / H(G)$.
+    The column-proportion weighted mean $\sum_c \frac{n_{\cdot c}}{N} \text{class\_completeness}[c]$
+    reproduces global `completeness` exactly.
 
 ### Boundary alignment (`method = "boundary"` or `"both"`)
 

@@ -108,27 +108,83 @@ forms_matrix_apply <- function(x,
                                negative = "negative",
                                ...) {
 
-    if (!requireNamespace("terra")) {
-        stop("Package 'terra' is required", call. = FALSE)
+    # Check if standard forms matrix (10, 6, 5, 4)
+    std_num_forms <- NULL
+    if (is.matrix(rcl) && all(dim(rcl) == c(9, 9))) {
+        for (nf in c(10L, 6L, 5L, 4L)) {
+            if (identical(as.vector(rcl), as.vector(get_forms_matrix_cpp(nf)))) {
+                std_num_forms <- nf
+                break
+            }
+        }
     }
 
-    if (!inherits(x, "SpatRaster")) {
-        stop("Object 'x' should be a SpatRaster", call. = FALSE)
+    if (inherits(x, "SpatRaster")) {
+        if (!requireNamespace("terra")) {
+            stop("Package 'terra' is required", call. = FALSE)
+        }
+
+        p <- x[[positive]]
+        n <- x[[negative]]
+
+        if (!is.null(std_num_forms)) {
+            pos_m <- terra::as.matrix(p, wide = TRUE)
+            neg_m <- terra::as.matrix(n, wide = TRUE)
+            out_m <- forms_matrix_apply_cpp(pos_m, neg_m, std_num_forms)
+            cls <- terra::rast(p)
+            terra::values(cls) <- out_m
+            cls <- geomorphon_theme(cls, forms = paste0("forms", std_num_forms))
+            names(cls) <- "form"
+            return(cls)
+        }
+
+        # Legacy fallback for custom non-standard matrix
+        d <- nrow(rcl)
+        r <- n * d + p
+        lut <- expand.grid(negative = seq(0, d - 1), positive = seq(0, d - 1))
+        lut$form <- unlist(apply(rcl, MARGIN = 2, function(a) a, simplify = FALSE))
+        lut <- cbind(ID = lut$negative * d + lut$positive, lut)
+        lut <- lut[order(lut$ID), ]
+        cls <- terra::subst(r, lut$ID, lut$form)
+        names(cls) <- "form"
+        return(cls)
+    } else {
+        # Matrix or list input
+        if (is.list(x) && !is.matrix(x)) {
+            p <- x[[positive]]
+            n <- x[[negative]]
+        } else if (is.matrix(x)) {
+            if (all(c(positive, negative) %in% colnames(x))) {
+                p <- x[, positive]
+                n <- x[, negative]
+            } else if (ncol(x) == 2) {
+                p <- x[, 1]
+                n <- x[, 2]
+            } else {
+                stop("Matrix 'x' must have columns matching 'positive' and 'negative', or exactly 2 columns.", call. = FALSE)
+            }
+        } else if (is.array(x) && length(dim(x)) == 3) {
+            # Rebuild as matrices: `[` drops a length-1 row or column dimension
+            p <- matrix(x[, , positive], nrow = dim(x)[1], ncol = dim(x)[2])
+            n <- matrix(x[, , negative], nrow = dim(x)[1], ncol = dim(x)[2])
+        } else {
+            stop("Object 'x' should be a SpatRaster, matrix, or list containing positive and negative overlooks.", call. = FALSE)
+        }
+
+        pos_m <- as.matrix(p)
+        neg_m <- as.matrix(n)
+
+        if (!is.null(std_num_forms)) {
+            return(forms_matrix_apply_cpp(pos_m, neg_m, std_num_forms))
+        }
+
+        # Custom matrix lookup for matrix input
+        d <- nrow(rcl)
+        out_m <- matrix(NA_real_, nrow = nrow(pos_m), ncol = ncol(pos_m))
+        valid <- !is.na(pos_m) & !is.na(neg_m) & pos_m >= 0 & pos_m < d & neg_m >= 0 & neg_m < d
+        out_m[valid] <- rcl[cbind(as.vector(neg_m[valid]) + 1, as.vector(pos_m[valid]) + 1)]
+        return(out_m)
     }
-
-    p <- x[[positive]]
-    n <- x[[negative]]
-    d <- nrow(rcl)
-    r <- n * d + p
-
-    lut <- expand.grid(negative = seq(0, d - 1), positive = seq(0, d - 1))
-    lut$form <- unlist(apply(rcl, MARGIN = 2, function(a) a, simplify = FALSE))
-
-    lut <- cbind(ID = lut$negative * d + lut$positive, lut)
-    lut <- lut[order(lut$ID), ]
-    cls <- terra::subst(r, lut$ID, lut$form)
-    names(cls) <- "form"
-    cls
 }
 
 #' Create a `forms_matrix` object
