@@ -203,11 +203,8 @@ ext(dem) <- c(1756968, 1757578, 5917000, 5917870)
 
 # Calculate focal PTRM with 5-cell radius
 ptrm_focal <- geomorphon_ptrm_focal(dem, radius = 5, mode = "dem")
-#> Warning: [subst] all 'from' values are missing, returning a copy of 'x'
 
 # Compare different window sizes
 ptrm_r3 <- geomorphon_ptrm_focal(dem, radius = 3)
-#> Warning: [subst] all 'from' values are missing, returning a copy of 'x'
 ptrm_r7 <- geomorphon_ptrm_focal(dem, radius = 7)
-#> Warning: [subst] all 'from' values are missing, returning a copy of 'x'
 ```

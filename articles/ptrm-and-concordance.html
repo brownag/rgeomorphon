@@ -297,17 +297,14 @@ slopes, and dissected ridge-valley networks.</p>
 <code>g</code>, pass <code>mode = "class"</code> to compute the focal
 window directly on the classes:</p>
 <div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">p_r5</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/geomorphon_ptrm_focal.html">geomorphon_ptrm_focal</a></span><span class="op">(</span><span class="va">g</span>, radius <span class="op">=</span> <span class="fl">5</span>, mode <span class="op">=</span> <span class="st">"class"</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## Warning: [subst] all 'from' values are missing, returning a copy of 'x'</span></span></code></pre>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">p_r10</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/geomorphon_ptrm_focal.html">geomorphon_ptrm_focal</a></span><span class="op">(</span><span class="va">g</span>, radius <span class="op">=</span> <span class="fl">10</span>, mode <span class="op">=</span> <span class="st">"class"</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## Warning: [subst] all 'from' values are missing, returning a copy of 'x'</span></span></code></pre>
-<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">p_r5</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/geomorphon_ptrm_focal.html">geomorphon_ptrm_focal</a></span><span class="op">(</span><span class="va">g</span>, radius <span class="op">=</span> <span class="fl">5</span>, mode <span class="op">=</span> <span class="st">"class"</span><span class="op">)</span></span>
+<span><span class="va">p_r10</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/geomorphon_ptrm_focal.html">geomorphon_ptrm_focal</a></span><span class="op">(</span><span class="va">g</span>, radius <span class="op">=</span> <span class="fl">10</span>, mode <span class="op">=</span> <span class="st">"class"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">p_r5</span>, main <span class="op">=</span> <span class="st">"Focal PTRM (radius = 5 cells / 50 m)"</span><span class="op">)</span></span>
 <span><span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">p_r10</span>, main <span class="op">=</span> <span class="st">"Focal PTRM (radius = 10 cells / 100 m)"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="ptrm-and-concordance_files/figure-html/ptrm-focal-1.png" class="r-plt" alt="" width="864"></p>
-<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">1</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p>Smaller window radii capture fine-scale landform boundaries (such as
 narrow gullies and ridge crests), whereas larger radii
@@ -399,7 +396,7 @@ directional definitions. With different NA masks they need not describe
 the edge sets used by the new symmetric scores. All three symmetric
 fields are included for <code>method = "boundary"</code> and
 <code>"both"</code>, not for <code>"nmi"</code> alone.</p>
-<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">conc</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/geomorphon_concordance.html">geomorphon_concordance</a></span><span class="op">(</span><span class="va">g</span>, <span class="va">soil</span>, method <span class="op">=</span> <span class="st">"both"</span>, threshold_cells <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
@@ -432,7 +429,7 @@ rasterized integer <code>mukey</code> values. Using
 <code><a href="../reference/geomorphon_theme.html">geomorphon_categories()</a></code> and <code>scorpion$mapunit</code>,
 we can label the rows with landform names and columns with map unit
 symbols (<code>musym</code>) for easier reading:</p>
-<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ct</span> <span class="op">&lt;-</span> <span class="va">conc</span><span class="op">$</span><span class="va">contingency_table</span></span>
 <span><span class="va">geo_cats</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/geomorphon_theme.html">geomorphon_categories</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">ct</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="va">geo_cats</span><span class="op">$</span><span class="va">form</span><span class="op">[</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/match.html" class="external-link">match</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/integer.html" class="external-link">as.integer</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">ct</span><span class="op">)</span><span class="op">)</span>, <span class="va">geo_cats</span><span class="op">$</span><span class="va">value</span><span class="op">)</span><span class="op">]</span></span>
@@ -467,12 +464,12 @@ positions. - <strong>Steep erosional remnant side slopes and summits
 <code>slope</code>, <code>spur</code>, <code>shoulder</code>, and
 <code>ridge</code> landforms, with almost no <code>flat</code>
 cells.</p>
-<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">g</span>, main <span class="op">=</span> <span class="st">"Geomorphons (10-form, search = 7, flat = 2°)"</span><span class="op">)</span></span>
 <span><span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">soil</span>, main <span class="op">=</span> <span class="st">"SSURGO Map Unit Symbol (musym)"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="ptrm-and-concordance_files/figure-html/plot-concordance-1.png" class="r-plt" alt="" width="864"></p>
-<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">1</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
@@ -521,7 +518,7 @@ fine-grained micro-landforms (<code>homogeneity = 0.0930</code>,
 <code>skip</code> distance, <code>flat_angle_deg</code>, and
 <code>forms</code> simplification to match the cartographic scale of the
 soil survey:</p>
-<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">param_grid</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>    label <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
 <span>        <span class="st">"Fine 10-form (search=3, flat=2°)"</span>,</span>
@@ -623,7 +620,7 @@ moderate hillslopes (<code>2–15%</code> slopes) into the
 <code>flat</code> class, leaving only the steepest erosional remnant
 scarps.</li>
 </ol>
-<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Scale-matched 6-form geomorphon classification</span></span>
 <span><span class="va">g_matched</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/geomorphons.html">geomorphons</a></span><span class="op">(</span></span>
 <span>    <span class="va">dem</span>,</span>
@@ -697,14 +694,14 @@ scarps.</li>
 <span><span class="co">## 2          75.39       15646        9932</span></span>
 <span><span class="co">## 3         179.83       15646        2264</span></span>
 <span><span class="co">## 4         199.49        2748        9932</span></span></code></pre>
-<div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>, <span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">g_matched</span>, main <span class="op">=</span> <span class="st">"1. Scale-Matched Geomorphons (flat = 5°)"</span><span class="op">)</span></span>
 <span><span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">soil_flipped</span>, main <span class="op">=</span> <span class="st">"2. Misregistered SSURGO (180° Flipped)"</span><span class="op">)</span></span>
 <span><span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">grid_blocks</span>, main <span class="op">=</span> <span class="st">"3. Arbitrary Rectilinear Grid Blocks"</span><span class="op">)</span></span>
 <span><span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">g_overflat</span>, main <span class="op">=</span> <span class="st">"4. Over-Flattened Geomorphons (flat = 15°)"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="ptrm-and-concordance_files/figure-html/plot-negative-controls-1.png" class="r-plt" alt="" width="864"></p>
-<div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">1</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <div class="section level3">
 <h3 id="diagnosing-each-failure-mode">Diagnosing Each Failure Mode<a class="anchor" aria-label="anchor" href="#diagnosing-each-failure-mode"></a>

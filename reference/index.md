@@ -17,6 +17,9 @@
 
   Get a `forms_matrix` for Geomorphon Classification
 
+- [`geomorphon_calibrate()`](http://humus.rocks/rgeomorphon/reference/geomorphon_calibrate.md)
+  : Calibration of Geomorphon Parameters Against Reference Targets
+
 - [`geomorphon_chunks_needed()`](http://humus.rocks/rgeomorphon/reference/geomorphon_chunks_needed.md)
   : Estimate Tile Processing Needs
 
@@ -24,11 +27,29 @@
   : Calculate Structural Concordance Between Geomorphon and Categorical
   Maps
 
+- [`geomorphon_divergence()`](http://humus.rocks/rgeomorphon/reference/geomorphon_divergence.md)
+  : Cell-Wise Divergence Between Landform Proportion Ensembles
+
+- [`geomorphon_ensemble()`](http://humus.rocks/rgeomorphon/reference/geomorphon_ensemble.md)
+  : Ensemble Aggregation of Geomorphon Classifications
+
+- [`geomorphon_pareto()`](http://humus.rocks/rgeomorphon/reference/geomorphon_pareto.md)
+  : Multi-Objective Pareto Frontier and Composite Calibration Score
+
+- [`geomorphon_profile_dist()`](http://humus.rocks/rgeomorphon/reference/geomorphon_profile_dist.md)
+  : Pairwise Dissimilarity of Concordance Profiles
+
 - [`geomorphon_ptrm()`](http://humus.rocks/rgeomorphon/reference/geomorphon_ptrm.md)
   : Calculate Perceived Terrain Realism Metric (PTRM)
 
 - [`geomorphon_ptrm_focal()`](http://humus.rocks/rgeomorphon/reference/geomorphon_ptrm_focal.md)
   : Calculate Focal (Moving Window) PTRM
+
+- [`geomorphon_sweep()`](http://humus.rocks/rgeomorphon/reference/geomorphon_sweep.md)
+  : Parameter Sweep for Geomorphon Terrain Classification
+
+- [`geomorphon_targets()`](http://humus.rocks/rgeomorphon/reference/geomorphon_targets.md)
+  : Reference Attribute Table Target Layer Generator
 
 - [`geomorphon_categories()`](http://humus.rocks/rgeomorphon/reference/geomorphon_theme.md)
   [`geomorphon_colors()`](http://humus.rocks/rgeomorphon/reference/geomorphon_theme.md)

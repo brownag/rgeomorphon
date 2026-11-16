@@ -263,18 +263,7 @@ When you already have a geomorphon classification raster `g`, pass
 ``` r
 
 p_r5 <- geomorphon_ptrm_focal(g, radius = 5, mode = "class")
-```
-
-    ## Warning: [subst] all 'from' values are missing, returning a copy of 'x'
-
-``` r
-
 p_r10 <- geomorphon_ptrm_focal(g, radius = 10, mode = "class")
-```
-
-    ## Warning: [subst] all 'from' values are missing, returning a copy of 'x'
-
-``` r
 
 par(mfrow = c(1, 2))
 terra::plot(p_r5, main = "Focal PTRM (radius = 5 cells / 50 m)")

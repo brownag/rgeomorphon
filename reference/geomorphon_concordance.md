@@ -129,6 +129,20 @@ A list with the following components (depending on `method`):
   Matrix. Cross-tabulation of geomorphon vs. categorical classes. Only
   included when method includes "nmi".
 
+- `class_homogeneity`:
+
+  Numeric vector. Per-geomorphon-class homogeneity scores
+  `1 - H(cat | geo = g) / H(cat)`, named by geomorphon class.
+  Row-weighted mean equals `homogeneity`. Included only for methods
+  "nmi" and "both".
+
+- `class_completeness`:
+
+  Numeric vector. Per-category-class completeness scores
+  `1 - H(geo | cat = c) / H(geo)`, named by category class.
+  Column-weighted mean equals `completeness`. Included only for methods
+  "nmi" and "both".
+
 - `mean_null_nmi`:
 
   Numeric. Arithmetic mean NMI across eligible deterministic spatial
