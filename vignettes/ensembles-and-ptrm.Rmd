@@ -166,7 +166,7 @@ Smaller radii highlight narrow gullies and ridge crests; larger radii smooth ove
 
 ## 5. Combining Scale Stability and Focal PTRM
 
-Focal PTRM and multi-scale ensemble entropy measure different terrain properties. On `scorpion`, their correlation is modest (`r ≈ -0.37`, `R² ≈ 0.14`):
+Focal PTRM and multi-scale ensemble entropy measure different terrain properties. On `scorpion`, their correlation is modest ($r \approx -0.37$, $R^2 \approx 0.14$):
 
 ```{r correlation-check}
 vals <- terra::values(c(p_r5, entropy, agreement), mat = TRUE)
