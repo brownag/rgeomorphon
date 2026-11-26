@@ -28,6 +28,7 @@ targets <- geomorphon_targets(
 
 expect_inherits(targets, "SpatRaster")
 expect_equal(terra::nlyr(targets), 5L)
+expect_equal(names(targets), c("musym", "drclassdcd", "mukind", "hydgrpdcd", "slopegraddcp"))
 
 cov <- attr(targets, "coverage")
 expect_true(is.data.frame(cov))
