@@ -21,7 +21,7 @@ geomorphon_pareto(
 
   A `data.frame` containing calibration evaluation metrics (such as the
   output of
-  [`geomorphon_calibrate()`](http://humus.rocks/rgeomorphon/reference/geomorphon_calibrate.md)).
+  [`geomorphon_calibrate()`](https://humus.rocks/rgeomorphon/reference/geomorphon_calibrate.md)).
 
 - objectives:
 

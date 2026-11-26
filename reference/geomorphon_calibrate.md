@@ -1,7 +1,7 @@
 # Calibration of Geomorphon Parameters Against Reference Targets
 
 Evaluates spatial concordance between multiple runs of a
-[`geomorphon_sweep()`](http://humus.rocks/rgeomorphon/reference/geomorphon_sweep.md)
+[`geomorphon_sweep()`](https://humus.rocks/rgeomorphon/reference/geomorphon_sweep.md)
 and reference categorical target raster layers. Combines sweep parameter
 metadata with concordance metrics, boundary-density penalties, and
 Pareto-optimal frontier identification.
@@ -29,7 +29,7 @@ geomorphon_calibrate(
 
   A single- or multi-layer categorical `SpatRaster` representing
   reference classification targets (e.g. from
-  [`geomorphon_targets()`](http://humus.rocks/rgeomorphon/reference/geomorphon_targets.md)).
+  [`geomorphon_targets()`](https://humus.rocks/rgeomorphon/reference/geomorphon_targets.md)).
 
 - forms:
 
@@ -41,7 +41,7 @@ geomorphon_calibrate(
 
   Character concordance method: `"both"` (default), `"nmi"`, or
   `"boundary"`. Passed to
-  [`geomorphon_concordance()`](http://humus.rocks/rgeomorphon/reference/geomorphon_concordance.md).
+  [`geomorphon_concordance()`](https://humus.rocks/rgeomorphon/reference/geomorphon_concordance.md).
 
 - threshold_cells:
 
@@ -51,7 +51,7 @@ geomorphon_calibrate(
 - spatial_null:
 
   Logical. Whether to evaluate spatial-null circular shift ensembles in
-  [`geomorphon_concordance()`](http://humus.rocks/rgeomorphon/reference/geomorphon_concordance.md).
+  [`geomorphon_concordance()`](https://humus.rocks/rgeomorphon/reference/geomorphon_concordance.md).
   Default is `TRUE`.
 
 ## Value
@@ -80,8 +80,8 @@ print(cal)
 #> 1      1      3    0              1    0         anglev1     0        300
 #> 2      2      4    0              1    0         anglev1     0        300
 #>   elapsed_sec n_cells  forms          target nmi homogeneity completeness
-#> 1       0.029   26565 forms6 elevation_class   0          NA            0
-#> 2       0.025   26565 forms6 elevation_class   0          NA            0
+#> 1       0.028   26565 forms6 elevation_class   0          NA            0
+#> 2       0.026   26565 forms6 elevation_class   0          NA            0
 #>   n_edges_geo n_edges_cat edge_ratio density_penalty edge_offset
 #> 1         858           0         NA              NA          NA
 #> 2         903           0         NA              NA          NA

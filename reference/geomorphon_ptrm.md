@@ -81,7 +81,7 @@ geomorphon_ptrm(
 - ...:
 
   Additional arguments passed to
-  [`geomorphons()`](http://humus.rocks/rgeomorphon/reference/geomorphons.md)
+  [`geomorphons()`](https://humus.rocks/rgeomorphon/reference/geomorphons.md)
   when `mode = "dem"`. Ignored when `mode = "class"`.
 
 ## Value
@@ -117,7 +117,7 @@ system.
 
 When `mode = "dem"`, geomorphons are calculated internally. For large
 DEMs, this may trigger the automatic tiled processing workflow. See
-[`geomorphons()`](http://humus.rocks/rgeomorphon/reference/geomorphons.md)
+[`geomorphons()`](https://humus.rocks/rgeomorphon/reference/geomorphons.md)
 for details.
 
 The PTRM is calculated using the formula:
@@ -150,8 +150,8 @@ approach to classification and mapping of landforms. Geomorphology, 182,
 
 ## See also
 
-[`geomorphons()`](http://humus.rocks/rgeomorphon/reference/geomorphons.md),
-[`geomorphon_categories()`](http://humus.rocks/rgeomorphon/reference/geomorphon_theme.md)
+[`geomorphons()`](https://humus.rocks/rgeomorphon/reference/geomorphons.md),
+[`geomorphon_categories()`](https://humus.rocks/rgeomorphon/reference/geomorphon_theme.md)
 
 ## Examples
 

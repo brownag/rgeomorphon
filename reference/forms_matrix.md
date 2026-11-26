@@ -28,7 +28,7 @@ An object of class `c("forms_matrix", "matrix", "array")`.
 
 This function is intended for custom classification matrix based on
 positive and negative overlooks. See
-[`forms_matrix_get()`](http://humus.rocks/rgeomorphon/reference/forms_matrix_get.md)
+[`forms_matrix_get()`](https://humus.rocks/rgeomorphon/reference/forms_matrix_get.md)
 for a convenient accessor for the standard classification systems with
 4, 5, 6 or 10 forms.
 

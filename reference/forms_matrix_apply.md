@@ -46,7 +46,7 @@ A SpatRaster containing the classification result.
 
 ## See also
 
-[`forms_matrix()`](http://humus.rocks/rgeomorphon/reference/forms_matrix.md)
+[`forms_matrix()`](https://humus.rocks/rgeomorphon/reference/forms_matrix.md)
 
 ## Examples
 

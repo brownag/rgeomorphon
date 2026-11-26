@@ -47,7 +47,7 @@ sessions.
     `rgeomorphon` uses **`RcppParallel`** to execute the main geomorphon
     algorithm in C++. This provides efficient, multi-threaded
     computation on a single data chunk. When you run
-    [`geomorphons()`](http://humus.rocks/rgeomorphon/reference/geomorphons.md)
+    [`geomorphons()`](https://humus.rocks/rgeomorphon/reference/geomorphons.md)
     on a raster that fits in memory, `RcppParallel` will automatically
     attempt to use multiple CPU cores to speed up the calculation. This
     is a form of shared-memory parallelism that works “out of the box.”
@@ -68,7 +68,7 @@ sessions.
 
 4.  **Provide a parallel `lapply` function:** You need to pass a
     parallel-aware loop function to
-    [`geomorphons()`](http://humus.rocks/rgeomorphon/reference/geomorphons.md)
+    [`geomorphons()`](https://humus.rocks/rgeomorphon/reference/geomorphons.md)
     via the `LAPPLY.FUN` argument.
 
 ### Scaling Up: From a Laptop to a Cluster
@@ -137,7 +137,7 @@ a single computer.
 Regardless of which of the backends you configure with
 [`future::plan()`](https://future.futureverse.org/reference/plan.html),
 your call to
-[`geomorphons()`](http://humus.rocks/rgeomorphon/reference/geomorphons.md)
+[`geomorphons()`](https://humus.rocks/rgeomorphon/reference/geomorphons.md)
 remains identical.
 
 ``` r
@@ -210,11 +210,11 @@ Sys.unsetenv("R_RGEOMORPHON_MEM_SCALE_NEED")
 ```
 
 We can also pass the `nchunk` argument directly to
-[`geomorphons()`](http://humus.rocks/rgeomorphon/reference/geomorphons.md)
+[`geomorphons()`](https://humus.rocks/rgeomorphon/reference/geomorphons.md)
 to bypass the memory-based heuristics.
 
 Now that
-[`geomorphons()`](http://humus.rocks/rgeomorphon/reference/geomorphons.md)
+[`geomorphons()`](https://humus.rocks/rgeomorphon/reference/geomorphons.md)
 will use a tiled approach, we can set up our parallel plan and execute
 the calculation.
 
@@ -228,7 +228,7 @@ future::plan(multisession, workers = 2)
 Use the LAPPLY.FUN argument to pass
 [`future.apply::future_lapply`](https://future.apply.futureverse.org/reference/future_lapply.html).
 This tells
-[`geomorphons()`](http://humus.rocks/rgeomorphon/reference/geomorphons.md)
+[`geomorphons()`](https://humus.rocks/rgeomorphon/reference/geomorphons.md)
 to use the future backend for processing tiles
 
 ``` r
@@ -247,7 +247,7 @@ system.time({
 ```
 
     ##    user  system elapsed 
-    ##   1.159   0.234   7.900
+    ##   1.182   0.253   8.153
 
 ``` r
 
@@ -275,7 +275,7 @@ terra::plot(g_parallel, main = "Geomorphons via Tiled Processing")
   reproducible.
 - **Backend Flexibility:** The `future` package allows for many
   different parallel backends. The
-  [`geomorphons()`](http://humus.rocks/rgeomorphon/reference/geomorphons.md)
+  [`geomorphons()`](https://humus.rocks/rgeomorphon/reference/geomorphons.md)
   code remains exactly the same.
 
 ## Beyond Parallelism: The Flexibility of `LAPPLY.FUN`

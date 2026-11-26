@@ -9,7 +9,7 @@ implementation employs a novel algorithm written in C++ and
 
 ## See also
 
-[`geomorphons()`](http://humus.rocks/rgeomorphon/reference/geomorphons.md)
+[`geomorphons()`](https://humus.rocks/rgeomorphon/reference/geomorphons.md)
 
 ## Author
 

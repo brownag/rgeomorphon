@@ -12,7 +12,7 @@ This implementation employs a novel algorithm written in C++ and
 
 For the sake of simplicity, some GRASS-specific implementation details
 have not been added. See
-[`?geomorphons`](http://humus.rocks/rgeomorphon/reference/geomorphons.md)
+[`?geomorphons`](https://humus.rocks/rgeomorphon/reference/geomorphons.md)
 for details.
 
 ## Installation
@@ -87,7 +87,7 @@ Now we will do a bathymetry example using the built in Salton Sea
 dataset (`salton`).
 
 See
-[`help("salton")`](http://humus.rocks/rgeomorphon/reference/salton.md)
+[`help("salton")`](https://humus.rocks/rgeomorphon/reference/salton.md)
 for details.
 
 ``` r

@@ -24,7 +24,7 @@ geomorphon_theme(x, forms = "forms10")
   character. One of: `"forms10"` (default), `"forms6"`, `"forms5"`,
   `"forms4"`. These are themes corresponding to the built-in 10-form,
   6-form, 5-form, and 4-form `"forms`" outputs from
-  [`geomorphons()`](http://humus.rocks/rgeomorphon/reference/geomorphons.md).
+  [`geomorphons()`](https://humus.rocks/rgeomorphon/reference/geomorphons.md).
 
 ## Value
 

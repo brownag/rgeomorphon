@@ -22,7 +22,7 @@ forms_matrix_get(num_forms = 10, levels = get_forms_grass_enum())
 
   Named integer with values between 0 and 10 corresponding to form class
   labels. Default:
-  [`get_forms_grass_enum()`](http://humus.rocks/rgeomorphon/reference/forms_matrix.md)
+  [`get_forms_grass_enum()`](https://humus.rocks/rgeomorphon/reference/forms_matrix.md)
 
 ## Value
 
@@ -31,7 +31,7 @@ An object of class `forms_matrix`
 ## Details
 
 For creating custom classification systems see the
-[`forms_matrix()`](http://humus.rocks/rgeomorphon/reference/forms_matrix.md)
+[`forms_matrix()`](https://humus.rocks/rgeomorphon/reference/forms_matrix.md)
 constructor.
 
 ## References
@@ -56,7 +56,7 @@ Reflectivity-Based Approach for Seafloor Segmentation. Geosciences,
 
 ## See also
 
-[`forms_matrix()`](http://humus.rocks/rgeomorphon/reference/forms_matrix.md)
+[`forms_matrix()`](https://humus.rocks/rgeomorphon/reference/forms_matrix.md)
 
 ## Examples
 

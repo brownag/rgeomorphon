@@ -97,7 +97,7 @@ geomorphon_ptrm_focal(
 - ...:
 
   Additional arguments passed to
-  [`geomorphons()`](http://humus.rocks/rgeomorphon/reference/geomorphons.md)
+  [`geomorphons()`](https://humus.rocks/rgeomorphon/reference/geomorphons.md)
   when `mode = "dem"`.
 
 ## Value
@@ -185,8 +185,8 @@ approach to classification and mapping of landforms. Geomorphology, 182,
 
 ## See also
 
-[`geomorphon_ptrm()`](http://humus.rocks/rgeomorphon/reference/geomorphon_ptrm.md),
-[`geomorphons()`](http://humus.rocks/rgeomorphon/reference/geomorphons.md),
+[`geomorphon_ptrm()`](https://humus.rocks/rgeomorphon/reference/geomorphon_ptrm.md),
+[`geomorphons()`](https://humus.rocks/rgeomorphon/reference/geomorphons.md),
 [`terra::focal()`](https://rspatial.github.io/terra/reference/focal.html)
 
 ## Examples

@@ -22,7 +22,7 @@ geomorphon_concordance(
 - geo_rast:
 
   `SpatRaster`. Geomorphon classification raster (typically output from
-  [`geomorphons()`](http://humus.rocks/rgeomorphon/reference/geomorphons.md)).
+  [`geomorphons()`](https://humus.rocks/rgeomorphon/reference/geomorphons.md)).
 
 - cat_rast:
 
@@ -300,7 +300,7 @@ means and deltas are `NA_real_`, and shift counts are `0L`.
 
 ## See also
 
-[`geomorphons()`](http://humus.rocks/rgeomorphon/reference/geomorphons.md),
+[`geomorphons()`](https://humus.rocks/rgeomorphon/reference/geomorphons.md),
 [`terra::boundaries()`](https://rspatial.github.io/terra/reference/boundaries.html)
 
 ## Examples

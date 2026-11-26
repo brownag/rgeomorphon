@@ -2,7 +2,7 @@
 
 Computes the pairwise dissimilarity matrix between conditional
 probability profiles from a contingency table or
-[`geomorphon_concordance()`](http://humus.rocks/rgeomorphon/reference/geomorphon_concordance.md)
+[`geomorphon_concordance()`](https://humus.rocks/rgeomorphon/reference/geomorphon_concordance.md)
 output using exact base-2 Jensen-Shannon divergence (default) or any
 method supported by `philentropy`.
 

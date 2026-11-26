@@ -40,7 +40,7 @@ geomorphon_sweep(
 - ...:
 
   Additional arguments passed to
-  [`geomorphons()`](http://humus.rocks/rgeomorphon/reference/geomorphons.md).
+  [`geomorphons()`](https://humus.rocks/rgeomorphon/reference/geomorphons.md).
 
 ## Value
 

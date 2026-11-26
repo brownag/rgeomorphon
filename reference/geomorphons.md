@@ -230,8 +230,8 @@ approach to classification and mapping of landforms, Geomorphology, vol.
 
 ## See also
 
-[`geomorphon_theme()`](http://humus.rocks/rgeomorphon/reference/geomorphon_theme.md)
-[`geomorphon_chunks_needed()`](http://humus.rocks/rgeomorphon/reference/geomorphon_chunks_needed.md)
+[`geomorphon_theme()`](https://humus.rocks/rgeomorphon/reference/geomorphon_theme.md)
+[`geomorphon_chunks_needed()`](https://humus.rocks/rgeomorphon/reference/geomorphon_chunks_needed.md)
 
 ## Examples
 
@@ -266,7 +266,7 @@ system.time({
     )
 })
 #>    user  system elapsed 
-#>   0.031   0.004   0.026 
+#>   0.033   0.000   0.024 
 
 plot(c(dem, rg))
 ```

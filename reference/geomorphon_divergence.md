@@ -2,7 +2,7 @@
 
 Computes cell-wise divergence and summary statistics between two aligned
 multi-layer class-proportion ensembles (e.g. from
-[`geomorphon_ensemble()`](http://humus.rocks/rgeomorphon/reference/geomorphon_ensemble.md)
+[`geomorphon_ensemble()`](https://humus.rocks/rgeomorphon/reference/geomorphon_ensemble.md)
 with `method = "proportions"`), or two lists of proportion matrices /
 numeric matrices.
 

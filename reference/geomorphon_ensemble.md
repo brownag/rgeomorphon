@@ -42,7 +42,7 @@ geomorphon_ensemble(
   proportions for when `method = "proportions"`. Defaults to `NULL`,
   which evaluates all reachable classes for `form` (10 for `forms10`, 6
   for `forms6`, 5 for `forms5`, 4 for `forms4`), matching
-  [`geomorphon_categories()`](http://humus.rocks/rgeomorphon/reference/geomorphon_theme.md).
+  [`geomorphon_categories()`](https://humus.rocks/rgeomorphon/reference/geomorphon_theme.md).
 
 - ties:
 

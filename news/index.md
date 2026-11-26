@@ -3,9 +3,9 @@
 ## rgeomorphon 0.4.0
 
 - Added
-  [`geomorphon_ptrm()`](http://humus.rocks/rgeomorphon/reference/geomorphon_ptrm.md)
+  [`geomorphon_ptrm()`](https://humus.rocks/rgeomorphon/reference/geomorphon_ptrm.md)
   and
-  [`geomorphon_ptrm_focal()`](http://humus.rocks/rgeomorphon/reference/geomorphon_ptrm_focal.md)
+  [`geomorphon_ptrm_focal()`](https://humus.rocks/rgeomorphon/reference/geomorphon_ptrm_focal.md)
   to measure perceived terrain realism from a DEM or geomorphon map
 
   - Supports global and circular focal-window calculations,
@@ -13,7 +13,7 @@
     model parameters (`coefficients`, `intercept`, `normalizer`).
 
 - Added
-  [`geomorphon_concordance()`](http://humus.rocks/rgeomorphon/reference/geomorphon_concordance.md)
+  [`geomorphon_concordance()`](https://humus.rocks/rgeomorphon/reference/geomorphon_concordance.md)
   to compare map structure between geomorphon and categorical rasters
 
   - Includes Normalized Mutual Information (`nmi`) with directional
@@ -54,18 +54,18 @@ CRAN release: 2025-09-16
 - Add `forms_matrix_*` methods for classifying positive and negative
   output using arbitrary forms matrices (lookup tables)
 
-  - [`forms_matrix_get()`](http://humus.rocks/rgeomorphon/reference/forms_matrix_get.md)
+  - [`forms_matrix_get()`](https://humus.rocks/rgeomorphon/reference/forms_matrix_get.md)
     to obtain forms matrices hard coded in the algorithm
 
-  - [`forms_matrix()`](http://humus.rocks/rgeomorphon/reference/forms_matrix.md)
+  - [`forms_matrix()`](https://humus.rocks/rgeomorphon/reference/forms_matrix.md)
     to create a new object of class `forms_matrix` (basically a factor
     matrix)
 
-  - [`forms_matrix_apply()`](http://humus.rocks/rgeomorphon/reference/forms_matrix_apply.md)
+  - [`forms_matrix_apply()`](https://humus.rocks/rgeomorphon/reference/forms_matrix_apply.md)
     to classify positive and negative outputs using a `forms_matrix`
 
 - Add new Salton Sea bathymetry dataset; see
-  [`?salton`](http://humus.rocks/rgeomorphon/reference/salton.md)
+  [`?salton`](https://humus.rocks/rgeomorphon/reference/salton.md)
 
 ## rgeomorphon 0.1.0
 

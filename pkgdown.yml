@@ -2,9 +2,10 @@ pandoc: 3.8.3
 pkgdown: 2.2.1
 pkgdown_sha: ~
 articles:
+  concordance-and-calibration: concordance-and-calibration.html
+  ensembles-and-ptrm: ensembles-and-ptrm.html
   geomorphons-tiled: geomorphons-tiled.html
-  ptrm-and-concordance: ptrm-and-concordance.html
-last_built: 2026-11-26T04:24Z
+last_built: 2026-11-26T17:47Z
 urls:
-  reference: http://humus.rocks/rgeomorphon/reference
-  article: http://humus.rocks/rgeomorphon/articles
+  reference: https://humus.rocks/rgeomorphon/reference
+  article: https://humus.rocks/rgeomorphon/articles
