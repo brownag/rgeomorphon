@@ -170,12 +170,6 @@ tiled processing.
 
 library(rgeomorphon)
 library(terra)
-```
-
-    ## terra 1.9.50
-
-``` r
-
 library(future)
 library(future.apply)
 
@@ -253,7 +247,7 @@ system.time({
 ```
 
     ##    user  system elapsed 
-    ##   0.800   0.054   5.828
+    ##   1.159   0.234   7.900
 
 ``` r
 

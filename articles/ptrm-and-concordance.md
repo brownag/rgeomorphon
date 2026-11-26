@@ -6,8 +6,6 @@ library(rgeomorphon)
 library(terra)
 ```
 
-    ## terra 1.9.50
-
 Beyond classifying landforms, `rgeomorphon` provides tools to summarize
 terrain complexity and compare landform patterns against independent
 thematic maps such as soil surveys or ecological classifications:

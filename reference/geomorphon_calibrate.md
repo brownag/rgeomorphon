@@ -80,8 +80,8 @@ print(cal)
 #> 1      1      3    0              1    0         anglev1     0        300
 #> 2      2      4    0              1    0         anglev1     0        300
 #>   elapsed_sec n_cells  forms          target nmi homogeneity completeness
-#> 1       0.019   26565 forms6 elevation_class   0          NA            0
-#> 2       0.020   26565 forms6 elevation_class   0          NA            0
+#> 1       0.029   26565 forms6 elevation_class   0          NA            0
+#> 2       0.025   26565 forms6 elevation_class   0          NA            0
 #>   n_edges_geo n_edges_cat edge_ratio density_penalty edge_offset
 #> 1         858           0         NA              NA          NA
 #> 2         903           0         NA              NA          NA
