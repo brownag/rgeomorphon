@@ -218,11 +218,11 @@ geomorphon_targets <- function(x,
     
     lyr <- terra::rast(x)
     terra::values(lyr) <- mapped_vals
-    names(lyr) <- v
     
     if (length(lvls) >= 1L) {
       levels(lyr) <- data.frame(id = seq_along(lvls), category = lvls, stringsAsFactors = FALSE)
     }
+    names(lyr) <- v
     
     n_val <- sum(!is.na(mapped_vals))
     n_miss <- sum(is.na(mapped_vals))
