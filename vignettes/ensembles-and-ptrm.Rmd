@@ -71,9 +71,9 @@ sw <- geomorphon_sweep(
 `geomorphon_ensemble()` aggregates the four scales into either a deterministic modal class (`method = "modal"`) or per-class proportions (`method = "proportions"`). From the proportion stack, we can compute per-cell scale agreement (maximum class proportion across scales) and Shannon entropy:
 
 ```{r ensembles, fig.width = 9, fig.height = 4}
-ens_mode10 <- geomorphon_ensemble(sw, forms = "forms10", method = "modal")
-ens_prop10 <- geomorphon_ensemble(sw, forms = "forms10", method = "proportions")
-ens_prop6  <- geomorphon_ensemble(sw, forms = "forms6",  method = "proportions")
+ens_mode10 <- geomorphon_ensemble(sw, form = "forms10", method = "modal")
+ens_prop10 <- geomorphon_ensemble(sw, form = "forms10", method = "proportions")
+ens_prop6  <- geomorphon_ensemble(sw, form = "forms6",  method = "proportions")
 
 # Scale agreement: 1.0 means all 4 search radii assign the same class
 agreement <- terra::app(ens_prop10, max, na.rm = TRUE)
